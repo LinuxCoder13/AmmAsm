@@ -10183,3 +10183,489 @@ _fini():
     bfd0:	48 83 ec 08          	sub    rsp,0x8
     bfd4:	48 83 c4 08          	add    rsp,0x8
     bfd8:	c3                   	ret
+Processing line 1: msg: u8 "how old are you: " ; 17
+Current char: 'm' (0x6d)
+Current char: ' ' (0x20)
+Current char: ' ' (0x20)
+Current char: ' ' (0x20)
+Processing line 2: passed: u8 "you can go\n", 0 ;12
+Current char: 'p' (0x70)
+Current char: ' ' (0x20)
+Current char: ' ' (0x20)
+Current char: ',' (0x2c)
+Current char: '0' (0x30)
+Current char: ';' (0x3b)
+Processing line 3: fail: u8 "you cant go\n", 0 ; 13
+Current char: 'f' (0x66)
+Current char: ' ' (0x20)
+Current char: ' ' (0x20)
+Current char: ',' (0x2c)
+Current char: '0' (0x30)
+Current char: ';' (0x3b)
+Processing line 4: age: u8 0, 0, 0
+Current char: 'a' (0x61)
+Current char: ' ' (0x20)
+Current char: ' ' (0x20)
+Current char: ',' (0x2c)
+Current char: '0' (0x30)
+Current char: ',' (0x2c)
+Current char: '0' (0x30)
+Processing line 5: 
+Current char: '
+' (0x0a)
+Processing line 6: _start:
+Current char: '_' (0x5f)
+Current char: '
+' (0x0a)
+Processing line 7:     mov %rax, 1
+Current char: ' ' (0x20)
+Current char: '%' (0x25)
+Current char: ',' (0x2c)
+Current char: '1' (0x31)
+Processing line 8:     mov %rdi, 1
+Current char: ' ' (0x20)
+Current char: '%' (0x25)
+Current char: ',' (0x2c)
+Current char: '1' (0x31)
+Processing line 9:     mov %rsi, msg
+Current char: ' ' (0x20)
+Current char: '%' (0x25)
+Current char: ',' (0x2c)
+Current char: 'm' (0x6d)
+Current char: '
+' (0x0a)
+Processing line 10:     mov %rdx, 17
+Current char: ' ' (0x20)
+Current char: '%' (0x25)
+Current char: ',' (0x2c)
+Current char: '1' (0x31)
+Processing line 11:     syscall
+Current char: ' ' (0x20)
+Current char: '
+' (0x0a)
+Processing line 12: 
+Current char: '
+' (0x0a)
+Processing line 13:     mov %rax, 0
+Current char: ' ' (0x20)
+Current char: '%' (0x25)
+Current char: ',' (0x2c)
+Current char: '0' (0x30)
+Processing line 14:     mov %rdi, 0
+Current char: ' ' (0x20)
+Current char: '%' (0x25)
+Current char: ',' (0x2c)
+Current char: '0' (0x30)
+Processing line 15:     mov %rsi, age
+Current char: ' ' (0x20)
+Current char: '%' (0x25)
+Current char: ',' (0x2c)
+Current char: 'a' (0x61)
+Current char: '
+' (0x0a)
+Processing line 16:     mov %rdx, 3
+Current char: ' ' (0x20)
+Current char: '%' (0x25)
+Current char: ',' (0x2c)
+Current char: '3' (0x33)
+Processing line 17:     syscall
+Current char: ' ' (0x20)
+Current char: '
+' (0x0a)
+Processing line 18: 
+Current char: '
+' (0x0a)
+Processing line 19:     mov [b=age, d=2], %r8b ; 0
+Current char: ' ' (0x20)
+Current char: '[' (0x5b)
+Current char: ',' (0x2c)
+Current char: '%' (0x25)
+Current char: ' ' (0x20)
+Processing line 20: 
+Current char: '
+' (0x0a)
+Processing line 21:     mov %al, [b=age]
+Current char: ' ' (0x20)
+Current char: '%' (0x25)
+Current char: ',' (0x2c)
+Current char: '[' (0x5b)
+Current char: '
+' (0x0a)
+Processing line 22:     cmp %al, '1'
+Current char: ' ' (0x20)
+Current char: '%' (0x25)
+Current char: ',' (0x2c)
+Current char: ''' (0x27)
+Current char: '
+' (0x0a)
+Processing line 23:     jne .cantgo
+Current char: ' ' (0x20)
+Current char: '.' (0x2e)
+Current char: '
+' (0x0a)
+Processing line 24: 
+Current char: '
+' (0x0a)
+Processing line 25:     mov %al, [b=age, d=1]
+Current char: ' ' (0x20)
+Current char: '%' (0x25)
+Current char: ',' (0x2c)
+Current char: '[' (0x5b)
+Current char: '
+' (0x0a)
+Processing line 26:     cmp %al, '8'
+Current char: ' ' (0x20)
+Current char: '%' (0x25)
+Current char: ',' (0x2c)
+Current char: ''' (0x27)
+Current char: '
+' (0x0a)
+Processing line 27:     jge .cango
+Current char: ' ' (0x20)
+Current char: '.' (0x2e)
+Current char: '
+' (0x0a)
+Processing line 28: 
+Current char: '
+' (0x0a)
+Processing line 29:     jmp .cantgo
+Current char: ' ' (0x20)
+Current char: '.' (0x2e)
+Current char: '
+' (0x0a)
+Processing line 30:     
+Current char: ' ' (0x20)
+Processing line 31: .cango:
+Current char: '.' (0x2e)
+Current char: '
+' (0x0a)
+Processing line 32: 
+Current char: '
+' (0x0a)
+Processing line 33:     mov %rax, 1
+Current char: ' ' (0x20)
+Current char: '%' (0x25)
+Current char: ',' (0x2c)
+Current char: '1' (0x31)
+Processing line 34:     mov %rdi, 1
+Current char: ' ' (0x20)
+Current char: '%' (0x25)
+Current char: ',' (0x2c)
+Current char: '1' (0x31)
+Processing line 35:     mov %rsi, passed
+Current char: ' ' (0x20)
+Current char: '%' (0x25)
+Current char: ',' (0x2c)
+Current char: 'p' (0x70)
+Current char: '
+' (0x0a)
+Processing line 36:     mov %rdx, 12
+Current char: ' ' (0x20)
+Current char: '%' (0x25)
+Current char: ',' (0x2c)
+Current char: '1' (0x31)
+Processing line 37:     syscall
+Current char: ' ' (0x20)
+Current char: '
+' (0x0a)
+Processing line 38:     jmp .end:
+Current char: ' ' (0x20)
+Current char: '.' (0x2e)
+Current char: '
+' (0x0a)
+Processing line 39: 
+Current char: '
+' (0x0a)
+Processing line 40: .cantgo:
+Current char: '.' (0x2e)
+Current char: '
+' (0x0a)
+Processing line 41: 
+Current char: '
+' (0x0a)
+Processing line 42:     mov %rax, 1
+Current char: ' ' (0x20)
+Current char: '%' (0x25)
+Current char: ',' (0x2c)
+Current char: '1' (0x31)
+Processing line 43:     mov %rdi, 1
+Current char: ' ' (0x20)
+Current char: '%' (0x25)
+Current char: ',' (0x2c)
+Current char: '1' (0x31)
+Processing line 44:     mov %rsi, fail
+Current char: ' ' (0x20)
+Current char: '%' (0x25)
+Current char: ',' (0x2c)
+Current char: 'f' (0x66)
+Current char: '
+' (0x0a)
+Processing line 45:     mov %rdx, 13
+Current char: ' ' (0x20)
+Current char: '%' (0x25)
+Current char: ',' (0x2c)
+Current char: '1' (0x31)
+Processing line 46:     syscall
+Current char: ' ' (0x20)
+Current char: '
+' (0x0a)
+Processing line 47: 
+Current char: '
+' (0x0a)
+Processing line 48: .end:
+Current char: '.' (0x2e)
+Current char: '
+' (0x0a)
+Processing line 49:     mov %rax, 60
+Current char: ' ' (0x20)
+Current char: '%' (0x25)
+Current char: ',' (0x2c)
+Current char: '6' (0x36)
+Processing line 50:     syscall
+Current char: ' ' (0x20)
+Current char: '
+' (0x0a)
+=== TOKENS DUMP (177 tokens) ===
+Token[0]: type=T_SOF        value='' line=1
+Token[1]: type=T_LAB        value='msg' line=1
+Token[2]: type=T_U8         value='u8' line=1
+Token[3]: type=T_STR        value='how old are you: ' line=1
+Token[4]: type=T_EOL        value='' line=1
+Token[5]: type=T_LAB        value='passed' line=2
+Token[6]: type=T_U8         value='u8' line=2
+Token[7]: type=T_STR        value='you can go
+' line=2
+Token[8]: type=T_COMMA      value=',' line=2
+Token[9]: type=T_INT        value='0' line=2
+Token[10]: type=T_EOL        value='' line=2
+Token[11]: type=T_LAB        value='fail' line=3
+Token[12]: type=T_U8         value='u8' line=3
+Token[13]: type=T_STR        value='you cant go
+' line=3
+Token[14]: type=T_COMMA      value=',' line=3
+Token[15]: type=T_INT        value='0' line=3
+Token[16]: type=T_EOL        value='' line=3
+Token[17]: type=T_LAB        value='age' line=4
+Token[18]: type=T_U8         value='u8' line=4
+Token[19]: type=T_INT        value='0' line=4
+Token[20]: type=T_COMMA      value=',' line=4
+Token[21]: type=T_INT        value='0' line=4
+Token[22]: type=T_COMMA      value=',' line=4
+Token[23]: type=T_INT        value='0' line=4
+Token[24]: type=T_EOL        value='' line=4
+Token[25]: type=T_EOL        value='' line=5
+Token[26]: type=T_LAB        value='_start' line=6
+Token[27]: type=T_EOL        value='' line=6
+Token[28]: type=T_INS        value='mov' line=7
+Token[29]: type=T_REG64      value='rax' line=7
+Token[30]: type=T_COMMA      value=',' line=7
+Token[31]: type=T_INT        value='1' line=7
+Token[32]: type=T_EOL        value='' line=7
+Token[33]: type=T_INS        value='mov' line=8
+Token[34]: type=T_REG64      value='rdi' line=8
+Token[35]: type=T_COMMA      value=',' line=8
+Token[36]: type=T_INT        value='1' line=8
+Token[37]: type=T_EOL        value='' line=8
+Token[38]: type=T_INS        value='mov' line=9
+Token[39]: type=T_REG64      value='rsi' line=9
+Token[40]: type=T_COMMA      value=',' line=9
+Token[41]: type=T_LAB        value='msg' line=9
+Token[42]: type=T_EOL        value='' line=9
+Token[43]: type=T_INS        value='mov' line=10
+Token[44]: type=T_REG64      value='rdx' line=10
+Token[45]: type=T_COMMA      value=',' line=10
+Token[46]: type=T_INT        value='17' line=10
+Token[47]: type=T_EOL        value='' line=10
+Token[48]: type=T_INS        value='syscall' line=11
+Token[49]: type=T_EOL        value='' line=11
+Token[50]: type=T_EOL        value='' line=12
+Token[51]: type=T_INS        value='mov' line=13
+Token[52]: type=T_REG64      value='rax' line=13
+Token[53]: type=T_COMMA      value=',' line=13
+Token[54]: type=T_INT        value='0' line=13
+Token[55]: type=T_EOL        value='' line=13
+Token[56]: type=T_INS        value='mov' line=14
+Token[57]: type=T_REG64      value='rdi' line=14
+Token[58]: type=T_COMMA      value=',' line=14
+Token[59]: type=T_INT        value='0' line=14
+Token[60]: type=T_EOL        value='' line=14
+Token[61]: type=T_INS        value='mov' line=15
+Token[62]: type=T_REG64      value='rsi' line=15
+Token[63]: type=T_COMMA      value=',' line=15
+Token[64]: type=T_LAB        value='age' line=15
+Token[65]: type=T_EOL        value='' line=15
+Token[66]: type=T_INS        value='mov' line=16
+Token[67]: type=T_REG64      value='rdx' line=16
+Token[68]: type=T_COMMA      value=',' line=16
+Token[69]: type=T_INT        value='3' line=16
+Token[70]: type=T_EOL        value='' line=16
+Token[71]: type=T_INS        value='syscall' line=17
+Token[72]: type=T_EOL        value='' line=17
+Token[73]: type=T_EOL        value='' line=18
+Token[74]: type=T_INS        value='mov' line=19
+Token[75]: type=T_ADDR_EXPR  value='b=age,d=2' line=19
+Token[76]: type=T_COMMA      value=',' line=19
+Token[77]: type=T_REG8       value='r8b' line=19
+Token[78]: type=T_EOL        value='' line=19
+Token[79]: type=T_EOL        value='' line=20
+Token[80]: type=T_INS        value='mov' line=21
+Token[81]: type=T_REG8       value='al' line=21
+Token[82]: type=T_COMMA      value=',' line=21
+Token[83]: type=T_ADDR_EXPR  value='b=age' line=21
+Token[84]: type=T_EOL        value='' line=21
+Token[85]: type=T_INS        value='cmp' line=22
+Token[86]: type=T_REG8       value='al' line=22
+Token[87]: type=T_COMMA      value=',' line=22
+Token[88]: type=T_CHAR       value='1' line=22
+Token[89]: type=T_EOL        value='' line=22
+Token[90]: type=T_INS        value='jne' line=23
+Token[91]: type=T_LAB        value='.cantgo' line=23
+Token[92]: type=T_EOL        value='' line=23
+Token[93]: type=T_EOL        value='' line=24
+Token[94]: type=T_INS        value='mov' line=25
+Token[95]: type=T_REG8       value='al' line=25
+Token[96]: type=T_COMMA      value=',' line=25
+Token[97]: type=T_ADDR_EXPR  value='b=age,d=1' line=25
+Token[98]: type=T_EOL        value='' line=25
+Token[99]: type=T_INS        value='cmp' line=26
+Token[100]: type=T_REG8       value='al' line=26
+Token[101]: type=T_COMMA      value=',' line=26
+Token[102]: type=T_CHAR       value='8' line=26
+Token[103]: type=T_EOL        value='' line=26
+Token[104]: type=T_INS        value='jge' line=27
+Token[105]: type=T_LAB        value='.cango' line=27
+Token[106]: type=T_EOL        value='' line=27
+Token[107]: type=T_EOL        value='' line=28
+Token[108]: type=T_INS        value='jmp' line=29
+Token[109]: type=T_LAB        value='.cantgo' line=29
+Token[110]: type=T_EOL        value='' line=29
+Token[111]: type=T_EOL        value='' line=30
+Token[112]: type=T_LAB        value='.cango' line=31
+Token[113]: type=T_EOL        value='' line=31
+Token[114]: type=T_EOL        value='' line=32
+Token[115]: type=T_INS        value='mov' line=33
+Token[116]: type=T_REG64      value='rax' line=33
+Token[117]: type=T_COMMA      value=',' line=33
+Token[118]: type=T_INT        value='1' line=33
+Token[119]: type=T_EOL        value='' line=33
+Token[120]: type=T_INS        value='mov' line=34
+Token[121]: type=T_REG64      value='rdi' line=34
+Token[122]: type=T_COMMA      value=',' line=34
+Token[123]: type=T_INT        value='1' line=34
+Token[124]: type=T_EOL        value='' line=34
+Token[125]: type=T_INS        value='mov' line=35
+Token[126]: type=T_REG64      value='rsi' line=35
+Token[127]: type=T_COMMA      value=',' line=35
+Token[128]: type=T_LAB        value='passed' line=35
+Token[129]: type=T_EOL        value='' line=35
+Token[130]: type=T_INS        value='mov' line=36
+Token[131]: type=T_REG64      value='rdx' line=36
+Token[132]: type=T_COMMA      value=',' line=36
+Token[133]: type=T_INT        value='12' line=36
+Token[134]: type=T_EOL        value='' line=36
+Token[135]: type=T_INS        value='syscall' line=37
+Token[136]: type=T_EOL        value='' line=37
+Token[137]: type=T_INS        value='jmp' line=38
+Token[138]: type=T_LAB        value='.end' line=38
+Token[139]: type=T_EOL        value='' line=38
+Token[140]: type=T_EOL        value='' line=39
+Token[141]: type=T_LAB        value='.cantgo' line=40
+Token[142]: type=T_EOL        value='' line=40
+Token[143]: type=T_EOL        value='' line=41
+Token[144]: type=T_INS        value='mov' line=42
+Token[145]: type=T_REG64      value='rax' line=42
+Token[146]: type=T_COMMA      value=',' line=42
+Token[147]: type=T_INT        value='1' line=42
+Token[148]: type=T_EOL        value='' line=42
+Token[149]: type=T_INS        value='mov' line=43
+Token[150]: type=T_REG64      value='rdi' line=43
+Token[151]: type=T_COMMA      value=',' line=43
+Token[152]: type=T_INT        value='1' line=43
+Token[153]: type=T_EOL        value='' line=43
+Token[154]: type=T_INS        value='mov' line=44
+Token[155]: type=T_REG64      value='rsi' line=44
+Token[156]: type=T_COMMA      value=',' line=44
+Token[157]: type=T_LAB        value='fail' line=44
+Token[158]: type=T_EOL        value='' line=44
+Token[159]: type=T_INS        value='mov' line=45
+Token[160]: type=T_REG64      value='rdx' line=45
+Token[161]: type=T_COMMA      value=',' line=45
+Token[162]: type=T_INT        value='13' line=45
+Token[163]: type=T_EOL        value='' line=45
+Token[164]: type=T_INS        value='syscall' line=46
+Token[165]: type=T_EOL        value='' line=46
+Token[166]: type=T_EOL        value='' line=47
+Token[167]: type=T_LAB        value='.end' line=48
+Token[168]: type=T_EOL        value='' line=48
+Token[169]: type=T_INS        value='mov' line=49
+Token[170]: type=T_REG64      value='rax' line=49
+Token[171]: type=T_COMMA      value=',' line=49
+Token[172]: type=T_INT        value='60' line=49
+Token[173]: type=T_EOL        value='' line=49
+Token[174]: type=T_INS        value='syscall' line=50
+Token[175]: type=T_EOL        value='' line=50
+Token[176]: type=T_EOF        value='ELF' line=50
+=== END TOKENS ===
+
+Label 'msg' at 0x401000
+Label 'passed' at 0x401011
+Label 'fail' at 0x40101d
+Label 'age' at 0x40102a
+Label '_start' at 0x40102d
+Label '_start.cango' at 0x4010a9
+Label '_start.cantgo' at 0x4010d8
+Label '_start.end' at 0x401102
+Resolving mov age: target=0x40102a, current=0x401081, offset=-92
+Resolving mov age: target=0x40102a, current=0x401088, offset=-100
+Resolving jne _start.cantgo: target=0x4010d8, current=0x401090, offset=66
+Resolving mov age: target=0x40102a, current=0x401096, offset=-113
+Resolving jge _start.cango: target=0x4010a9, current=0x40109e, offset=5
+Resolving jmp _start.cantgo: target=0x4010d8, current=0x4010a4, offset=47
+Resolving jmp _start.end: target=0x401102, current=0x4010d3, offset=42
+=== AST DUMP (43 nodes) ===
+AST[0]: type=AST_LABEL       name='msg' addr=0x401000  vaddr=0x401000
+AST[1]: type=AST_U8          size=17 data=[68 6f 77 20 6f 6c 64 20 61 72 65 20 79 6f 75 3a 20] machine_code=[68 6f 77 20 6f 6c 64 20 61 72 65 20 79 6f 75 3a 20]
+AST[2]: type=AST_LABEL       name='passed' addr=0x401011  vaddr=0x401011
+AST[3]: type=AST_U8          size=12 data=[79 6f 75 20 63 61 6e 20 67 6f 0a 00] machine_code=[79 6f 75 20 63 61 6e 20 67 6f 0a 00]
+AST[4]: type=AST_LABEL       name='fail' addr=0x40101d  vaddr=0x40101d
+AST[5]: type=AST_U8          size=13 data=[79 6f 75 20 63 61 6e 74 20 67 6f 0a 00] machine_code=[79 6f 75 20 63 61 6e 74 20 67 6f 0a 00]
+AST[6]: type=AST_LABEL       name='age' addr=0x40102a  vaddr=0x40102a
+AST[7]: type=AST_U8          size=3 data=[00 00 00] machine_code=[00 00 00]
+AST[8]: type=AST_LABEL       name='_start' addr=0x40102d  vaddr=0x40102d
+AST[9]: type=AST_INS         cmd='mov' operands=2 [REG64:'rax'] [IMM:'1'] inst size=10 machine_code=[48 b8 01 00 00 00 00 00 00 00]
+AST[10]: type=AST_INS         cmd='mov' operands=2 [REG64:'rdi'] [IMM:'1'] inst size=10 machine_code=[48 bf 01 00 00 00 00 00 00 00]
+AST[11]: type=AST_INS         cmd='mov' operands=2 [REG64:'rsi'] [LABEL:'msg'] inst size=10 machine_code=[48 be 00 10 40 00 00 00 00 00]
+AST[12]: type=AST_INS         cmd='mov' operands=2 [REG64:'rdx'] [IMM:'17'] inst size=10 machine_code=[48 ba 11 00 00 00 00 00 00 00]
+AST[13]: type=AST_INS         cmd='syscall' operands=0 inst size=2 machine_code=[0f 05]
+AST[14]: type=AST_INS         cmd='mov' operands=2 [REG64:'rax'] [IMM:'0'] inst size=10 machine_code=[48 b8 00 00 00 00 00 00 00 00]
+AST[15]: type=AST_INS         cmd='mov' operands=2 [REG64:'rdi'] [IMM:'0'] inst size=10 machine_code=[48 bf 00 00 00 00 00 00 00 00]
+AST[16]: type=AST_INS         cmd='mov' operands=2 [REG64:'rsi'] [LABEL:'age'] inst size=10 machine_code=[48 be 2a 10 40 00 00 00 00 00]
+AST[17]: type=AST_INS         cmd='mov' operands=2 [REG64:'rdx'] [IMM:'3'] inst size=10 machine_code=[48 ba 03 00 00 00 00 00 00 00]
+AST[18]: type=AST_INS         cmd='syscall' operands=0 inst size=2 machine_code=[0f 05]
+AST[19]: type=AST_INS         cmd='mov' operands=2 [MEM:'b=age,d=2'] [REG8:'r8b'] inst size=7 machine_code=[44 88 05 a4 ff ff ff]
+AST[20]: type=AST_INS         cmd='mov' operands=2 [REG8:'al'] [MEM:'b=age'] inst size=6 machine_code=[8a 05 9c ff ff ff]
+AST[21]: type=AST_INS         cmd='cmp' operands=2 [REG8:'al'] [CHAR:'1'] inst size=2 machine_code=[3c 31]
+AST[22]: type=AST_INS         cmd='jne' operands=1 [LABEL:'_start.cantgo'] inst size=6 machine_code=[0f 85 42 00 00 00]
+AST[23]: type=AST_INS         cmd='mov' operands=2 [REG8:'al'] [MEM:'b=age,d=1'] inst size=6 machine_code=[8a 05 8f ff ff ff]
+AST[24]: type=AST_INS         cmd='cmp' operands=2 [REG8:'al'] [CHAR:'8'] inst size=2 machine_code=[3c 38]
+AST[25]: type=AST_INS         cmd='jge' operands=1 [LABEL:'_start.cango'] inst size=6 machine_code=[0f 8d 05 00 00 00]
+AST[26]: type=AST_INS         cmd='jmp' operands=1 [LABEL:'_start.cantgo'] inst size=5 machine_code=[e9 2f 00 00 00]
+AST[27]: type=AST_LABEL       name='_start.cango' addr=0x4010a9  vaddr=0x4010a9
+AST[28]: type=AST_INS         cmd='mov' operands=2 [REG64:'rax'] [IMM:'1'] inst size=10 machine_code=[48 b8 01 00 00 00 00 00 00 00]
+AST[29]: type=AST_INS         cmd='mov' operands=2 [REG64:'rdi'] [IMM:'1'] inst size=10 machine_code=[48 bf 01 00 00 00 00 00 00 00]
+AST[30]: type=AST_INS         cmd='mov' operands=2 [REG64:'rsi'] [LABEL:'passed'] inst size=10 machine_code=[48 be 11 10 40 00 00 00 00 00]
+AST[31]: type=AST_INS         cmd='mov' operands=2 [REG64:'rdx'] [IMM:'12'] inst size=10 machine_code=[48 ba 0c 00 00 00 00 00 00 00]
+AST[32]: type=AST_INS         cmd='syscall' operands=0 inst size=2 machine_code=[0f 05]
+AST[33]: type=AST_INS         cmd='jmp' operands=1 [LABEL:'_start.end'] inst size=5 machine_code=[e9 2a 00 00 00]
+AST[34]: type=AST_LABEL       name='_start.cantgo' addr=0x4010d8  vaddr=0x4010d8
+AST[35]: type=AST_INS         cmd='mov' operands=2 [REG64:'rax'] [IMM:'1'] inst size=10 machine_code=[48 b8 01 00 00 00 00 00 00 00]
+AST[36]: type=AST_INS         cmd='mov' operands=2 [REG64:'rdi'] [IMM:'1'] inst size=10 machine_code=[48 bf 01 00 00 00 00 00 00 00]
+AST[37]: type=AST_INS         cmd='mov' operands=2 [REG64:'rsi'] [LABEL:'fail'] inst size=10 machine_code=[48 be 1d 10 40 00 00 00 00 00]
+AST[38]: type=AST_INS         cmd='mov' operands=2 [REG64:'rdx'] [IMM:'13'] inst size=10 machine_code=[48 ba 0d 00 00 00 00 00 00 00]
+AST[39]: type=AST_INS         cmd='syscall' operands=0 inst size=2 machine_code=[0f 05]
+AST[40]: type=AST_LABEL       name='_start.end' addr=0x401102  vaddr=0x401102
+AST[41]: type=AST_INS         cmd='mov' operands=2 [REG64:'rax'] [IMM:'60'] inst size=10 machine_code=[48 b8 3c 00 00 00 00 00 00 00]
+AST[42]: type=AST_INS         cmd='syscall' operands=0 inst size=2 machine_code=[0f 05]
+=== END AST ===
+
+AmmAsm: Compiled successfully! a.out (4366 bytes)

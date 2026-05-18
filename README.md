@@ -1,44 +1,70 @@
 # AmmAsm — x86-64 Assembler
 
-**Version:** 1.6  
-**Author:** Ammar Najafli  
-**License:** MIT 
+**Version:** 1.7
+**Author:** Ammar Najafli
+**License:** MIT
 
 AmmAsm is a lightweight, handwritten x86-64 assembler designed for simplicity and clarity. It compiles assembly code directly to machine code and produces ELF executables for Linux x86-64.
 
 ---
 
-## What's New in v1.6
+## What's New in v1.7
 
-added new bugs.. lol I'm joking... or not...
+### Expression Support (Full)
 
-### RIP-Relative Addressing (Full Support)
+AmmAsm v1.7 introduces full expression support in both instructions and data directives. Anywhere you can use a number or label, you can now use arbitrary arithmetic expressions.
 
-AmmAsm v1.6 now fully supports RIP-relative addressing for all memory operands. When a label is used as the base in an address expression, the assembler automatically emits `[rip + disp32]` encoding.
+But: Expr(non-const) can be evaluate only in `mov r64, imm64`, `mov r32, imm32` and `add r32, imm32`
+I mean, Expr is relevant to imm64 & imm32
 
-RIP-relative examples:
+**Expression syntax:**
 
-```
-mov %rax, [b=msg]           ; lea rax, [rip + offset]
-mov %rcx, [b=array, d=8]    ; [rip + array + 8]
-add %rdx, [b=counter]       ; add rdx, [rip + counter]
-```
-*Important*: Local labels require full qualification
+| Expression | Meaning |
+|------------|---------|
+| `msg` | Address of label `msg` |
+| `$-msg` | Current address - address of `msg` (negative) |
+| `msg+5` | Address of `msg` + 5 bytes |
+| `msg-8` | Address of `msg` - 8 bytes |
+| `label1+label2` | Sum of two addresses |
+| `'A' + 32` | ASCII code of 'a' (97) |
+| `msg+10-'A'` | Complex mixed expressions |
 
-When accessing a local label (starting with dot) in an address expression, you must use the full path: [b=global.local]
+**All expression features work in:**
 
-```asm
+- `mov %rax, msg+5` -> absolute address
+- `mov %rax, [b=msg+5]` -> RIP-relative address
+- `jmp msg+10` -> relative jump with offset
+- `u64 $-msg, msg+8, msg+16` -> data directives
+- `add %rax, $-_start` -> arithmetic with current address
+- `mov %rax, (((((10 * 2) << 2) + 5) & 0xFF) | 0x100) - 50` -> oh lord, I DID IT!!!!! 
+
+**Expression examples:**
+
+```ASM
 _start:
-    mov %rax, [b=_start.msg]    ; correct - full qualification
-    ; mov %rax, [b=.msg]        ; wrong - will fail
-
-    mov %rax, 1
-    mov %rdi, 1
-    mov %rsi, msg:
-    syscall
-
-.msg: u8 "Hello!", 0
+    mov %rax, msg           ; address of msg (0x401000)
+    mov %rbx, $-_start      ; length from _start to current (negative)
+    mov %rcx, msg+5         ; address of 'W' in "Hello World"
+    mov %rdx, msg+8         ; address of 'r' in "World"
+    
+    u64 $-msg, msg+5, msg+8, 0xdeadbeef
+    
+    jmp _start
+    
+msg: u8 "Hello World", 0
 ```
+
+---
+
+**Backend Refactoring**
+
+- resolve_expr() — New expression evaluator that supports:
+- Label resolution (msg)
+- Current address ($)
+- Character literals ('A')
+- Arithmetic (+, -, *, /, <<, >>, &, |, ^)
+- Parentheses for grouping
+- Mixed expressions with labels and constants
 
 ---
 
@@ -48,53 +74,6 @@ _start:
 
 ---
 
-How it works:
-
-- When `b=LABEL` (a label name instead of register) -> parse_addr_expr() sets is_rip_rel = 1
-- Encoder emits ModR/M: mod=00, r/m=101 (RIP-relative encoding)
-- Displacement placeholder 0x00000000 is emitted
-- Linker (resolve_labels()) calculates disp32 = target_addr - (current_pc + inst_size) + user_disp
-- Final disp32 patched into the 4-byte displacement field
-
-### Instruction add — Completed (All Forms)
-
-The add instruction is now fully implemented in v1.6 (was partial in v1.5):
-
-| Form | Encoding | Status |
-|------|----------|--------|
-| add reg, imm | 0x80/0x81/0x83 + ModR/M | Full |
-| add reg, reg | 0x00/0x01 + ModR/M (mod=11) | Full |
-| add reg, [addr] | 0x02/0x03 + SIB/ModRM | Full |
-| add [addr], reg | 0x00/0x01 + SIB/ModRM | Full |
-| add rax, imm (short form) | 0x04/0x05 | Full |
-| All sizes (8/16/32/64) | REX.W + operands | Full |
-| Extended registers r8-r15 | REX.B/R/R/X | Full |
-
-What "completion" means:
-
-- Previously: add had limited forms (only add reg, imm worked)
-- v1.6: Every combination of register/memory/immediate works identically to mov
-- All 10 ModRM/SIB addressing modes supported via unified encode_inst_rm_rm()
-
-### Full Change Summary (v1.5 -> v1.6)
-
-| Feature | v1.5 | v1.6 |
-|---------|------|------|
-| RIP-relative addressing | Not supported | Full support |
-| add reg, imm | Partial | Full |
-| add reg, reg | Not implemented | Full |
-| add reg, mem | Not implemented | Full |
-| add mem, reg | Not implemented | Full |
-| add short forms (rax) | Not implemented | Full |
-
----
-
-### Backend Refactoring
-
-- encode_inst_rm_rm() — Unified memory-operand encoder now handles all 10 ModRM/SIB addressing cases in a single function
-- Register lookup — Split into human-readable helpers vs. raw CPU encoding
-
----
 
 ## Features
 
@@ -129,7 +108,7 @@ Builds the Abstract Syntax Tree.
 
 - Validates operand combinations per instruction
 - Resolves operand types: O_REG8/16/32/64, O_IMM, O_MEM, O_LABEL, O_CHAR
-- Produces typed AST nodes: AST_INS, AST_LABEL, AST_U8/16/32/64, AST_SECTION, etc.
+- Produces typed AST nodes: AST_INS, AST_LABEL, AST_U8/16/32/64, etc.
 
 ### 3. Code Generator (parseInst)
 
@@ -162,7 +141,7 @@ Orchestrates all passes and writes the final binary buffer.
 
 Prefix with %:
 
-```
+```asm
 mov %rax, 42        ; 64-bit
 mov %eax, 42        ; 32-bit
 mov %ax,  42        ; 16-bit
@@ -172,7 +151,7 @@ mov %r8,  %r15      ; Extended regs r8-r15
 
 ### Numeric Literals
 
-```
+```asm
 mov %rax, 42            ; Decimal
 mov %rax, 0xff          ; Hexadecimal
 mov %rax, 0b1010        ; Binary
@@ -192,21 +171,20 @@ Unlike NASM, AmmAsm uses an explicit key-value format inside [...]:
 | s=N | Scale (1/2/4/8) | s=4 |
 | d=N | Displacement | d=0x10 |
 
-```
+```asm
 mov %rax, [b=rbx]                       ; [rbx]
 mov %rax, [b=rbx, d=16]                 ; [rbx + 16]
 mov %rax, [b=rbx, i=rcx, s=8]           ; [rbx + rcx*8]
 mov %rax, [b=rbx, i=rcx, s=8, d=0x10]   ; [rbx + rcx*8 + 16]
 mov [b=rsp, d=8], %rax                  ; store to [rsp+8]
 
-; RIP-relative (new in v1.6)
 mov %rax, [b=msg]                       ; load from msg
 mov %rax, [b=msg, d=4]                  ; msg + 4
 ```
 
 ### Data Directives
 
-```
+```asm
 msg:    u8  "Hello, World!", 0x0A, 0
 bytes:  u8  0x01, 0x02, 0x03, 'A', 'B'
 words:  u16 100, 200, 300, 0x1234
@@ -255,7 +233,7 @@ _start:
     mov %rax, 1         ; sys_write
     mov %rdi, 1         ; stdout
     mov %rsi, msg:      ; buffer
-    mov %rdx, 14        ; length
+    mov %rdx, [b=len]   ; length
     syscall
 
     mov %rax, 60        ; sys_exit
@@ -263,6 +241,7 @@ _start:
     syscall
 
 msg: u8 "Hello, World!", 0x0A
+len: u64 $ - msg
 ```
 
 
@@ -294,7 +273,7 @@ chmod +x output && ./output
 
 - Limited instruction set — `mov`, `add`, `cmp`, `jmp`, `call`, `jcc`, `syscall` (more coming)
 - No multi-file linking
-- No `.data` / `.bss` sections (everything in `.text`)
+- No `.data` / `.bss` sections (everything in `.text` + RWX)
 - No macro system
 - No floating-point (FPU/SSE)
 - No optimization passes (intentional)
@@ -310,6 +289,4 @@ chmod +x output && ./output
 
 ---
 
-- So today AmmAsm can compile any Thuring full assembly code 
-
-**Made by a 14 y.o. systems programmer.**
+**Made by a 15 y.o. systems programmer.**

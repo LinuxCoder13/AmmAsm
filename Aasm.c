@@ -1,10 +1,8 @@
 # 0 "Aasm.c"
 
 /*
- * AmmOS - Minimal Modular Operating System
- * Copyright (C) 2025 Ammar Najafli
- *
- * This file is part of AmmOS.
+ * AmmAsm - Linux x86-64 Assembler 
+ * Copyright (C) 2026 Ammar Najafli
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -44,62 +42,25 @@
 #include <signal.h>
 #include <ctype.h>
 #include <stdint.h>
+#include <inttypes.h>
 
 #include "Aasm.h"
-
-#define T_INS       0x00
-#define T_INT       0x01
-#define T_LAB       0x02
-#define T_REG8      0x03
-#define T_REG16     0x04
-#define T_REG32     0x05
-#define T_REG64     0x06
-#define T_ADDR_EXPR 0x09
-#define T_STR       0x0b
-#define T_EOL       0x0c
-#define T_EOF       0x0d
-#define T_SEC       0x0e
-
-#define T_U8      0x0f
-#define T_U8PTR   0x10
-#define T_U16     0x11
-#define T_U16PTR  0x12
-#define T_U32     0x13
-#define T_U32PTR  0x14
-#define T_U64     0x15
-#define T_U64PTR  0x16
-#define T_CHAR      0x17
-#define T_COMMA     0x18
-
-#define T_RESB      0x19
-#define T_RESQ      0x1a
-#define T_RESD      0x1b
-#define T_RESL      0x1c
-
-#define T_PC        0x21
-
 
 #define MAX_TOKENS 1024
 
 // .rodata            
 const char *CMDS[] = {"mov", "push", "pop", "syscall", "call", "jmp", "add", "sub", 
-               "mul", "div", "je", "jne", "jg", "jl", "jge", "jle", "jz", "ja", "jb",
+               "mul", "div", "je", "jne", "jg", "jl", "jge", "jle", "jz", "ja", "jb", "jnz", "jc",
                "xor", "or", "cmp", "inc", "dec", "nop", "ret", "leave", "test", "lea", "not", 
                "and", "shl", "shr", NULL};
 
 const char *JCC[] = { "je", "jne", "jg", "jl", "jge", "jle", "jz", "ja", "jb", "jnz", "jc", NULL};
 
-const char *HUMAN_AST[] = {
-    "U8",     "U8PTR",
-    "U16",    "U16PTR",
-    "U32",    "U32PTR",
-    "U64",    "U64PTR",
-    NULL
-};
+const char *HUMAN_AST[] = { "U8", "U16", "U32", "U64", NULL};
 
 /* name of label can include only this chars */
 
-const char *LETEXT = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_";
+const char *LETEXT = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_1234567890";
 const char* DIG    = "0123456789";
 const char* DIGEXT = "0123456789abcdefABCDEF";
 const char* DIGBIN = "01";
@@ -161,14 +122,16 @@ const char* regs64GP[] = {
     NULL
 };
 
+#define TEXT 0x401000
 
 uint64_t pc = 0;
-int line = 0;
+#define vpc (pc + TEXT)
+uint16_t line = 0;
 
 Token toks[MAX_TOKENS];
 int toks_count = 0;
 
-AST ast[MAX_TOKENS];
+AST ast[MAX_TOKENS / 8];
 int ast_count = 0;
 
 const char *p;
@@ -253,10 +216,12 @@ long parse_term() {
         if (*p == '*') {
             p++;
             left *= parse_number();
-        } else if (*p == '/') {
+        } 
+        else if (*p == '/') {
             p++;
             left /= parse_number();
-        } else break;
+        } 
+        else break;
     }
     return left;
 }
@@ -268,10 +233,32 @@ long parse_expr() {
         if (*p == '+') {
             p++;
             left += parse_term();
-        } else if (*p == '-') {
+        } 
+        else if (*p == '-') {
             p++;
             left -= parse_term();
-        } else break;
+        }
+        else if (*p == '^'){
+            p++;
+            left ^= parse_term();
+        }
+        else if (*p == '|'){
+            p++;
+            left |= parse_term();
+        }
+        else if (*p == '&'){
+            p++;
+            left &= parse_term();
+        }
+        else if (*p == '>' && *(p+1) == '>'){
+            p+=2;
+            left >>= parse_term();
+        }
+        else if (*p == '<' && *(p+1) == '<'){
+            p+=2;
+            left <<= parse_term();
+        }
+        else break;
     }
     return left;
 }
@@ -279,6 +266,38 @@ long parse_expr() {
 long eval_expr(const uint8_t *str) {
     p = str;
     return parse_expr();
+}
+
+void itoa(uint64_t value, uint8_t* str) {
+    if (value == 0) {
+        str[0] = '0';
+        str[1] = '\0';
+        return;
+    }
+
+    uint8_t buff[20];
+    int i = 0;
+    int is_negative = 0;
+
+    if (value < 0) {
+        is_negative = 1;
+        value = -value;
+    }
+
+    while (value > 0) {
+        buff[i++] = (value % 10) + '0';
+        value /= 10;
+    }
+
+    if (is_negative) {
+        buff[i++] = '-';
+    }
+
+    int j = 0;
+    while (i > 0) {
+        str[j++] = buff[--i];
+    }
+    str[j] = '\0';
 }
 
 
@@ -308,14 +327,25 @@ void DEBUG_PRINT_TOKENS() {
     for (int i = 0; i < toks_count; i++) {
         const char* type_str = "UNKNOWN";
         switch(toks[i].type) {
+            case T_SOF: type_str = "T_SOF"; break;
             case T_INS: type_str = "T_INS"; break;
             case T_INT: type_str = "T_INT"; break;
+            case T_PLUS: type_str = "T_PLUS"; break;
+            case T_MINUS: type_str = "T_MINUS"; break;
+            case T_MULL: type_str = "T_MULL"; break;
+            case T_DIV: type_str = "T_DIV"; break;
+            case T_OR: type_str = "T_OR"; break;
+            case T_XOR: type_str = "T_XOR"; break;
+            case T_AND: type_str = "T_AND"; break;
+            case T_LSHIFT: type_str = "T_LSHIFT"; break;
+            case T_RSHIFT: type_str = "T_RSHIFT"; break;
             case T_LAB: type_str = "T_LAB"; break;
             case T_REG8: type_str = "T_REG8"; break;
             case T_REG16: type_str = "T_REG16"; break;
             case T_REG32: type_str = "T_REG32"; break;
             case T_REG64: type_str = "T_REG64"; break;
             case T_ADDR_EXPR: type_str = "T_ADDR_EXPR"; break;
+            case T_PC: type_str = "T_PC"; break;
             case T_STR: type_str = "T_STR"; break;
             case T_EOL: type_str = "T_EOL"; break;
             case T_EOF: type_str = "T_EOF"; break;
@@ -365,33 +395,6 @@ char *read_string(char *buff, char *dest, int line) {
 }
 
 
-/* littel endian */
-
-// 16-bit
-void As16(uint16_t a, unsigned char out[2]) {
-    out[0] = a & 0xff;
-    out[1] = (a >> 8) & 0xff;
-}
-
-// 32-bit
-void As32(uint32_t a, unsigned char out[4]) {
-    out[0] = a & 0xff;
-    out[1] = (a >> 8) & 0xff;
-    out[2] = (a >> 16) & 0xff;
-    out[3] = (a >> 24) & 0xff;
-}
-
-// 64-bit
-void As64(uint64_t a, unsigned char out[8]) {
-    out[0] = a & 0xff;
-    out[1] = (a >> 8) & 0xff;
-    out[2] = (a >> 16) & 0xff;
-    out[3] = (a >> 24) & 0xff;
-    out[4] = (a >> 32) & 0xff;
-    out[5] = (a >> 40) & 0xff;
-    out[6] = (a >> 48) & 0xff;
-    out[7] = (a >> 56) & 0xff;
-}
 void expand_local_labels(){
     char global_lab[64] = {0};
     int glob_defined = 0;
@@ -399,7 +402,7 @@ void expand_local_labels(){
     for(int i = 0; i < ast_count; ++i){
         AST* node = &ast[i];
 
-        // --- LABEL ---
+        // LABEL
         if(node->type == AST_LABEL){
 
             if(node->label.name[0] != '.'){  
@@ -420,29 +423,41 @@ void expand_local_labels(){
             }
         }
 
-        // --- INSTRUCTIONS ---
+        // INSTRUCTIONS (EXPR)
         else if(node->type == AST_INS){
-
             for(int j = 0; j < node->ins.oper_count; j++){
+                if(node->ins.operands[j].type == O_EXPR){
+                    Expr *expr = &node->ins.operands[j].expr;
+                    for(int k = 0; k < expr->count; ++k){
+                        if(expr->tokens[k].type == T_LAB && expr->tokens[k].value[0] == '.'){
+                            if(!glob_defined){ fprintf(stderr, "AmmAsm: local label used without global\n"); exit(1);}
 
-                if(node->ins.otype[j] == O_LABEL){
-
-                    char* name = node->ins.operands[j];
-
-                    if(name[0] == '.'){
-
-                        if(!glob_defined){
-                            fprintf(stderr, "AmmAsm: local label used without global\n");
-                            exit(1);
+                            char full[64] = {0};
+                            snprintf(full, sizeof(full), "%s%s", global_lab, expr->tokens[k].value);
+                            free(expr->tokens[k].value);
+                            expr->tokens[k].value = strdup(full);
                         }
-
-                        char full[64];
-                        snprintf(full, sizeof(full), "%s%s", global_lab, name);
-                        strncpy(node->ins.operands[j], full, 63);
-                        node->ins.operands[j][63] = 0;
                     }
                 }
             }
+        }
+
+        else if(node->type == AST_U64){
+            for(int j = 0; j < node->u64.size; j++){
+                if(node->u64.entries[j].type == U64_EXPR){
+                    Expr *expr = &node->u64.entries[j].expr;
+                    for(int k = 0; k < expr->count; ++k){
+                        if(expr->tokens[k].type == T_LAB && expr->tokens[k].value[0] == '.'){
+                            if(!glob_defined){ fprintf(stderr, "AmmAsm: local label used without global\n"); exit(1);}
+
+                            char full[64] = {0};
+                            snprintf(full, sizeof(full), "%s%s", global_lab, expr->tokens[k].value);
+                            free(expr->tokens[k].value);
+                            expr->tokens[k].value = strdup(full);
+                        }
+                    }
+                }
+            }            
         }
     }
 }
@@ -456,6 +471,8 @@ int LEXER(FILE* fl) {
     }
     Lexer lexer = {0}; 
     int in_comment = 0;
+
+    add_token(T_SOF, "", 1); // start of file
 
     while (fgets(lexer.buf, 256, fl) != NULL) {
         char* buff = lexer.buf;
@@ -485,6 +502,9 @@ int LEXER(FILE* fl) {
                 } else buff++;
                 continue;
             }
+            else if(*buff == '$'){
+                add_token(T_PC, (uint8_t[2]){'$', '\0'}, line);
+            }
             else if((*buff == 'u' || *buff == 'U') && isdigit(*(buff+1))){
                 char buffer[10] = {0};
                 int i=0;
@@ -493,16 +513,52 @@ int LEXER(FILE* fl) {
                 }
 
                 if(strcasecmp(buffer, HUMAN_AST[0]) == 0)      add_token(T_U8, buffer, line); 
-                else if(strcasecmp(buffer, HUMAN_AST[1]) == 0) add_token(T_U8PTR, buffer, line);
-                else if(strcasecmp(buffer, HUMAN_AST[2]) == 0) add_token(T_U16, buffer, line);
-                else if(strcasecmp(buffer, HUMAN_AST[3]) == 0) add_token(T_U16PTR, buffer, line);
-                else if(strcasecmp(buffer, HUMAN_AST[4]) == 0) add_token(T_U32, buffer, line);
-                else if(strcasecmp(buffer, HUMAN_AST[5]) == 0) add_token(T_U32PTR, buffer, line);
-                else if(strcasecmp(buffer, HUMAN_AST[6]) == 0) add_token(T_U64, buffer, line);
-                else if(strcasecmp(buffer, HUMAN_AST[7]) == 0) add_token(T_U64PTR, buffer, line);
+                else if(strcasecmp(buffer, HUMAN_AST[1]) == 0) add_token(T_U16, buffer, line);
+                else if(strcasecmp(buffer, HUMAN_AST[2]) == 0) add_token(T_U32, buffer, line);
+                else if(strcasecmp(buffer, HUMAN_AST[3]) == 0) add_token(T_U64, buffer, line);
                 else { fprintf(stderr, "AmmAsm: Can't define data size directives on line '%d'\n", line); exit(1); }
                 continue;             
             }
+
+            else if (*buff == '-'){ buff++; add_token(T_MINUS, "-",  line); continue;}
+            else if (*buff == '+'){ buff++; add_token(T_PLUS,  "+",  line); continue;}
+            else if (*buff == '*'){ buff++; add_token(T_MULL,  "*",  line); continue;}
+            else if (*buff == '/'){ buff++; add_token(T_DIV,   "/",  line); continue;}
+
+            else if (*buff == '|'){ buff++; add_token(T_OR,    "|",  line); continue;}
+            else if (*buff == '^'){ buff++; add_token(T_XOR,   "^",  line); continue;}
+            else if (*buff == '&'){ buff++; add_token(T_AND,   "&",  line); continue;}
+            
+            else if (*buff == '>' && *(buff+1) == '>'){ buff+=2; add_token(T_RSHIFT, ">>", line); continue;}
+            else if (*buff == '<' && *(buff+1) == '<'){ buff+=2; add_token(T_LSHIFT, "<<", line); continue;}
+
+            else if (*buff == '('){ buff++; add_token(T_LPRANT,   "(",  line); continue;}
+            else if (*buff == ')'){ buff++; add_token(T_RPRANT,   ")",  line); continue;}
+
+
+            else if (isdigit(*buff)) { 
+                char num[128] = {0};
+                int i = 0;
+
+                while (*buff && (
+                    isdigit(*buff) || 
+                    isxdigit(*buff) ||
+                    *buff == 'x' || *buff == 'X' || 
+                    *buff == 'o' || *buff == 'O' ||  
+                    *buff == 'b' || *buff == 'B' )){
+
+                    if (i < (int)(sizeof(num) - 1)) {
+                        num[i++] = *buff;
+                    }
+                    buff++;
+                }
+                
+                num[i] = '\0';
+                
+                add_token(T_INT, num, line);
+                continue; 
+            }
+
             else if (isin(LETEXT, *buff)) { // global label
                 char buf[256] = {0};
                 int i = 0;
@@ -523,10 +579,8 @@ int LEXER(FILE* fl) {
                     add_token(T_INS, buf, line);
                     continue;
                 }
-                else {     
-                    DEBUG_PRINT_TOKENS();             
-                    fprintf(stderr, "AmmAsm: Can't define global lab at line '%d'\n", line);
-                    exit(1);
+                else {                  
+                    add_token(T_LAB, buf, line);
                 }
                 continue;
             }
@@ -540,14 +594,15 @@ int LEXER(FILE* fl) {
                 }
                 char full[64] = {0};
                 snprintf(full, 64, "%s", buf);
+
                 if (*buff == ':') {
                     buff++;
                     add_token(T_LAB, full, line);
                     continue;
                 } 
                 else {
-                    fprintf(stderr, "AmmAsm: Can't define local lab at line '%d'\n", line);
-                    exit(1);
+                    add_token(T_LAB, full, line);
+                    continue;
                 }
             }
             else if (*buff == '%') {
@@ -566,35 +621,7 @@ int LEXER(FILE* fl) {
 
                 continue;
             }
-            else if (isdigit(*buff) || *buff == '-') { 
-                char expr_buf[128] = {0};
-                int i = 0;
 
-                while (*buff && (
-                    isdigit(*buff) || 
-                    isxdigit(*buff) ||
-                    *buff == '+' || *buff == '-' || 
-                    *buff == '*' || *buff == '/' || 
-                    *buff == 'x' || *buff == 'X' || 
-                    *buff == 'o' || *buff == 'O' ||  
-                    *buff == 'b' || *buff == 'B' ||  
-                    isspace(*buff)
-                )){
-                    if (i < (int)(sizeof(expr_buf) - 1)) {
-                        expr_buf[i++] = *buff;
-                    }
-                    buff++;
-                }
-                
-                expr_buf[i] = '\0';
-                
-                long long value = (long)eval_expr(expr_buf);
-                
-                char val_str[32];
-                snprintf(val_str, sizeof(val_str), "%lld", value);
-                add_token(T_INT, val_str, line);
-                continue; 
-            }
             else if(*buff == '"'){
                 buff++;
 
@@ -672,27 +699,17 @@ int LEXER(FILE* fl) {
                 add_token(T_ADDR_EXPR, clean_expr, line);
                 continue;
             }
-            else if (*buff == '!') {
-                buff++; 
-                if (strncasecmp(buff, "section", 7) == 0) {
-                    buff += 7;
-                    while (*buff == ' ' || *buff == '\t') buff++;
 
-                    char section[12] = {0};
-                    int i = 0;
-
-                    while (*buff && *buff != '\n' && i < (int)(sizeof(section) - 1)) {
-                        section[i++] = *buff++;
-                    }
-
-                    add_token(T_SEC, section, line);
-                }
-                continue;
-            }
             else if(*buff == ','){
                 buff++;
                 while(isspace(*buff)) buff++;
                 add_token(T_COMMA, ",", line);
+                continue;
+            }
+
+            else if(*buff == '$'){
+                buff++;
+                add_token(T_PC, "$", line);
                 continue;
             }
 
@@ -714,9 +731,6 @@ int LEXER(FILE* fl) {
     return line;
 }
 
-
-
-
 void DEBUG_PRINT_AST() {
     #ifdef DEBUG
     printf("=== AST DUMP (%d nodes) ===\n", ast_count);
@@ -727,19 +741,14 @@ void DEBUG_PRINT_AST() {
         switch(node->type) {
             case AST_INS: type_str = "AST_INS"; break;
             case AST_U8: type_str = "AST_U8"; break;
-            case AST_U8PTR: type_str = "AST_U8PTR"; break;
             case AST_U16: type_str = "AST_U16"; break;
-            case AST_U16PTR: type_str = "AST_U16PTR"; break;
             case AST_U32: type_str = "AST_U32"; break;
-            case AST_U32PTR: type_str = "AST_U32PTR"; break;
             case AST_U64: type_str = "AST_U64"; break;
-            case AST_U64PTR: type_str = "AST_U64PTR"; break;
             case AST_RESB: type_str = "AST_RESB"; break;
             case AST_RESQ: type_str = "AST_RESQ"; break;
             case AST_RESD: type_str = "AST_RESD"; break;
             case AST_RESL: type_str = "AST_RESL"; break;
             case AST_LABEL: type_str = "AST_LABEL"; break;
-            case AST_SECTION: type_str = "AST_SECTION"; break;
             case AST_ADDR_EXPR: type_str = "AST_ADDR_EXPR"; break;
             case AST_CHAR: type_str = "AST_CHAR"; break;
             case AST_INT: type_str = "AST_INT"; break;
@@ -752,18 +761,61 @@ void DEBUG_PRINT_AST() {
                 printf(" cmd='%s' operands=%d", node->cmd, node->ins.oper_count);
                 for (int j = 0; j < node->ins.oper_count; j++) {
                     const char* otype_str = "?";
-                    switch(node->ins.otype[j]) {
+                    switch(node->ins.operands[j].type) {
                         case O_REG8: otype_str = "REG8"; break;
                         case O_REG16: otype_str = "REG16"; break;
                         case O_REG32: otype_str = "REG32"; break;
                         case O_REG64: otype_str = "REG64"; break;
                         case O_IMM: otype_str = "IMM"; break;
                         case O_MEM: otype_str = "MEM"; break;
-                        case O_LABEL: otype_str = "LABEL"; break;
-                        case O_ID: otype_str = "ID"; break;
+                        case O_EXPR: otype_str = "EXPR"; break;
                         case O_CHAR: otype_str = "CHAR"; break;
                     }
-                    printf(" [%s:'%s']", otype_str, node->ins.operands[j]);
+                    printf(" [%s:", otype_str);
+                    
+                    switch(node->ins.operands[j].type) {
+                        case O_REG8:
+                        case O_REG16:
+                        case O_REG32:
+                        case O_REG64:
+                            printf("'%s'", node->ins.operands[j].reg);
+                            break;
+                        case O_IMM:
+                            printf("0x%lx", node->ins.operands[j].imm);
+                            break;
+                        case O_CHAR:
+                            printf("'%c'", node->ins.operands[j].c);
+                            break;
+                        case O_EXPR:
+                            printf("(");
+                            for (int k = 0; k < node->ins.operands[j].expr.count; k++) {
+                                if (node->ins.operands[j].expr.tokens[k].type == T_CHAR) {
+                                    printf("'%s'", node->ins.operands[j].expr.tokens[k].value);
+                                } else {
+                                    printf("%s", node->ins.operands[j].expr.tokens[k].value);
+                                }
+                                if (k < node->ins.operands[j].expr.count - 1) printf(" ");
+                            }
+                            printf(")");
+                            break;
+                        case O_MEM:
+                            if (node->ins.operands[j].addr.is_rip_rel) {
+                                printf("rip+");
+                            }
+                            printf("b=%d", node->ins.operands[j].addr.base);
+                            if (node->ins.operands[j].addr.have_index) {
+                                printf(", i=%d", node->ins.operands[j].addr.index);
+                                printf(", s=%d", node->ins.operands[j].addr.scale);
+                            }
+                            if (node->ins.operands[j].addr.have_disp) {
+                                printf(", d=0x%x", node->ins.operands[j].addr.disp);
+                            }
+                            break;
+                        default:
+                            printf("?");
+                            break;
+                    }
+                    printf("]");
                 }
                 printf(" inst size=%d", node->machine_code_size);
                 break;
@@ -804,10 +856,19 @@ void DEBUG_PRINT_AST() {
                 break;
                 
             case AST_U64:
-                printf(" size=%d data=[", node->u64.size * sizeof(long));
+                printf(" size=%d data=[", node->u64.size);
                 for (int j = 0; j < node->u64.size; j++) {
-                    printf("%016llx", node->u64.data[j]);
-                    if (j < node->u64.size - 1) printf(" ");
+                    if (node->u64.entries[j].type == U64_INT) {
+                        printf("%016llx", node->u64.entries[j].imm);
+                    } else {
+                        printf("(");
+                        for (int k = 0; k < node->u64.entries[j].expr.count; k++) {
+                            printf("%s", node->u64.entries[j].expr.tokens[k].value);
+                            if (k < node->u64.entries[j].expr.count - 1) printf(" ");
+                        }
+                        printf(")");
+                    }
+                    if (j < node->u64.size - 1) printf(", ");
                 }
                 printf("]");
                 break;
@@ -827,10 +888,6 @@ void DEBUG_PRINT_AST() {
             case AST_RESL:
                 printf(" size=%ld lbytes", node->resl.size);
                 break;
-                
-            case AST_SECTION:
-                printf(" name='%s'", node->section.name);
-                break;
         }
         
         if (node->machine_code_size > 0) {
@@ -846,6 +903,7 @@ void DEBUG_PRINT_AST() {
     }
     printf("=== END AST ===\n\n");
     #endif
+    
 }
 
 /* post-link resolve O(n^2) */
@@ -861,7 +919,6 @@ uint64_t collect_labels() {
         if (ast[i].type == AST_LABEL) {
             ast[i].label.adress = current_pc; 
             ast[i].label.vadress = current_pc;
-            ast[i].label.defined = 1;
             
             #ifdef DEBUG
             printf("Label '%s' at 0x%lx\n", ast[i].label.name, current_pc);
@@ -877,7 +934,7 @@ uint64_t collect_labels() {
                  (ast[i].type == AST_U16 && ast[i].machine_code_size > 0) ||
                  (ast[i].type == AST_U32 && ast[i].machine_code_size > 0) ||
                  (ast[i].type == AST_U64 && ast[i].machine_code_size > 0))
-            current_pc += ast[i].machine_code_size; // clean code?
+            current_pc += ast[i].machine_code_size; 
     }
     
     if(!e_entry_defined){
@@ -892,124 +949,121 @@ void resolve_labels() {
     for (int i = 0; i < ast_count; i++) {
         AST* node = &ast[i];
         
-        if (node->type != AST_INS || node->ins.resolved) continue;
-        
         // MOV r64, label
-        if (strcasecmp(node->cmd, "mov") == 0 && node->ins.otype[0] == O_REG64 && node->ins.otype[1] == O_LABEL) {
-            const char* label_name = node->ins.operands[1];
-            uint64_t label_addr = 0;
-            int found = 0;
-            
-            
-            for (int j = 0; j < ast_count; j++) {
-                if (ast[j].type == AST_LABEL && 
-                    strcmp(ast[j].label.name, label_name) == 0) {
-                    label_addr = ast[j].label.vadress;
-                    found = 1;
-                    break;
-                }
-            }
-            
-            if (!found) {
-                fprintf(stderr, "AmmAsm: Undefined label '%s'\n", label_name);
-                exit(1);
-            }
-            
-            // MOV r64, imm64
-            As64(label_addr, &node->machine_code[2]);
-            node->ins.resolved = 1;
+        if (strcasecmp(node->cmd, "mov") == 0 && node->ins.operands[0].type == O_REG64 && node->ins.operands[1].type == O_EXPR) {
+            uint64_t addr = resolve_expr(node->ins.operands[1].expr, node->ins.pc);
+            *(uint64_t*)(node->machine_code + (node->machine_code_size - 8)) = addr;
+        }
+
+        // MOV r32, expr (32-bit absolute)
+        else if (strcasecmp(node->cmd, "mov") == 0 && node->ins.operands[0].type == O_REG32 && node->ins.operands[1].type == O_EXPR) {
+            uint64_t addr = resolve_expr(node->ins.operands[1].expr, node->ins.pc);
+            if (addr > 0xFFFFFFFF) { fprintf(stderr, "AmmAsm: address 0x%lx doesn't fit in 32 bits\n", addr); exit(1);}
+            *(uint32_t*)(node->machine_code + (node->machine_code_size - 4)) = (uint32_t)addr;
+        }
+
+        // add r64, expr(imm32)
+        else if (strcasecmp(node->cmd, "add") == 0 && node->ins.operands[0].type == O_REG64 && node->ins.operands[1].type == O_EXPR) {
+            uint64_t addr = resolve_expr(node->ins.operands[1].expr, node->ins.pc);
+            *(uint32_t*)(node->machine_code + (node->machine_code_size - 4)) = (uint32_t)addr;
+        }
+
+        // add r32, expr (imm32)
+        else if (strcasecmp(node->cmd, "add") == 0 && node->ins.operands[0].type == O_REG32 && node->ins.operands[1].type == O_EXPR) {
+            uint64_t addr = resolve_expr(node->ins.operands[1].expr, node->ins.pc);
+            if (addr > 0xFFFFFFFF) { fprintf(stderr, "AmmAsm: address 0x%lx doesn't fit in 32 bits\n", addr); exit(1);}
+            *(uint32_t*)(node->machine_code + (node->machine_code_size - 4)) = (uint32_t)addr;
         }
         
         // JMP/CALL/JCC label (REL32)
         else if ((strcasecmp(node->cmd, "jmp")  == 0 || 
                   strcasecmp(node->cmd, "call") == 0 ||
                   is2arrin(JCC, node->cmd)) &&
-                 node->ins.otype[0] == O_LABEL) {
+                 node->ins.operands[0].type == O_EXPR) {
             
-            const char* label_name = node->ins.operands[0];
-            uint64_t label_addr = 0;
-            int found = 0;
-            
-            for (int j = 0; j < ast_count; j++) {
-                if (ast[j].type == AST_LABEL && 
-                    !strcmp(ast[j].label.name, label_name)) {
-                    label_addr = ast[j].label.vadress;
-                    found = 1;
-                    break;
-                }
-            }
-            
-            if (!found) {
-                fprintf(stderr, "AmmAsm: Undefined label '%s'\n", label_name);
-                exit(1);
-            }
-            
-            uint64_t current_pc = 0x401000;
-            for (int k = 0; k < i; k++) {
-                if ((ast[k].type == AST_INS && ast[k].machine_code_size > 0) ||
-                    (ast[k].type == AST_U8  && ast[k].machine_code_size > 0) ||
-                    (ast[k].type == AST_U16 && ast[k].machine_code_size > 0) ||
-                    (ast[k].type == AST_U32 && ast[k].machine_code_size > 0) ||
-                    (ast[k].type == AST_U64 && ast[k].machine_code_size > 0)) {
-                    current_pc += ast[k].machine_code_size;
-                }
-            }
-            int32_t rel32 = (int32_t)(label_addr - (current_pc + node->machine_code_size));
-            
-            #ifdef DEBUG
-            printf("Resolving %s %s: target=0x%lx, current=0x%lx, offset=%d\n",
-                   node->cmd, label_name, label_addr, current_pc, rel32);
-            #endif
-
-            As32(rel32, &node->machine_code[node->machine_code_size - 4]);
-            node->ins.resolved = 1;
+            uint64_t addr = resolve_expr(node->ins.operands[0].expr, node->ins.pc);
+            int32_t rel32 = (int32_t)(addr - (node->ins.pc + node->machine_code_size));
+            *(uint32_t*)(node->machine_code + node->machine_code_size - 4) = rel32;
         }
         // [RIP REL] (DISP32)
-        else if(node->ins.expr.is_rip_rel &&
-        (node->ins.otype[0] == O_MEM || node->ins.otype[1] == O_MEM)){
-            const char* label = node->ins.expr.label;
-            uint64_t label_addr = 0;
-            int found = 0;  
-        
-            for(int j = 0; j < ast_count; j++){
-                if( ast[j].type == AST_LABEL && !strcmp(ast[j].label.name, label)){
-                    label_addr = ast[j].label.vadress;
-                    found = 1;
-                    break;
-                }
-            }
+        else if ((node->ins.operands[0].addr.is_rip_rel || node->ins.operands[1].addr.is_rip_rel) &&
+                (node->ins.operands[0].type == O_MEM || node->ins.operands[1].type == O_MEM)) {
             
-            if (!found) {
-                fprintf(stderr, "AmmAsm: Undefined label '%s'\n", label);
+            int idx = (node->ins.operands[0].type == O_MEM && node->ins.operands[0].addr.is_rip_rel) ? 0 : 1;
+            AddrExpr *mem = &node->ins.operands[idx].addr;
+            int32_t disp = mem->disp;
+            
+            uint64_t addr = find_lab_addr(mem->label);
+            if (!addr) {
+                fprintf(stderr, "AmmAsm: undefined label '%s' in RIP-relative addressing\n", mem->label);
                 exit(1);
             }
-
-            uint64_t current_pc = 0x401000;
-            for (int k = 0; k < i; k++) {
-                if ((ast[k].type == AST_INS && ast[k].machine_code_size > 0) ||
-                    (ast[k].type == AST_U8  && ast[k].machine_code_size > 0) ||
-                    (ast[k].type == AST_U16 && ast[k].machine_code_size > 0) ||
-                    (ast[k].type == AST_U32 && ast[k].machine_code_size > 0) ||
-                    (ast[k].type == AST_U64 && ast[k].machine_code_size > 0)) {
-                    current_pc += ast[k].machine_code_size;
-                }
-            }
-
             
-            int32_t disp32 = (int32_t)(label_addr - (current_pc + node->machine_code_size)) + node->ins.expr.disp;
-
-
-            #ifdef DEBUG
-            printf("Resolving %s %s: target=0x%lx, current=0x%lx, offset=%d\n",
-                   node->cmd, label, label_addr, current_pc, disp32);
-            #endif      
-            As32((uint32_t)disp32, &node->machine_code[node->machine_code_size - 4]);
-
-            node->ins.resolved = 1;
+            int32_t disp32 = (int32_t)(addr - (node->ins.pc + node->machine_code_size)) + disp;
+            *(uint32_t*)(node->machine_code + node->machine_code_size - 4) = disp32;
         }
+
+        // U64 (dq)
+        else if (node->type == AST_U64) {
+            int offset = 0;
+            for (int j = 0; j < node->u64.size; ++j) {
+                if (node->u64.entries[j].type == U64_EXPR) {
+                    uint64_t val = resolve_expr(node->u64.entries[j].expr, node->u64.pc + offset);
+                    *(uint64_t*)(node->machine_code + offset) = val;
+                }
+                offset += sizeof(uint64_t);
+            }
+        }
+
+        // we will not free() all Expr.tokens[i].value, becouse we need them for DEBUG_AST_PRINT() which calls at end of compiler.
+        // OS will do it by him self.
     }
 }
 
+uint64_t find_lab_addr(const uint8_t* name){
+    for (int j = 0; j < ast_count; j++) {
+        if (ast[j].type == AST_LABEL && strcmp(ast[j].label.name, name) == 0) {
+            return ast[j].label.vadress;
+        }
+    }
+
+    return 0;
+}
+
+uint64_t resolve_expr(Expr expr, uint64_t pc){
+
+    static char buffer[1024] = {0}; // for eval_expr
+    buffer[0] = 0;
+    int bi = 0;
+    uint64_t addr; // label
+
+    for(int i = 0; i < expr.count; i++){
+        switch(expr.tokens[i].type){
+            case T_LAB: {
+                if(expr.tokens[i].value[0] == '.') { fprintf(stderr, "AmmAsm: can't use local lab in expr\n"); exit(1);}
+                addr = find_lab_addr(expr.tokens[i].value);
+                if(!addr){ fprintf(stderr, "AmmAsm: symbol \"%s\" undefined\n", expr.tokens[i].value); exit(1); }
+ 
+                bi += snprintf(buffer + bi, 1024 - bi, "%lu", addr);
+                break;
+            }
+            case T_PC: {
+                bi += snprintf(buffer + bi, 1024 - bi, "%lu", pc);
+                break;
+            }
+            case T_CHAR: {
+                bi += snprintf(buffer + bi, 1024 - bi, "%d", expr.tokens[i].value[0]);
+                break;
+            }
+            default:{ // just copy
+                bi += snprintf(buffer + bi, 1024 - bi, "%s", expr.tokens[i].value);
+                break;
+            }
+        }
+    }
+
+    return (uint64_t)eval_expr(buffer);
+}
 
 // parser:
 AST* PARSE(){
@@ -1029,41 +1083,57 @@ AST* PARSE(){
                 else if(toks[pos].type == T_REG8 || toks[pos].type == T_REG16 ||
                         toks[pos].type == T_REG32 || toks[pos].type == T_REG64){
                     int tt = toks[pos].type;
-                    strncpy(node.ins.operands[node.ins.oper_count], toks[pos++].value, 35);
+                    strncpy(node.ins.operands[node.ins.oper_count].reg, toks[pos++].value, 8);
                     switch (tt) {
-                        case T_REG8:  node.ins.otype[node.ins.oper_count++] = O_REG8;  break;
-                        case T_REG16: node.ins.otype[node.ins.oper_count++] = O_REG16; break;
-                        case T_REG32: node.ins.otype[node.ins.oper_count++] = O_REG32; break;
-                        case T_REG64: node.ins.otype[node.ins.oper_count++] = O_REG64; break;
-                        default:      node.ins.otype[node.ins.oper_count++] = O_NONE;  break;
+                        case T_REG8:  node.ins.operands[node.ins.oper_count++].type = O_REG8;  break;
+                        case T_REG16: node.ins.operands[node.ins.oper_count++].type = O_REG16; break;
+                        case T_REG32: node.ins.operands[node.ins.oper_count++].type = O_REG32; break;
+                        case T_REG64: node.ins.operands[node.ins.oper_count++].type = O_REG64; break;
+                        default:      node.ins.operands[node.ins.oper_count++].type = O_NONE;  break;
                     }
                 }
                 else if(toks[pos].type == T_ADDR_EXPR){
-                    strncpy(node.ins.operands[node.ins.oper_count], toks[pos].value, 35);
+                    node.ins.operands[node.ins.oper_count].addr = parse_addr_expr(toks[pos].value);
                     pos++;
-                    node.ins.otype[node.ins.oper_count++] = O_MEM;
+                    node.ins.operands[node.ins.oper_count++].type = O_MEM;
                     continue;
-                    // ((void(*)())0)();
+                    ((void(*)())0)(); // sacred artifact
                 }
-                else if(toks[pos].type == T_LAB){
-                    strncpy(node.ins.operands[node.ins.oper_count], toks[pos].value, 35);
-                    pos++;
-                    node.ins.otype[node.ins.oper_count++] = O_LABEL;
-                    continue;
-                }
-                else if(toks[pos].type == T_INT){
-                    strncpy(node.ins.operands[node.ins.oper_count], toks[pos].value, 35);
-                    pos++;
-                    node.ins.otype[node.ins.oper_count++] = O_IMM;
-                    continue;
-                }
-                else if(toks[pos].type == T_CHAR){
-                    node.ins.operands[node.ins.oper_count][0] = toks[pos].value[0]; // okay?
-                    node.ins.operands[node.ins.oper_count][1] = '\0'; // okay?
-                    node.ins.otype[node.ins.oper_count++] = O_CHAR;
+
+                // constexpr
+                else if(toks[pos].type == T_CHAR && toks[pos+1].type == T_EOL){
+                    node.ins.operands[node.ins.oper_count].c = toks[pos].value[0]; // okay?
+                    node.ins.operands[node.ins.oper_count++].type = O_CHAR;
                     pos++;
                     continue;
                 }
+
+                // constexpr
+                else if(toks[pos].type == T_INT && toks[pos+1].type == T_EOL){
+                    node.ins.operands[node.ins.oper_count].imm = (uint64_t)eval_expr(toks[pos].value);
+                    pos++;
+                    node.ins.operands[node.ins.oper_count++].type = O_IMM;
+                    continue;
+                }
+
+                // expr
+                else if((toks[pos].type == T_LAB || toks[pos].type == T_INT ||
+                        toks[pos].type == T_PC|| toks[pos].type == T_MINUS
+                        ||toks[pos].type == T_PLUS || toks[pos].type == T_CHAR || toks[pos].type == T_LPRANT)){
+
+                    Expr expr = {0};
+                    while (toks[pos].type != T_COMMA && toks[pos].type != T_EOL && toks[pos].type != T_EOF) {
+                        expr.tokens[expr.count].type = toks[pos].type;
+                        expr.tokens[expr.count].value = strdup(toks[pos].value); 
+                        (expr.count >= 25) ? fprintf(stderr, "AmmAsm: Too many tokens in expr(max 16)\n"), exit(1) : expr.count++;
+                        toks[pos].value = NULL; // escape double free()
+                        pos++;
+                    } 
+                    node.ins.operands[node.ins.oper_count].type = O_EXPR;
+                    node.ins.operands[node.ins.oper_count].expr = expr;
+                    node.ins.oper_count++;
+                }
+
                 else if(toks[pos].type == T_EOL || toks[pos].type == T_EOF){
                     break;
                 }
@@ -1119,42 +1189,7 @@ AST* PARSE(){
             if (pos < toks_count && toks[pos].type == T_EOL) ++pos;
             continue;
         }
-        else if (tok->type == T_U8PTR && (pos == 0 || toks[pos-1].type == T_LAB)) {
-            node.type = AST_U8PTR;
-            node.u8ptr.size = 0;
-            pos++;
 
-            while (pos < toks_count) {
-                if (toks[pos].type == T_EOL || toks[pos].type == T_EOF) break;
-                
-                if (toks[pos].type == T_COMMA) { pos++; continue; }
-                if (toks[pos].type == T_LAB) {
-                    if (node.u8ptr.size >= 256) {
-                        fprintf(stderr, "AmmAsm: too many u8ptr (max. 256)\n");
-                        exit(1);
-                    }
-                    strncpy(node.u8ptr.data[node.u8ptr.size++], toks[pos].value, 256);
-                    pos++;
-                }
-                else if (toks[pos].type == T_INT && atoi(toks[pos].value) == 0) {
-                    if (node.u8ptr.size >= 256) {
-                        fprintf(stderr, "AmmAsm: too many u8ptr (max. 256)\n");
-                        exit(1);
-                    }
-                    node.u8ptr.data[node.u8ptr.size++] = ((void*)0);
-                    pos++;
-                }
-                else {
-                    fprintf(stderr, "AmmAsm: expected label name LAB or 0 (NULL) in U8PTR at line %d\n", toks[pos].line);
-                    exit(1);
-                }
-            }
-
-
-            ast[ast_count++] = node;
-            if(pos < toks_count && toks[pos].type == T_EOL) ++pos;
-            continue;
-        }
         else if(tok->type == T_U16 && (pos == 0 || toks[pos-1].type == T_LAB)){
             node.type = AST_U16;
             node.u16.size = 0;
@@ -1177,33 +1212,6 @@ AST* PARSE(){
             if(pos < toks_count && toks[pos].type == T_EOL) ++pos;
             continue;
         }
-        else if(tok->type == T_U16PTR && (pos == 0 || toks[pos-1].type == T_LAB)){
-            node.type = AST_U16PTR;
-            node.u16ptr.size = 0;
-            ++pos; // skip cmd
-
-            while (pos < toks_count){
-                if(toks[pos].type == T_EOL || toks[pos].type == T_EOF)break;
-                if(toks[pos].type == T_COMMA){ ++pos; continue; }
-                if(node.u16ptr.size >= 256){ fprintf(stderr, "AmmAsm: Too many u16ptr at line \"%d\"", toks[pos].line); exit(1);}
-
-                if(toks[pos].type == T_LAB){
-                    node.u16ptr.data[node.u16ptr.size++] = toks[pos].value;
-                    ++pos;
-                }
-                else if(toks[pos].type == T_INT && atoi(toks[pos].value) == 0){
-                    node.u16ptr.data[node.u16ptr.size] = ((void*)0);
-                    pos++;
-                }
-                else {
-                    fprintf(stderr, "AmmAsm: expected label name or 0 (NULL) in u16ptr at line %d\n", toks[pos].line);
-                    exit(1);
-                }
-            }
-            ast[ast_count++] = node;
-            if(pos < toks_count && toks[pos].type == T_EOL) ++pos;
-            continue;            
-        }
         else if (tok->type == T_U32 && (pos == 0 || toks[pos-1].type == T_LAB)) {
             node.type = AST_U32;
             node.u32.size = 0;
@@ -1225,33 +1233,7 @@ AST* PARSE(){
             ast[ast_count++] = node;
             if (pos < toks_count && toks[pos].type == T_EOL) pos++;
         }
-        else if(tok->type == T_U32PTR && (pos == 0 || toks[pos-1].type == T_LAB)){
-            node.type = AST_U32PTR;
-            node.u32ptr.size = 0;
-            ++pos; // skip cmd
 
-            while (pos < toks_count){
-                if(toks[pos].type == T_EOL || toks[pos].type == T_EOF)break;
-                if(toks[pos].type == T_COMMA){ ++pos; continue; }
-                if(node.u32ptr.size >= 256){ fprintf(stderr, "AmmAsm: Too many u32ptr at line \"%d\"", toks[pos].line); exit(1);}
-
-                if(toks[pos].type == T_LAB){
-                    node.u32ptr.data[node.u32ptr.size++] = toks[pos].value;
-                    ++pos;
-                }
-                else if(toks[pos].type == T_INT && atoi(toks[pos].value) == 0){
-                    node.u32ptr.data[node.u32ptr.size] = ((void*)0);
-                    pos++;
-                }
-                else {
-                    fprintf(stderr, "AmmAsm: expected label name or 0 (NULL) in u32ptr at line %d\n", toks[pos].line);
-                    exit(1);
-                }
-            }
-            ast[ast_count++] = node;
-            if(pos < toks_count && toks[pos].type == T_EOL) ++pos;
-            continue;            
-        }
         else if (tok->type == T_U64 && (pos == 0 || toks[pos-1].type == T_LAB)) {
             node.type = AST_U64;
             node.u64.size = 0;
@@ -1259,11 +1241,34 @@ AST* PARSE(){
 
             while (pos < toks_count && toks[pos].type != T_EOL && toks[pos].type != T_EOF) {
                 if (toks[pos].type == T_COMMA){ pos++; continue; }
-                if (node.u64.size >= 256){ fprintf(stderr, "AmmAsm: Too many u64 at line %d\n", toks[pos].line); exit(1);}
-                if (toks[pos].type == T_INT) {
-                    node.u64.data[node.u64.size++] = atoi(toks[pos].value);
+                if (node.u64.size >= 32){ fprintf(stderr, "AmmAsm: Too many u64 entries (max 32) at line %d\n", toks[pos].line); exit(1); }
+                
+                if (toks[pos].type == T_INT && (toks[pos+1].type == T_COMMA || toks[pos+1].type == T_EOL || toks[pos+1].type == T_EOF)) {
+                    node.u64.entries[node.u64.size].type = U64_INT;
+                    node.u64.entries[node.u64.size].imm = (uint64_t)eval_expr(toks[pos].value);
+                    node.u64.size++;
                     pos++;
                 } 
+                else if(toks[pos].type == T_PC || toks[pos].type == T_LAB || toks[pos].type == T_INT ||
+                        toks[pos].type == T_MINUS || toks[pos].type == T_PLUS) {
+                    
+                    Expr expr = {0};
+                    expr.count = 0;
+                    
+                    while (pos < toks_count && toks[pos].type != T_COMMA && toks[pos].type != T_EOL && toks[pos].type != T_EOF) {
+                        expr.tokens[expr.count].value = strdup(toks[pos].value);
+                        expr.tokens[expr.count].type = toks[pos].type;
+                        toks[pos].value = NULL; // escape double free()
+                        expr.count++;
+                        pos++;
+                        
+                        if (expr.count >= 16){fprintf(stderr, "AmmAsm: Expression too complex (max 16 tokens) at line %d\n", toks[pos].line); exit(1);}
+                    }
+                    
+                    node.u64.entries[node.u64.size].type = U64_EXPR;
+                    node.u64.entries[node.u64.size].expr = expr;
+                    node.u64.size++;
+                }
                 else {
                     fprintf(stderr, "AmmAsm: unexpected token in u64 at line %d: '%s'\n", toks[pos].line, toks[pos].value);
                     exit(1);
@@ -1273,34 +1278,7 @@ AST* PARSE(){
             ast[ast_count++] = node;
             if (pos < toks_count && toks[pos].type == T_EOL) pos++;
         }
-        else if(tok->type == T_U64PTR && (pos == 0 || toks[pos-1].type == T_LAB)){
-            node.type = AST_U64PTR;
-            node.u64ptr.size = 0;
-            ++pos; // skip cmd
 
-            while (pos < toks_count){
-                if(toks[pos].type == T_EOL || toks[pos].type == T_EOF)break;
-                if(toks[pos].type == T_COMMA){ ++pos; continue; }
-                if(node.u64ptr.size >= 256){ fprintf(stderr, "AmmAsm: Too many u64ptr at line \"%d\"", toks[pos].line); exit(1);}
-
-                if(toks[pos].type == T_LAB){
-                    node.u64ptr.data[node.u64ptr.size++] = toks[pos].value;
-                    ++pos;
-                }
-                else if(toks[pos].type == T_INT && atoi(toks[pos].value) == 0){
-                    node.u64ptr.data[node.u64ptr.size] = ((void*)0);
-                    pos++;
-                }
-                else {
-                    fprintf(stderr, "AmmAsm: expected label name or 0 (NULL) in u64ptr at line %d\n", toks[pos].line);
-                    exit(1);
-                }
-            }
-            ast[ast_count++] = node;
-            if(pos < toks_count && toks[pos].type == T_EOL) ++pos;
-            continue;            
-        }
-        // bss
         else if(tok->type == T_RESB || tok->type == T_RESQ || tok->type == T_RESD || tok->type == T_RESL){
             Token *pp = tok;
             if(toks[(pos-1)].type != T_LAB || toks[(pos+1)].type != T_INT){ 
@@ -1325,12 +1303,7 @@ AST* PARSE(){
             if(pos < toks_count && toks[pos].type == T_EOL) ++pos;
             continue;              
         }
-        else if (tok->type == T_SEC){
-            node.type = AST_SECTION;
-            strncpy(node.section.name, toks[pos++].value, sizeof node.section.name);
-            ast[ast_count++] = node;
-            if(pos < toks_count && toks[pos].type == T_EOL) ++pos;
-        }
+
 
         if (pos < toks_count && toks[pos].type != T_EOF) {
             pos++;
@@ -1443,8 +1416,6 @@ Parsing Algorithm
       - if `index == rsp` -> error
       - if `scale` not in {1,2,4,8} -> error
       - if nothing set -> error
-4) Store result in `AddrExpr`:
-      base_reg, index_reg, disp_val, scale, base_is_reg, index_exists
 
 ===============================================================================
 Design Purpose
@@ -1463,11 +1434,9 @@ Input:
 
 Output:
     AddrExpr {
-        base_reg = "rbx",
-        base_is_reg = 1,
-        index_reg = "rcx",
-        index_exists = 1,
-        disp_val = 0x10,
+        base = "rbx",
+        index = "rcx",
+        disp = 0x10,
         scale = 4
     }
 
@@ -1484,9 +1453,6 @@ Output:
 #define emit_modrm(mod, reg, rm) (((mod & 7) << 6) | ((reg & 7) << 3) | (rm & 7))
 #define emit_sib(scale, idx, base) (((scale & 3) << 6) | ((idx & 7) << 3) | (base & 7))
 
-
-// this function will return 1 fully parsed addexpr for sib_gen_byte() 
-// parsing only GP registers (rax..r15)
 AddrExpr parse_addr_expr(const uint8_t* expr) {
     AddrExpr new = { 0 };
     const uint8_t *p = expr;
@@ -1603,7 +1569,7 @@ AddrExpr parse_addr_expr(const uint8_t* expr) {
 uint8_t encode_mov_reg_imm(uint8_t *mash_code, uint8_t reg_idx, uint64_t imm, uint8_t sz){
     uint8_t legacy_prefix = 0x66; // 16 bit
     uint8_t rex = 0;
-    uint8_t opcode = 0; // we will use legacy one. not c7 + modrm!
+    uint8_t opcode = (sz == 8) ? 0xB0 : 0xB8; 
     uint8_t pos = 0;
     uint8_t rm_idx = reg_idx;
 
@@ -1612,24 +1578,13 @@ uint8_t encode_mov_reg_imm(uint8_t *mash_code, uint8_t reg_idx, uint64_t imm, ui
         rm_idx -= 8;
     }
 
-    if(sz == 8){
-        opcode = 0xB0;
-        if(reg_idx >= 4 && reg_idx <= 7){ rex |= REX_BASE; } // spl, bpl, sil, dil
+    switch(sz){
+        case 8: if(reg_idx >= 4 && reg_idx <= 7) rex |= REX_BASE; break; // spl, bpl, sil, dil
+        case 16: mash_code[pos++] = legacy_prefix; break;
+        case 32: break; // none
+        case 64: rex |= REX_BASE | REX_W; break;
     }
-
-    else if(sz == 16){
-        opcode = 0xB8;
-        mash_code[pos++] = legacy_prefix;
-    }
-
-    else if(sz == 32){
-        opcode = 0xB8;
-    }
-
-    else if(sz == 64){
-        rex |= REX_BASE | REX_W;
-        opcode = 0xB8;
-    }
+    
 
     opcode += rm_idx;
 
@@ -1637,10 +1592,10 @@ uint8_t encode_mov_reg_imm(uint8_t *mash_code, uint8_t reg_idx, uint64_t imm, ui
     mash_code[pos++] = opcode;
 
     switch (sz){
-        case 8: mash_code[pos++] = (uint8_t)imm; break;
-        case 16: As16((uint16_t)imm, &mash_code[pos]); pos+=2; break;
-        case 32: As32((uint32_t)imm, &mash_code[pos]); pos+=4; break;
-        case 64: As64((uint64_t)imm, &mash_code[pos]); pos+=8; break;
+        case 8:  mash_code[pos++] = (uint8_t)imm; break;
+        case 16: *(uint16_t*)(mash_code + pos) = (uint16_t)imm; pos+=2; break;
+        case 32: *(uint32_t*)(mash_code + pos) = (uint32_t)imm; pos+=4; break;
+        case 64: *(uint64_t*)(mash_code + pos) = (uint64_t)imm; pos+=8; break;
     }
 
     return pos; // mashine code size
@@ -1650,7 +1605,7 @@ uint8_t encode_mov_reg_imm(uint8_t *mash_code, uint8_t reg_idx, uint64_t imm, ui
 uint8_t encode_mov_reg_reg(uint8_t *mash_code, uint8_t dest_idx, uint8_t src_idx, uint8_t sz){
     uint8_t legacy_prefix = 0x66; // 16 bit 
     uint8_t rex = 0;
-    uint8_t opcode = 0;
+    uint8_t opcode = (sz == 8) ? 0x88 : 0x89;
     uint8_t modrm = 0;
     uint8_t pos = 0;
 
@@ -1668,30 +1623,16 @@ uint8_t encode_mov_reg_reg(uint8_t *mash_code, uint8_t dest_idx, uint8_t src_idx
     }
 
     switch (sz){
-        case 8: {
-            opcode = 0x88;
-            if((dest_idx >= 4 && dest_idx <= 7) || (src_idx >= 4 && src_idx <= 7)){ rex |= REX_BASE;} // spl, bpl, sil, dil
-            break;
-        }
-        case 16: {
-            opcode = 0x89;
-            mash_code[pos++] = legacy_prefix;
-            break;
-        }
-        case 32: {
-            opcode = 0x89;
-            break;            
-        }
-        case 64: {
-            opcode = 0x89;
-            rex |= REX_BASE | REX_W;
-            break;            
-        }        
+        case 8: if((dest_idx >= 4 && dest_idx <= 7) || (src_idx >= 4 && src_idx <= 7)) rex |= REX_BASE; break;// spl, bpl, sil, dil
+        case 16: mash_code[pos++] = legacy_prefix; break;
+        case 32: break;           
+        case 64: rex |= REX_BASE | REX_W; break;            
+               
     }
 
     if(rex)mash_code[pos++] = rex;
     mash_code[pos++] = opcode;
-    // 0b11 means that this operation take place between 2 regs (no memory used)
+    // mod = 0b11 means that this operation take place between 2 regs (no memory used)
     mash_code[pos++] = emit_modrm(0b11, reg, rm);
 
     return pos;
@@ -1804,17 +1745,16 @@ uint8_t encode_inst_rm_rm(uint8_t *mash_code, uint8_t reg, AddrExpr *expr, uint8
     if(need_sib) mash_code[pos++] = sib;
     if(expr->have_disp && !expr->is_rip_rel){
         if(disp_sz == 1) mash_code[pos++] = (uint8_t)expr->disp;
-        else {As32(expr->disp, &mash_code[pos]); pos+=4; }
+        else {*(uint32_t*)(mash_code + pos) = expr->disp; pos+=4; }
     }
-    else if(expr->is_rip_rel){As32(0x00000000, &mash_code[pos]); pos+=4; } // placeholder
+    else if(expr->is_rip_rel){*(uint32_t*)(mash_code + pos) = 0x0; pos+=4; } // placeholder
     return pos;
 }
 
-uint8_t encode_add_imm(uint8_t *mash_code, uint8_t reg, const uint8_t* val, uint8_t sz){
+uint8_t encode_add_imm(uint8_t *mash_code, uint8_t reg, uint32_t imm, uint8_t sz){
     uint8_t rex = 0;
     uint8_t opcode = 0;
     uint8_t modrm = 0;
-    uint32_t imm = 0;
     uint8_t rm = reg;
     int pos = 0;
 
@@ -1825,21 +1765,17 @@ uint8_t encode_add_imm(uint8_t *mash_code, uint8_t reg, const uint8_t* val, uint
 
     switch(sz){
         case 8:
-            imm = (uint8_t)eval_expr(val);
             if (reg >= 4 && reg <= 7) rex |= REX_BASE;
             break;
 
         case 16:
             mash_code[pos++] = 0x66;
-            imm = (uint16_t)eval_expr(val);
             break;
 
         case 32:
-            imm = (uint32_t)eval_expr(val);
             break;
 
         case 64:
-            imm = (uint32_t)eval_expr(val); 
             rex |= REX_BASE | REX_W;
             break;
     }
@@ -1863,8 +1799,8 @@ uint8_t encode_add_imm(uint8_t *mash_code, uint8_t reg, const uint8_t* val, uint
         } 
         else {
             mash_code[pos++] = 0x05;
-            if (sz == 16) {As16((uint16_t)imm, &mash_code[pos]); pos += 2;}
-            else {As32((uint32_t)imm, &mash_code[pos]); pos += 4;}
+            if (sz == 16) { *(uint16_t*)(mash_code + pos) = (uint16_t)imm; pos += 2;}
+            else {*(uint32_t*)(mash_code + pos) = (uint32_t)imm; pos += 4;}
         }
 
         return pos;
@@ -1876,18 +1812,10 @@ uint8_t encode_add_imm(uint8_t *mash_code, uint8_t reg, const uint8_t* val, uint
     mash_code[pos++] = opcode;
     mash_code[pos++] = modrm;
 
-    if (opcode == 0x83) {
-        mash_code[pos++] = (uint8_t)imm;
-    } 
-    else if (sz == 16) {
-        As16((uint16_t)imm, &mash_code[pos]); pos += 2;
-    } 
-    else if (sz == 32 || sz == 64) {
-        As32((uint32_t)imm, &mash_code[pos]); pos += 4;
-    } 
-    else {
-        mash_code[pos++] = (uint8_t)imm;
-    }
+    if (opcode == 0x83) mash_code[pos++] = (uint8_t)imm;
+    else if (sz == 16){ *(uint16_t*)(mash_code + pos) = (uint16_t)imm; pos += 2;}
+    else if (sz == 32 || sz == 64){ *(uint32_t*)(mash_code + pos) = (uint32_t)imm; pos += 4;}
+    else mash_code[pos++] = (uint8_t)imm;
 
     return pos;
 }
@@ -1912,12 +1840,6 @@ uint8_t encode_add_reg_reg(uint8_t *mash_code, uint8_t dest, uint8_t src, uint8_
         reg -= 8;
     }
 
-    // matematika in pyton
-    // 2+2=22
-    // 22+22=2222
-    // 222+222=222222
-    // 2222+2222=22222222
-
     switch(sz){
         case 8 : { if((dest >= 4 && dest <= 7) || (src >= 4 && src <= 7)){ rex |= REX_BASE;} break; } // spl, bpl, sil, dil
         case 16: mash_code[pos++] = legacy_prefix; break;
@@ -1934,17 +1856,13 @@ uint8_t encode_add_reg_reg(uint8_t *mash_code, uint8_t dest, uint8_t src, uint8_
     return pos;
 }
 
-typedef struct {
-    OperandType type;
-    const uint8_t *text;
-} Operand;
 
 void parseInst(AST* node) {
     if (node->type != AST_INS) return;
     int pos = 0;
 
-    Operand a = {node->ins.otype[0], node->ins.operands[0]};
-    Operand b = {node->ins.otype[1], node->ins.operands[1]};
+    Operand a = node->ins.operands[0];
+    Operand b = node->ins.operands[1];
     const uint8_t *cmd = node->cmd;
     uint8_t *machine_code = node->machine_code;
     
@@ -2007,18 +1925,21 @@ void parseInst(AST* node) {
         // MOV R64, IMM64
         if (a.type == O_REG64 && b.type == O_IMM) {
 
-            uint8_t reg_idx = find_reg64_index(a.text);
-            uint64_t imm = (uint64_t)eval_expr(b.text);
+            uint8_t reg_idx = find_reg64_index(a.reg);
+            uint64_t imm = b.imm;
+
+            node->ins.pc = vpc;
             *s = encode_mov_reg_imm(machine_code, reg_idx, imm, 64);
             pc += *s;
+            
             return;
         }
 
         // MOV R32, IMM32
         else if (a.type == O_REG32 && b.type == O_IMM) {
 
-            uint8_t reg_idx = find_reg32_index(a.text);
-            uint32_t imm = (uint32_t)eval_expr(b.text);
+            uint8_t reg_idx = find_reg32_index(a.reg);
+            uint32_t imm = (uint32_t)(b.imm);
             *s = encode_mov_reg_imm(machine_code, reg_idx, (uint32_t)imm, 32);
             pc += *s;
             return;
@@ -2027,8 +1948,8 @@ void parseInst(AST* node) {
         // MOV R16, IMM16
         else if (a.type == O_REG16 && b.type == O_IMM) {
 
-            uint8_t reg_idx = find_reg16_index(a.text);
-            uint16_t imm = (uint16_t)eval_expr(b.text);
+            uint8_t reg_idx = find_reg16_index(a.reg);
+            uint16_t imm = (uint16_t)(b.imm);
             *s = encode_mov_reg_imm(machine_code, reg_idx, (uint16_t)imm, 16);
             pc += *s;
             return;
@@ -2037,9 +1958,9 @@ void parseInst(AST* node) {
         // MOV R8, IMM8/CHAR
         else if (a.type == O_REG8 && (b.type == O_IMM || b.type == O_CHAR)) {
 
-            uint8_t c = b.text[0];
-            uint8_t reg_idx = find_reg8_index(a.text);
-            uint8_t imm = (uint8_t)eval_expr(b.text);
+            uint8_t c = b.c;
+            uint8_t reg_idx = find_reg8_index(a.reg);
+            uint8_t imm = (uint8_t)(b.imm);
             *s = encode_mov_reg_imm(machine_code, reg_idx, (b.type == O_CHAR) ? (uint8_t)c : (uint8_t)imm, 8);
             pc += *s;
             return;
@@ -2053,8 +1974,8 @@ void parseInst(AST* node) {
         // MOV R64, R64
         else if (a.type == O_REG64 && b.type == O_REG64) {
         
-            uint8_t rm = find_reg64_index(a.text);
-            uint8_t reg = find_reg64_index(b.text);
+            uint8_t rm = find_reg64_index(a.reg);
+            uint8_t reg = find_reg64_index(b.reg);
             *s = encode_mov_reg_reg(machine_code, rm, reg, 64);
             pc += *s;
             return;
@@ -2063,8 +1984,8 @@ void parseInst(AST* node) {
         // MOV R32, R32
         else if (a.type == O_REG32 && b.type == O_REG32) {
         
-            uint8_t rm = find_reg32_index(a.text);
-            uint8_t reg = find_reg32_index(b.text);
+            uint8_t rm = find_reg32_index(a.reg);
+            uint8_t reg = find_reg32_index(b.reg);
             *s = encode_mov_reg_reg(machine_code, rm, reg, 32);
             pc += *s;
             return;
@@ -2073,8 +1994,8 @@ void parseInst(AST* node) {
         // MOV R16, R16
         else if (a.type == O_REG16 && b.type == O_REG16) {
         
-            uint8_t rm = find_reg16_index(a.text);
-            uint8_t reg = find_reg16_index(b.text);
+            uint8_t rm = find_reg16_index(a.reg);
+            uint8_t reg = find_reg16_index(b.reg);
             *s = encode_mov_reg_reg(machine_code, rm, reg, 16);
             pc += *s;
             return;
@@ -2083,8 +2004,8 @@ void parseInst(AST* node) {
         // MOV R8, R8
         else if (a.type == O_REG8 && b.type == O_REG8) {
         
-            uint8_t rm = find_reg8_index(a.text);
-            uint8_t reg = find_reg8_index(b.text);
+            uint8_t rm = find_reg8_index(a.reg);
+            uint8_t reg = find_reg8_index(b.reg);
             *s = encode_mov_reg_reg(machine_code, rm, reg, 8);
             pc += *s;
             return;
@@ -2116,13 +2037,13 @@ void parseInst(AST* node) {
 
         // MOV R64, [ADDR]
         else if (a.type == O_REG64 && b.type == O_MEM) {
-            uint8_t reg = find_reg64_index(a.text);
-            AddrExpr mem = parse_addr_expr(b.text);
+            uint8_t reg = find_reg64_index(a.reg);
+            AddrExpr mem = b.addr;
             if(mem.is_rip_rel) {
-                node->ins.expr = mem;
-                node->ins.resolved = 0;
+                node->ins.operands[1].addr = mem;
             }
 
+            node->ins.pc = vpc;
             *s = encode_inst_rm_rm(machine_code, reg, &mem, 64, 0x8B);
             pc += *s;
             return;
@@ -2130,13 +2051,13 @@ void parseInst(AST* node) {
 
         // MOV R32, [ADDR]
         else if (a.type == O_REG32 && b.type == O_MEM) {
-            uint8_t reg = find_reg32_index(a.text);
-            AddrExpr mem = parse_addr_expr(b.text);
+            uint8_t reg = find_reg32_index(a.reg);
+            AddrExpr mem = b.addr;
             if(mem.is_rip_rel) {
-                node->ins.expr = mem;
-                node->ins.resolved = 0;
+                node->ins.operands[1].addr = mem;
             }
 
+            node->ins.pc = vpc;
             *s = encode_inst_rm_rm(machine_code, reg, &mem, 32, 0x8B);
             pc += *s;
             return;
@@ -2144,13 +2065,13 @@ void parseInst(AST* node) {
 
         // MOV R16, [ADDR]
         else if (a.type == O_REG16 && b.type == O_MEM) {
-            uint8_t reg = find_reg16_index(a.text);
-            AddrExpr mem = parse_addr_expr(b.text);
+            uint8_t reg = find_reg16_index(a.reg);
+            AddrExpr mem = b.addr;
             if(mem.is_rip_rel) {
-                node->ins.expr = mem;
-                node->ins.resolved = 0;
+                node->ins.operands[1].addr = mem;
             }
 
+            node->ins.pc = vpc;
             *s = encode_inst_rm_rm(machine_code, reg, &mem, 16, 0x8B);
             pc += *s;
             return;
@@ -2158,13 +2079,13 @@ void parseInst(AST* node) {
 
         // MOV R8, [ADDR]
         else if (a.type == O_REG8 && b.type == O_MEM) {
-            uint8_t reg = find_reg8_index(a.text);
-            AddrExpr mem = parse_addr_expr(b.text);
+            uint8_t reg = find_reg8_index(a.reg);
+            AddrExpr mem = b.addr;
             if(mem.is_rip_rel) {
-                node->ins.expr = mem;
-                node->ins.resolved = 0;
+                node->ins.operands[1].addr = mem;
             }
 
+            node->ins.pc = vpc;
             *s = encode_inst_rm_rm(machine_code, reg, &mem, 8, 0x8A);
             pc += *s;
             return;
@@ -2177,13 +2098,13 @@ void parseInst(AST* node) {
 
         // MOV [ADDR], R64
         else if (a.type == O_MEM && b.type == O_REG64) {
-            uint8_t reg = find_reg64_index(b.text);
-            AddrExpr mem = parse_addr_expr(a.text);
+            uint8_t reg = find_reg64_index(b.reg);
+            AddrExpr mem = a.addr;
             if(mem.is_rip_rel) {
-                node->ins.expr = mem;
-                node->ins.resolved = 0;
+                node->ins.operands[0].addr = mem;
             }
 
+            node->ins.pc = vpc;
             *s = encode_inst_rm_rm(machine_code, reg, &mem, 64, 0x89);
             pc += *s;
             return;
@@ -2191,13 +2112,13 @@ void parseInst(AST* node) {
 
         // MOV [ADDR], R32
         else if (a.type == O_MEM && b.type == O_REG32) {
-            uint8_t reg = find_reg32_index(b.text);
-            AddrExpr mem = parse_addr_expr(a.text);
+            uint8_t reg = find_reg32_index(b.reg);
+            AddrExpr mem = a.addr;
             if(mem.is_rip_rel) {
-                node->ins.expr = mem;
-                node->ins.resolved = 0;
+                node->ins.operands[0].addr = mem;
             }
 
+            node->ins.pc = vpc;
             *s = encode_inst_rm_rm(machine_code, reg, &mem, 32, 0x89);
             pc += *s;
             return;
@@ -2205,13 +2126,13 @@ void parseInst(AST* node) {
 
         // MOV [ADDR], R16
         else if (a.type == O_MEM && b.type == O_REG16) {
-            uint8_t reg = find_reg16_index(b.text);
-            AddrExpr mem = parse_addr_expr(a.text);
+            uint8_t reg = find_reg16_index(b.reg);
+            AddrExpr mem = a.addr;
             if(mem.is_rip_rel) {
-                node->ins.expr = mem;
-                node->ins.resolved = 0;
+                node->ins.operands[0].addr = mem;
             }
 
+            node->ins.pc = vpc;
             *s = encode_inst_rm_rm(machine_code, reg, &mem, 16, 0x89);
             pc += *s;
             return;
@@ -2219,24 +2140,24 @@ void parseInst(AST* node) {
 
         // MOV [ADDR], R8
         else if (a.type == O_MEM && b.type == O_REG8) {
-            uint8_t reg = find_reg8_index(b.text);
-            AddrExpr mem = parse_addr_expr(a.text);
+            uint8_t reg = find_reg8_index(b.reg);
+            AddrExpr mem = a.addr;
             if(mem.is_rip_rel) {
-                node->ins.expr = mem;
-                node->ins.resolved = 0;
+                node->ins.operands[0].addr = mem;
             }
 
+            node->ins.pc = vpc;
             *s = encode_inst_rm_rm(machine_code, reg, &mem, 8, 0x88);
             pc += *s;
             return;
         }
     
-        // MOV R64, LABEL
-        else if (a.type == O_REG64 && b.type == O_LABEL) {
+        // MOV R64, EXPR
+        else if (a.type == O_REG64 && b.type == O_EXPR) {
 
             uint8_t rex = REX_BASE | REX_W; 
             uint8_t opcode = 0xB8;
-            uint8_t reg = find_reg64_index(a.text);
+            uint8_t reg = find_reg64_index(a.reg);
             uint8_t rm = reg;
 
             if(reg >= 8){
@@ -2247,11 +2168,36 @@ void parseInst(AST* node) {
             opcode += rm;
             node->machine_code[0] = rex;
             node->machine_code[1] = opcode;
-            As64(0x0000000000000000, &node->machine_code[2]); // placeholder
-
+            *(uint64_t*)(node->machine_code + 2) = 0x0;  // placeholder
+            
+            node->ins.pc = vpc;
             *s = 10;
             pc += 10;
-            node->ins.resolved = 0; // !!!
+            return;
+        }
+
+        // MOV R32, EXPR
+        else if (a.type == O_REG32 && b.type == O_EXPR) {
+            uint8_t rex = 0; 
+            uint8_t opcode = 0xB8;
+            uint8_t reg = find_reg32_index(a.reg);
+            uint8_t rm = reg;
+            int pos = 0;
+            
+            if(reg >= 8){
+                rm -= 8;
+                rex |= REX_B;  
+            }
+            
+            opcode += rm;
+            if(rex) node->machine_code[pos++] = rex;
+            node->machine_code[pos++] = opcode;
+            *(uint32_t*)(node->machine_code + pos) = 0; 
+            pos+=4;
+            
+            node->ins.pc = vpc;
+            *s = pos; 
+            pc += *s;
             return;
         }
     }
@@ -2266,33 +2212,35 @@ void parseInst(AST* node) {
 
         // add r/m64, imm32
         if(a.type == O_REG64 && b.type == O_IMM){
-            uint8_t reg = find_reg64_index(a.text);
+            uint8_t reg = find_reg64_index(a.reg);
 
-            *s = encode_add_imm(machine_code, reg, b.text, 64); 
+            node->ins.pc = vpc;
+            *s = encode_add_imm(machine_code, reg, b.imm, 64); 
             pc += *s;
         }
 
         // add r/m32, imm32
-        else if(node->ins.otype[0] == O_REG32 && node->ins.otype[1] == O_IMM){
-            uint8_t reg = find_reg32_index(a.text);
+        else if(a.type == O_REG32 && b.type == O_IMM){
+            uint8_t reg = find_reg32_index(a.reg);
 
-            *s = encode_add_imm(machine_code, reg, b.text, 32); 
+            node->ins.pc = vpc;
+            *s = encode_add_imm(machine_code, reg, b.imm, 32); 
             pc += *s;
         }
 
         // add r/m16, imm16
-        else if(node->ins.otype[0] == O_REG16 && node->ins.otype[1] == O_IMM){
-            uint8_t reg = find_reg16_index(a.text);
+        else if(a.type == O_REG16 && b.type == O_IMM){
+            uint8_t reg = find_reg16_index(a.reg);
 
-            *s = encode_add_imm(machine_code, reg, b.text, 16); 
+            *s = encode_add_imm(machine_code, reg, b.imm, 16); 
             pc += *s;
         }
 
         // add r/m8, imm8
         else if(a.type == O_REG8 && b.type == O_IMM){
-            uint8_t reg = find_reg8_index(a.text);
+            uint8_t reg = find_reg8_index(a.reg);
 
-            *s = encode_add_imm(machine_code, reg, b.text, 8); 
+            *s = encode_add_imm(machine_code, reg, b.imm, 8); 
             pc += *s;
         }
 
@@ -2301,8 +2249,8 @@ void parseInst(AST* node) {
         // ===========================================
         
         else if(a.type == O_REG64 && b.type == O_REG64){
-            uint8_t dest = find_reg64_index(a.text);
-            uint8_t src  = find_reg64_index(b.text);
+            uint8_t dest = find_reg64_index(a.reg);
+            uint8_t src  = find_reg64_index(b.reg);
             
 
             *s = encode_add_reg_reg(machine_code, dest, src, 64);
@@ -2311,8 +2259,8 @@ void parseInst(AST* node) {
         }
 
         else if(a.type == O_REG32 && b.type == O_REG32){
-            uint8_t dest = find_reg32_index(a.text);
-            uint8_t src  = find_reg32_index(b.text);
+            uint8_t dest = find_reg32_index(a.reg);
+            uint8_t src  = find_reg32_index(b.reg);
 
             *s = encode_add_reg_reg(machine_code, dest, src, 32);
             pc += *s;
@@ -2320,8 +2268,8 @@ void parseInst(AST* node) {
         }
 
         else if(a.type == O_REG16 && b.type == O_REG16){
-            uint8_t dest = find_reg16_index(a.text);
-            uint8_t src  = find_reg16_index(b.text);
+            uint8_t dest = find_reg16_index(a.reg);
+            uint8_t src  = find_reg16_index(b.reg);
 
             *s = encode_add_reg_reg(machine_code, dest, src, 16);
             pc += *s;
@@ -2329,8 +2277,8 @@ void parseInst(AST* node) {
         }
 
         else if(a.type == O_REG8 && b.type == O_REG8){
-            uint8_t dest = find_reg8_index(a.text);
-            uint8_t src  = find_reg8_index(b.text);
+            uint8_t dest = find_reg8_index(a.reg);
+            uint8_t src  = find_reg8_index(b.reg);
 
             *s = encode_add_reg_reg(machine_code, dest, src, 8);
             pc += *s;
@@ -2342,52 +2290,52 @@ void parseInst(AST* node) {
         // ===================
 
         else if(a.type == O_REG64 && b.type == O_MEM){
-            uint8_t dest = find_reg64_index(a.text);
-            AddrExpr mem  = parse_addr_expr(b.text);
+            uint8_t dest = find_reg64_index(a.reg);
+            AddrExpr mem = b.addr;
             if(mem.is_rip_rel) {
-                node->ins.expr = mem;
-                node->ins.resolved = 0;
+                node->ins.operands[1].addr = mem;
             }
 
+            node->ins.pc = vpc;
             *s = encode_inst_rm_rm(machine_code, dest, &mem, 64, 0x03);
             pc += *s;
             return;
         }
 
         else if(a.type == O_REG32 && b.type == O_MEM){
-            uint8_t dest = find_reg32_index(a.text);
-            AddrExpr mem  = parse_addr_expr(b.text);
+            uint8_t dest = find_reg32_index(a.reg);
+            AddrExpr mem = b.addr;
             if(mem.is_rip_rel) {
-                node->ins.expr = mem;
-                node->ins.resolved = 0;
+                node->ins.operands[1].addr = mem;
             }
 
+            node->ins.pc = vpc;
             *s = encode_inst_rm_rm(machine_code, dest, &mem, 32, 0x03);
             pc += *s;
             return;
         }
 
         else if(a.type == O_REG16 && b.type == O_MEM){
-            uint8_t dest = find_reg16_index(a.text);
-            AddrExpr mem  = parse_addr_expr(b.text);
+            uint8_t dest = find_reg16_index(a.reg);
+            AddrExpr mem = b.addr;
             if(mem.is_rip_rel) {
-                node->ins.expr = mem;
-                node->ins.resolved = 0;
+                node->ins.operands[1].addr = mem;
             }
 
+            node->ins.pc = vpc;
             *s = encode_inst_rm_rm(machine_code, dest, &mem, 16, 0x03);
             pc += *s;
             return;
         }
 
         else if(a.type == O_REG8 && b.type == O_MEM){
-            uint8_t dest = find_reg8_index(a.text);
-            AddrExpr mem  = parse_addr_expr(b.text);
+            uint8_t dest = find_reg8_index(a.reg);
+            AddrExpr mem = b.addr;
             if(mem.is_rip_rel) {
-                node->ins.expr = mem;
-                node->ins.resolved = 0;
+                node->ins.operands[1].addr = mem;
             }
             
+            node->ins.pc = vpc;
             *s = encode_inst_rm_rm(machine_code, dest, &mem, 8, 0x02);
             pc += *s;
             return;
@@ -2397,58 +2345,75 @@ void parseInst(AST* node) {
         // add [addr], reg
         // ================
 
-        else if(a.type == O_REG64 && b.type == O_MEM){
-            uint8_t dest = find_reg64_index(a.text);
-            AddrExpr mem  = parse_addr_expr(b.text);
+        else if(a.type == O_MEM && b.type == O_REG64){
+            uint8_t dest = find_reg64_index(a.reg);
+            AddrExpr mem = b.addr;
             if(mem.is_rip_rel) {
-                node->ins.expr = mem;
-                node->ins.resolved = 0;
+                node->ins.operands[0].addr = mem;
             }
 
+            node->ins.pc = vpc;
             *s = encode_inst_rm_rm(machine_code, dest, &mem, 64, 0x01);
             pc += *s;
             return;
         }
 
-        else if(a.type == O_REG32 && b.type == O_MEM){
-            uint8_t dest = find_reg32_index(a.text);
-            AddrExpr mem  = parse_addr_expr(b.text);
+        else if(a.type == O_MEM && b.type == O_REG32){
+            uint8_t dest = find_reg32_index(a.reg);
+            AddrExpr mem = b.addr;
             if(mem.is_rip_rel) {
-                node->ins.expr = mem;
-                node->ins.resolved = 0;
+                node->ins.operands[0].addr = mem;
             }
 
+            node->ins.pc = vpc;
             *s = encode_inst_rm_rm(machine_code, dest, &mem, 32, 0x01);
             pc += *s;
             return;
         }
 
-        else if(a.type == O_REG16 && b.type == O_MEM){
-            uint8_t dest = find_reg16_index(a.text);
-            AddrExpr mem  = parse_addr_expr(b.text);
+        else if(a.type == O_MEM && b.type == O_REG16){
+            uint8_t dest = find_reg16_index(a.reg);
+            AddrExpr mem = b.addr;
             if(mem.is_rip_rel) {
-                node->ins.expr = mem;
-                node->ins.resolved = 0;
+                node->ins.operands[0].addr = mem;
             }
 
+            node->ins.pc = vpc;
             *s = encode_inst_rm_rm(machine_code, dest, &mem, 16, 0x01);
             pc += *s;
             return;
         }
 
-        else if(a.type == O_REG8 && b.type == O_MEM){
-            uint8_t dest = find_reg8_index(a.text);
-            AddrExpr mem  = parse_addr_expr(b.text);
+        else if(a.type == O_MEM && b.type == O_REG8){
+            uint8_t dest = find_reg8_index(a.reg);
+            AddrExpr mem = b.addr;
             if(mem.is_rip_rel) {
-                node->ins.expr = mem;
-                node->ins.resolved = 0;
+                node->ins.operands[0].addr = mem;
             }
             
+            node->ins.pc = vpc;
             *s = encode_inst_rm_rm(machine_code, dest, &mem, 8, 0x00);
             pc += *s;
             return;
         }
 
+
+        // EXPR
+        else if(a.type == O_REG64 && b.type == O_EXPR){
+            uint8_t dest = find_reg64_index(a.reg);
+
+            node->ins.pc = vpc;
+            *s = encode_add_imm(machine_code, dest, 0x0, 64);
+            pc += *s;
+        }
+
+        else if(a.type == O_REG32 && b.type == O_EXPR){
+            uint8_t dest = find_reg32_index(a.reg);
+
+            node->ins.pc = vpc;
+            *s = encode_add_imm(machine_code, dest, 0x0, 32);
+            pc += *s;
+        }
     }
 
     // место для документации jmp/call
@@ -2458,35 +2423,35 @@ void parseInst(AST* node) {
         // =========================
         // JMP/CALL label (REL32)
         // =========================
-        if(node->ins.otype[0] == O_LABEL) { 
+        if(a.type == O_EXPR) { 
             uint8_t opcode = (!strcasecmp(node->cmd, "jmp")) ? 0xE9 : 0xE8;
-            
-            node->machine_code[0] = opcode;
-            As32(0x00000000, &node->machine_code[1]);
-            
+
+            machine_code[0] = opcode;
+            *(uint32_t*)(machine_code + 1) = 0x0;
+        
+            node->ins.pc = vpc;
             *s = 5;
             pc += 5;
-            node->ins.resolved = 0; // for linker
             return;
         }
         
         // =========================
         // JMP/CALL r64 (FAR)
         // =========================
-        else if(node->ins.otype[0] == O_REG64) {
+        else if(node->ins.operands[0].type == O_REG64) {
             uint8_t rex = REX_BASE | REX_W;
             uint8_t opcode = 0xFF;
             uint8_t modrm;
             
-            int reg_idx = find_reg64_index(node->ins.operands[0]);
+            int reg_idx = find_reg64_index(node->ins.operands[0].reg);
             if(reg_idx >= 8) rex |= REX_B;
             
             // ModR/M: mod=11 (register), reg=extension, rm=register
             if(!strcasecmp(node->cmd, "jmp")) { // jmp
-                modrm = (0b11 << 6) | (0b100 << 3) | (reg_idx & 7);  // FF /4
+                modrm = emit_modrm(0b11, 0b100, reg_idx); // FF /4
             } 
             else { // call
-                modrm = (0b11 << 6) | (0b010 << 3) | (reg_idx & 7);  // FF /2
+                modrm = emit_modrm(0b11, 0b010, reg_idx);  // FF /2
             }
             
             node->machine_code[0] = rex;
@@ -2499,287 +2464,6 @@ void parseInst(AST* node) {
         }
     }
 
-    // CMP
-
-    else if(!strcasecmp(node->cmd, "cmp")){
-
-        // ========================
-        // CMP R/M, IMM 
-        // ========================
-
-        // CMP r/m64, imm32 / imm8
-        if(node->ins.otype[0] == O_REG64 && node->ins.otype[1] == O_IMM){
-            uint8_t rex = REX_BASE | REX_W;
-            uint8_t opcode64 = 0x81; // cmp r/m64, imm32
-            uint8_t opcode8 = 0x83; // cmp r/m64, imm8
-            uint8_t modrm = 0;
-            uint32_t imm = (uint32_t)atoi(node->ins.operands[1]);
-            int pos = 0;
-            int reg_idx = find_reg64_index(node->ins.operands[0]);
-            
-            if (reg_idx >= 8)
-                rex |= REX_B;
-
-            if(reg_idx == 0b000){ // rax
-                node->machine_code[pos++] = rex;
-                node->machine_code[pos++] = 0x3D;
-                As32(imm, &node->machine_code[pos]);
-                pos += 4;
-                
-                *s = pos;
-                pc += pos;
-                return;
-            }
-            modrm = (0b11 << 6) | (7 << 3) | (reg_idx & 7);
-            node->machine_code[pos++] = rex;
-
-            if((int8_t)imm >= INT8_MIN && (int8_t)imm <= INT8_MAX){
-                node->machine_code[pos++] = opcode8;
-                node->machine_code[pos++] = modrm;
-                node->machine_code[pos++] = (uint8_t)imm;
-            }
-            else {
-                node->machine_code[pos++] = opcode64;
-                node->machine_code[pos++] = modrm;
-                As32(imm, &node->machine_code[pos]);
-                pos += 4;                
-            }   
-            
-            *s = pos;
-            pc += pos;
-            return;
-        }
-        
-        // CMP r/m32, imm32 / imm8
-        else if(node->ins.otype[0] == O_REG32 && node->ins.otype[1] == O_IMM){
-            uint8_t rex = 0;
-            uint8_t opcode32 = 0x81; // cmp r/m32, imm32
-            uint8_t opcode8 = 0x83; // cmp r/m32, imm8
-            uint8_t modrm = 0;
-            int64_t imm = (int64_t)eval_expr(node->ins.operands[1]);
-            int pos = 0;
-            int reg_idx = find_reg32_index(node->ins.operands[0]);
-            
-            if (reg_idx >= 8)
-                rex |= REX_BASE | REX_B;
-
-            if(reg_idx == 0b000){ // eax
-                node->machine_code[pos++] = 0x3D;
-                As32(imm, &node->machine_code[pos]);
-                pos += 4;
-                
-                *s = pos;
-                pc += pos;
-                return;
-            }
-            modrm = (0b11 << 6) | (7 << 3) | (reg_idx & 7);
-            if(rex)node->machine_code[pos++] = rex;
-            
-            if((int8_t)imm >= INT8_MIN && (int8_t)imm <= INT8_MAX){
-                node->machine_code[pos++] = opcode8;
-                node->machine_code[pos++] = modrm;
-                node->machine_code[pos++] = (uint8_t)imm;
-            }
-            else {
-                node->machine_code[pos++] = opcode32;
-                node->machine_code[pos++] = modrm;
-                As32(imm, &node->machine_code[pos]);
-                pos += 4;                
-            }           
-        
-            *s = pos;
-            pc += pos;
-            return;
-        }
-        // CMP r/m16, imm8 / imm16
-        else if(node->ins.otype[0] == O_REG16 && node->ins.otype[1] == O_IMM){
-            uint8_t rex = 0;
-            uint8_t legacy_prefix = 0x66;            
-            uint8_t opcode16 = 0x81; // cmp r/m16, imm16
-            uint8_t opcode8  = 0x83; // cmp r/m16, imm8
-            uint8_t modrm = 0;
-            int64_t imm = (int64_t)eval_expr(node->ins.operands[1]);
-            int is_ext_reg = 0;
-            int pos = 0;
-            int reg_idx = find_reg16_index(node->ins.operands[0]);
-            modrm = (0b11 << 6) | (7 << 3) | (reg_idx & 7);
-
-            if (reg_idx >= 8){
-                rex |= REX_BASE | REX_B;
-                is_ext_reg = 1;
-            }
-
-            if(reg_idx == 0b000 && !is_ext_reg){ // ax
-                node->machine_code[pos++] = legacy_prefix;
-                node->machine_code[pos++] = 0x3D;
-                As16(imm, &node->machine_code[pos]);
-                pos += 2;
-                
-                *s = pos;
-                pc += pos;
-                return;
-            }
-            node->machine_code[pos++] = legacy_prefix;
-            if(rex) node->machine_code[pos++] = rex;
-
-            if((int8_t)imm >= INT8_MIN && (int8_t)imm <= INT8_MAX){
-                node->machine_code[pos++] = opcode8;
-                node->machine_code[pos++] = modrm;
-                node->machine_code[pos++] = (uint8_t)imm;
-            } 
-            else { // ( imm >= INT16_MIN && imm <= INT16_MAX)
-                printf("%#x", imm);
-                node->machine_code[pos++] = opcode16;
-                node->machine_code[pos++] = modrm;
-                As16((uint16_t)imm, &node->machine_code[pos]);
-                pos += 2;
-            }
-            
-            *s = pos;
-            pc += pos;
-            return;
-        }
-        // CMP r/m8, imm8 / char
-        else if(node->ins.otype[0] == O_REG8 && (node->ins.otype[1] == O_IMM || node->ins.otype[1] == O_CHAR)){
-            uint8_t rex = 0;
-            uint8_t legacy_prefix = 0x66;
-            uint8_t opcode = 0x80; // cmp r/m8, imm8
-            uint8_t modrm = 0;
-            uint8_t imm = (node->ins.otype[1] == O_IMM) ? (uint8_t)eval_expr(node->ins.operands[1]) : node->ins.operands[1][0]; // sorry
-            int pos = 0;
-            int reg_idx = find_reg8_index(node->ins.operands[0]);
-            
-            if (reg_idx >= 4 && reg_idx <= 7)
-                rex |= REX_BASE;
-
-            else if (reg_idx >= 8)
-                rex |= REX_B;
-                
-
-            if(reg_idx == 0b000){ // al
-                opcode = 0x3C;
-                node->machine_code[pos++] = opcode;
-                node->machine_code[pos++] = imm;
-                
-                *s = pos;
-                pc += pos;
-                return;
-            }
-            modrm = (0b11 << 6) | (7 << 3) | (reg_idx & 7);
-            if(rex)node->machine_code[pos++] = rex;
-            node->machine_code[pos++] = opcode;
-            node->machine_code[pos++] = modrm;
-            node->machine_code[pos++] = imm;
-            
-            
-            *s = pos;
-            pc += pos;
-            return;
-        }
-
-        // =======================
-        // CMP REG, REG (mod = 11)
-        // =======================
-
-        // cmp reg64, reg64
-        else if(node->ins.otype[0] == O_REG64 && node->ins.otype[1] == O_REG64){
-            uint8_t rex = REX_BASE | REX_W;
-            uint8_t modrm = 0; // mod = 11
-            uint8_t opcode = 0x39; // cmp reg64, reg64
-            int pos = 0;
-
-            int rm_idx = find_reg64_index(node->ins.operands[0]);
-            int reg_idx = find_reg64_index(node->ins.operands[1]);
-
-            if(rm_idx >= 8) rex |= REX_B;
-            if(reg_idx >= 8) rex |= REX_R;
-
-            modrm = (0b11 << 6) | ((reg_idx << 3) & 7) | (rm_idx & 7);
-
-            node->machine_code[pos++] = rex;
-            node->machine_code[pos++] = opcode;
-            node->machine_code[pos++] = modrm;
-
-            *s = pos;
-            pc += pos;
-            return;
-        }
-
-        // cmp reg32, reg32
-        else if(node->ins.otype[0] == O_REG32 && node->ins.otype[1] == O_REG32){
-            uint8_t rex = 0;
-            uint8_t modrm = 0; // mod = 11
-            uint8_t opcode = 0x39; // cmp reg32, reg32
-            int pos = 0;
-
-            int rm_idx = find_reg32_index(node->ins.operands[0]);
-            int reg_idx = find_reg32_index(node->ins.operands[1]);
-
-            if(rm_idx >= 8)  rex |= REX_BASE | REX_B;
-            if(reg_idx >= 8) rex |= REX_BASE | REX_R;
-
-            modrm = (0b11 << 6) | ((reg_idx << 3) & 7) | (rm_idx & 7);
-
-            if(rex)node->machine_code[pos++] = rex;
-            node->machine_code[pos++] = opcode;
-            node->machine_code[pos++] = modrm;
-
-            *s = pos;
-            pc += pos;
-            return;
-        }
-
-        // cmp reg16, reg16
-        else if(node->ins.otype[0] == O_REG16 && node->ins.otype[1] == O_REG16){
-            uint8_t legacy_prefix = 0x66;
-            uint8_t rex = 0;
-            uint8_t modrm = 0; // mod = 11
-            uint8_t opcode = 0x39; // cmp reg16, reg16
-            int pos = 0;
-
-            int rm_idx  = find_reg16_index(node->ins.operands[0]);
-            int reg_idx = find_reg16_index(node->ins.operands[1]);
-
-            if(reg_idx >= 8) rex |= REX_BASE | REX_R;
-            if(rm_idx >= 8)  rex |= REX_BASE | REX_B;
-
-            modrm = (0b11 << 6) | ((reg_idx << 3) & 7) | (rm_idx & 7);
-
-            node->machine_code[pos++] = legacy_prefix;
-            if(rex)node->machine_code[pos++] = rex;
-            node->machine_code[pos++] = opcode;
-            node->machine_code[pos++] = modrm;
-
-            *s = pos;
-            pc += pos;
-            return;
-        }
-
-        // cmp reg8, reg8
-        else if(node->ins.otype[0] == O_REG8 && node->ins.otype[1] == O_REG8){
-            uint8_t rex = 0;
-            uint8_t modrm = 0; // mod = 11
-            uint8_t opcode = 0x3A; // cmp reg8, reg8
-            int pos = 0;
-
-            int rm_idx = find_reg8_index(node->ins.operands[0]);
-            int reg_idx = find_reg8_index(node->ins.operands[1]);
-
-            if(rm_idx >= 8)  rex |= REX_BASE | REX_B;
-            if(reg_idx >= 8) rex |= REX_BASE | REX_R;
-            if((reg_idx >= 4 && reg_idx <= 7) || (rm_idx >= 4 && rm_idx <= 7)) rex |= REX_BASE;
-
-            modrm = (0b11 << 6) | ((reg_idx << 3) & 7) | (rm_idx & 7);
-
-            if(rex)node->machine_code[pos++] = rex;
-            node->machine_code[pos++] = opcode;
-            node->machine_code[pos++] = modrm;
-
-            *s = pos;
-            pc += pos;
-            return;
-        }
-    }
     
     // ===============================================
     // JCC -> Jump if Condition Is Met 
@@ -2820,14 +2504,297 @@ void parseInst(AST* node) {
 
         node->machine_code[pos++] = 0x0F;
         node->machine_code[pos++] = opcode2;
-        As32(0x00000000, &node->machine_code[pos]); // rel32
+        *(uint32_t*)(machine_code + pos) = 0x0; // rel32
         pos += 4;
 
+        node->ins.pc = vpc;
         pc += pos;
         *s = pos;
-        node->ins.resolved = 0;
         return;
     }
+
+    // CMP
+
+    // legacy code. will be rewriten in new version
+    else if(!strcasecmp(node->cmd, "cmp")){
+
+        // ========================
+        // CMP R/M, IMM 
+        // ========================
+
+        // CMP r/m64, imm32 / imm8
+        if(a.type == O_REG64 && b.type == O_IMM){
+            uint8_t rex = REX_BASE | REX_W;
+            uint8_t opcode64 = 0x81; // cmp r/m64, imm32
+            uint8_t opcode8 = 0x83; // cmp r/m64, imm8
+            uint8_t modrm = 0;
+            uint32_t imm = (uint32_t)(b.imm);
+            int pos = 0;
+            int reg_idx = find_reg64_index(a.reg);
+            
+            if (reg_idx >= 8)
+                rex |= REX_B;
+
+            if(reg_idx == 0b000){ // rax
+                node->machine_code[pos++] = rex;
+                node->machine_code[pos++] = 0x3D;
+                *(uint32_t*)(machine_code + pos) = imm;
+                pos += 4;
+                
+                *s = pos;
+                pc += pos;
+                return;
+            }
+            modrm = (0b11 << 6) | (7 << 3) | (reg_idx & 7);
+            node->machine_code[pos++] = rex;
+
+            if((int8_t)imm >= INT8_MIN && (int8_t)imm <= INT8_MAX){
+                node->machine_code[pos++] = opcode8;
+                node->machine_code[pos++] = modrm;
+                node->machine_code[pos++] = (uint8_t)imm;
+            }
+            else {
+                node->machine_code[pos++] = opcode64;
+                node->machine_code[pos++] = modrm;
+                *(uint32_t*)(machine_code + pos) = imm;
+                pos += 4;                
+            }   
+            
+            *s = pos;
+            pc += pos;
+            return;
+        }
+        
+        // CMP r/m32, imm32 / imm8
+        else if(a.type == O_REG32 && b.type == O_IMM){
+            uint8_t rex = 0;
+            uint8_t opcode32 = 0x81; // cmp r/m32, imm32
+            uint8_t opcode8 = 0x83; // cmp r/m32, imm8
+            uint8_t modrm = 0;
+            int64_t imm = (int64_t)(b.imm);
+            int pos = 0;
+            int reg_idx = find_reg32_index(a.reg);
+            
+            if (reg_idx >= 8)
+                rex |= REX_BASE | REX_B;
+
+            if(reg_idx == 0b000){ // eax
+                node->machine_code[pos++] = 0x3D;
+                *(uint32_t*)(machine_code + pos) = imm;
+                pos += 4;
+                
+                *s = pos;
+                pc += pos;
+                return;
+            }
+            modrm = (0b11 << 6) | (7 << 3) | (reg_idx & 7);
+            if(rex)node->machine_code[pos++] = rex;
+            
+            if((int8_t)imm >= INT8_MIN && (int8_t)imm <= INT8_MAX){
+                node->machine_code[pos++] = opcode8;
+                node->machine_code[pos++] = modrm;
+                node->machine_code[pos++] = (uint8_t)imm;
+            }
+            else {
+                node->machine_code[pos++] = opcode32;
+                node->machine_code[pos++] = modrm;
+                *(uint32_t*)(machine_code + pos) = imm;
+                pos += 4;                
+            }           
+        
+            *s = pos;
+            pc += pos;
+            return;
+        }
+        // CMP r/m16, imm8 / imm16
+        else if(a.type == O_REG16 && b.type == O_IMM){
+            uint8_t rex = 0;
+            uint8_t legacy_prefix = 0x66;            
+            uint8_t opcode16 = 0x81; // cmp r/m16, imm16
+            uint8_t opcode8  = 0x83; // cmp r/m16, imm8
+            uint8_t modrm = 0;
+            int64_t imm = (int64_t)(b.imm);
+            int is_ext_reg = 0;
+            int pos = 0;
+            int reg_idx = find_reg16_index(a.reg);
+            modrm = (0b11 << 6) | (7 << 3) | (reg_idx & 7);
+
+            if (reg_idx >= 8){
+                rex |= REX_BASE | REX_B;
+                is_ext_reg = 1;
+            }
+
+            if(reg_idx == 0b000 && !is_ext_reg){ // ax
+                node->machine_code[pos++] = legacy_prefix;
+                node->machine_code[pos++] = 0x3D;
+                *(uint16_t*)(node->machine_code + pos) = (uint16_t)imm;
+                pos += 2;
+                
+                *s = pos;
+                pc += pos;
+                return;
+            }
+            node->machine_code[pos++] = legacy_prefix;
+            if(rex) node->machine_code[pos++] = rex;
+
+            if((int8_t)imm >= INT8_MIN && (int8_t)imm <= INT8_MAX){
+                node->machine_code[pos++] = opcode8;
+                node->machine_code[pos++] = modrm;
+                node->machine_code[pos++] = (uint8_t)imm;
+            } 
+            else { // ( imm >= INT16_MIN && imm <= INT16_MAX)
+                node->machine_code[pos++] = opcode16;
+                node->machine_code[pos++] = modrm;
+                *(uint16_t*)(node->machine_code + pos) = (uint16_t)imm;
+                pos += 2;
+            }
+            
+            *s = pos;
+            pc += pos;
+            return;
+        }
+        // CMP r/m8, imm8 / char
+        else if(a.type == O_REG8 && (b.type == O_IMM || b.type == O_CHAR)){
+            uint8_t rex = 0;
+            uint8_t legacy_prefix = 0x66;
+            uint8_t opcode = 0x80; // cmp r/m8, imm8
+            uint8_t modrm = 0;
+            uint8_t imm = (b.type == O_IMM) ? (uint8_t)(b.imm) : b.c; // sorry
+            int pos = 0;
+            int reg_idx = find_reg8_index(a.reg);
+            
+            if (reg_idx >= 4 && reg_idx <= 7)
+                rex |= REX_BASE;
+
+            else if (reg_idx >= 8)
+                rex |= REX_B;
+                
+
+            if(reg_idx == 0b000){ // al
+                opcode = 0x3C;
+                node->machine_code[pos++] = opcode;
+                node->machine_code[pos++] = imm;
+                
+                *s = pos;
+                pc += pos;
+                return;
+            }
+            modrm = (0b11 << 6) | (7 << 3) | (reg_idx & 7);
+            if(rex)node->machine_code[pos++] = rex;
+            node->machine_code[pos++] = opcode;
+            node->machine_code[pos++] = modrm;
+            node->machine_code[pos++] = imm;
+            
+            
+            *s = pos;
+            pc += pos;
+            return;
+        }
+
+        // =======================
+        // CMP REG, REG (mod = 11)
+        // =======================
+
+        // cmp reg64, reg64
+        else if(a.type == O_REG64 && b.type == O_REG64){
+            uint8_t rex = REX_BASE | REX_W;
+            uint8_t modrm = 0; // mod = 11
+            uint8_t opcode = 0x39; // cmp reg64, reg64
+            int pos = 0;
+
+            int rm_idx = find_reg64_index(a.reg);
+            int reg_idx = find_reg64_index(b.reg);
+
+            if(rm_idx >= 8) rex |= REX_B;
+            if(reg_idx >= 8) rex |= REX_R;
+
+            modrm = (0b11 << 6) | ((reg_idx << 3) & 7) | (rm_idx & 7);
+
+            node->machine_code[pos++] = rex;
+            node->machine_code[pos++] = opcode;
+            node->machine_code[pos++] = modrm;
+
+            *s = pos;
+            pc += pos;
+            return;
+        }
+
+        // cmp reg32, reg32
+        else if(a.type == O_REG32 && b.type == O_REG32){
+            uint8_t rex = 0;
+            uint8_t modrm = 0; // mod = 11
+            uint8_t opcode = 0x39; // cmp reg32, reg32
+            int pos = 0;
+
+            int rm_idx = find_reg32_index(a.reg);
+            int reg_idx = find_reg32_index(b.reg);
+
+            if(rm_idx >= 8)  rex |= REX_BASE | REX_B;
+            if(reg_idx >= 8) rex |= REX_BASE | REX_R;
+
+            modrm = (0b11 << 6) | ((reg_idx << 3) & 7) | (rm_idx & 7);
+
+            if(rex)node->machine_code[pos++] = rex;
+            node->machine_code[pos++] = opcode;
+            node->machine_code[pos++] = modrm;
+
+            *s = pos;
+            pc += pos;
+            return;
+        }
+
+        // cmp reg16, reg16
+        else if(a.type == O_REG16 && b.type == O_REG16){
+            uint8_t legacy_prefix = 0x66;
+            uint8_t rex = 0;
+            uint8_t modrm = 0; // mod = 11
+            uint8_t opcode = 0x39; // cmp reg16, reg16
+            int pos = 0;
+
+            int rm_idx = find_reg16_index(a.reg);
+            int reg_idx = find_reg16_index(b.reg);
+
+            if(reg_idx >= 8) rex |= REX_BASE | REX_R;
+            if(rm_idx >= 8)  rex |= REX_BASE | REX_B;
+
+            modrm = (0b11 << 6) | ((reg_idx << 3) & 7) | (rm_idx & 7);
+
+            node->machine_code[pos++] = legacy_prefix;
+            if(rex)node->machine_code[pos++] = rex;
+            node->machine_code[pos++] = opcode;
+            node->machine_code[pos++] = modrm;
+
+            *s = pos;
+            pc += pos;
+            return;
+        }
+
+        // cmp reg8, reg8
+        else if(a.type == O_REG8 && b.type == O_REG8){
+            uint8_t rex = 0;
+            uint8_t modrm = 0; // mod = 11
+            uint8_t opcode = 0x3A; // cmp reg8, reg8
+            int pos = 0;
+
+            int rm_idx = find_reg8_index(a.reg);
+            int reg_idx = find_reg8_index(b.reg);
+
+            if(rm_idx >= 8)  rex |= REX_BASE | REX_B;
+            if(reg_idx >= 8) rex |= REX_BASE | REX_R;
+            if((reg_idx >= 4 && reg_idx <= 7) || (rm_idx >= 4 && rm_idx <= 7)) rex |= REX_BASE;
+
+            modrm = (0b11 << 6) | ((reg_idx << 3) & 7) | (rm_idx & 7);
+
+            if(rex)node->machine_code[pos++] = rex;
+            node->machine_code[pos++] = opcode;
+            node->machine_code[pos++] = modrm;
+
+            *s = pos;
+            pc += pos;
+            return;
+        }
+    }
+
     
     // ABI SYSTEM-V
     else if(!strcasecmp(node->cmd, "syscall")){
@@ -2854,7 +2821,7 @@ void parse_size_directives(AST* node) {
         case AST_U16: {
             int offset = 0;
             for(int i = 0; i < node->u16.size; ++i){
-                As16(node->u16.data[i], &mc[offset]);
+                *(uint16_t*)(mc + offset) = (uint16_t)node->u16.data[i];
                 offset += sizeof(uint16_t);
             }
             node->machine_code_size = offset; 
@@ -2865,7 +2832,7 @@ void parse_size_directives(AST* node) {
         case AST_U32: {
             int offset = 0;
             for(int i = 0; i < node->u32.size; ++i){
-                As32(node->u32.data[i], &mc[offset]);
+                *(uint32_t*)(mc + offset) = node->u32.data[i];
                 offset += sizeof(uint32_t);
             }
             node->machine_code_size = offset;
@@ -2876,10 +2843,16 @@ void parse_size_directives(AST* node) {
         case AST_U64: {
             int offset = 0;
             for(int i = 0; i < node->u64.size; ++i){
-                As64(node->u64.data[i], &mc[offset]);
+                if(node->u64.entries[i].type == U64_EXPR){
+                    *(uint64_t*)(mc + offset) = 0x0; // placeholder, resolved later
+                }  
+                else {
+                    *(uint64_t*)(mc + offset) = node->u64.entries[i].imm;
+                }
                 offset += sizeof(uint64_t);
             }
-            node->machine_code_size = offset; 
+            node->machine_code_size = offset;
+            node->u64.pc = vpc; 
             pc += offset;
             break;
         }
@@ -2954,13 +2927,8 @@ void compiler(uint8_t *text, int *textsize, uint64_t *e_entry) {
     int pos = 0;
 
     for(int i = 0; i < ast_count; i++){
-        if(ast[i].type == AST_INS) {
-            parseInst(&ast[i]);
-        }
-        else if(ast[i].type == AST_U8 || ast[i].type == AST_U16 || 
-                ast[i].type == AST_U32 || ast[i].type == AST_U64) {
-            parse_size_directives(&ast[i]);
-        }
+        if(ast[i].type == AST_INS) parseInst(&ast[i]);
+        else if(ast[i].type == AST_U8 || ast[i].type == AST_U16 || ast[i].type == AST_U32 || ast[i].type == AST_U64) parse_size_directives(&ast[i]);
     }
     expand_local_labels();
     *e_entry = collect_labels();
@@ -2996,9 +2964,10 @@ void compiler(uint8_t *text, int *textsize, uint64_t *e_entry) {
     *textsize = pos;
 }
 
-void handl_pipeline(int argc, char **argv){ // second main() in 1 pthread (for keeping code clean)
+void handl_pipeline(int argc, char **argv){ 
     static uint8_t text[1024 * 64];
     int textsize = 0;
+
     uint64_t entry_point = 0x401000; // default
 
     FILE *input = fopen(argv[0], "r");
@@ -3046,3 +3015,13 @@ int main(int argc, char **argv){
 
     return 0;
 }
+
+
+
+
+
+
+
+
+
+// перевести все глобалки в стек

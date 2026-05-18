@@ -5,26 +5,66 @@
  
 /* == forward declarations == */
 typedef enum {
+    T_INS,
+    T_INT,
+    T_PLUS,
+    T_MINUS,
+    T_DIV,
+    T_MULL,
+    T_LSHIFT,
+    T_RSHIFT,
+    T_XOR,
+    T_AND,
+    T_OR,
+    T_RPRANT,
+    T_LPRANT,
+    T_LAB,
+    T_REG8,
+    T_REG16,
+    T_REG32,
+    T_REG64,
+    T_ADDR_EXPR,
+    T_LABEL_EXPR,
+    T_STR,
+    T_SOF,
+    T_EOL,
+    T_EOF,
+    T_SEC,
+    T_U8,
+    T_U8PTR,
+    T_U16,
+    T_U16PTR,
+    T_U32,
+    T_U32PTR,
+    T_U64,
+    T_U64PTR,
+    T_CHAR,
+    T_COMMA,
+    T_RESB,
+    T_RESQ,
+    T_RESD,
+    T_RESL,
+    T_PC
+} TokenType;
+
+
+typedef enum {
     AST_INT,
     AST_INS,    
     AST_U8,
-    AST_U8PTR,
     AST_U16,
-    AST_U16PTR,
     AST_U32,
-    AST_U32PTR,
     AST_U64,
-    AST_U64PTR,
     AST_RESB,
     AST_RESQ,
     AST_RESD,
     AST_RESL,
-    AST_LABEL,   
-    AST_COMMENT,
-    AST_SECTION,
+    AST_EXPR, 
+    AST_LABEL,
     AST_COMMA,
     AST_ADDR_EXPR,
     AST_CHAR,
+    AST_PC,
     AST_UNKNOWN
 } ASTType;
 
@@ -34,18 +74,11 @@ typedef enum {
     O_REG16,
     O_REG32,
     O_REG64,
+    O_EXPR, // imm, lab, pc, char
+    O_CHAR, 
     O_IMM,
-    O_MEM,
-    O_LABEL,
-    O_CHAR,
-    O_ID
+    O_MEM
 } OperandType;
-
-// will be added more in future version
-typedef enum {
-    SEC_DATA,
-    SEC_TEXT
-} SECtype;
 
 typedef struct {
     // must have
@@ -63,39 +96,72 @@ typedef struct {
 
 } AddrExpr;
 
+typedef struct {
+    TokenType type;
+    uint8_t* value;
+} ExprToken;
 
+typedef struct {
+    int count;
+    ExprToken tokens[25]; 
+} Expr;
+
+
+typedef struct{
+    OperandType type;
+
+    union {
+        uint8_t reg[8];
+        Expr expr; // imm, label, $, char, ect.
+        AddrExpr addr;
+        uint64_t imm;
+        uint8_t c;
+    };
+
+} Operand;
+
+typedef enum {
+    U64_INT,
+    U64_EXPR
+} U64EntryType;
+
+typedef struct {
+    U64EntryType type;
+    union {
+        uint64_t imm;
+        Expr expr;
+    };
+} U64Entry;
+
+// oh, lord
 typedef struct AST {
     ASTType type;
-    char cmd[256];  // mostly useing for ins
+    char cmd[12];  // mostly useing for ins
 
     union {     
-        struct { uint8_t operands[4][35]; OperandType otype[4]; int oper_count; int resolved; AddrExpr expr;} ins; // resolved -> for linking symbols. expr -> for sib
-        struct { uint8_t data[256]; int size; } u8;
-        struct { uint8_t *data[256]; int size; } u8ptr;
-        struct { uint16_t data[256]; int size; } u16;
-        struct { uint8_t *data[256]; int size; } u16ptr;
-        struct { uint32_t data[256]; int size; } u32;
-        struct { uint8_t *data[256]; int size; } u32ptr;
-        struct { uint64_t data[256]; int size; } u64;
-        struct { uint8_t *data[256]; int size; } u64ptr;
+        struct { Operand  operands[2]; int oper_count; uint64_t pc;} ins; 
+        struct { uint8_t  data[64]; int size; } u8;
+        struct { uint16_t data[64]; int size; } u16;
+        struct { uint32_t data[64]; int size; } u32;
+        struct { U64Entry entries[32]; int size; uint64_t pc; } u64;
         struct { uint64_t size; } resb;
         struct { uint64_t size; } resq;
         struct { uint64_t size; } resd;
         struct { uint64_t size; } resl;
         struct { uint8_t c;     } chr;
-        struct { uint8_t name[64]; uint64_t adress; uint64_t vadress; uint8_t defined;} label; // only can be in .text section
-        struct { uint8_t name[64]; uint64_t offset; uint32_t size; SECtype type;} section;
+        struct { uint8_t name[64]; uint64_t adress; uint64_t vadress;} label; // only can be in .text section
+        struct { uint64_t vaddr;} pc; // $
     };
-        uint8_t machine_code[64];
-        uint8_t machine_code_size;
+
+    uint8_t machine_code[16];
+    uint8_t machine_code_size;
+        
 } AST;
-
-
 
 typedef struct {
     int   type;       
-    char* value;      
     int   line;       // for errors
+    char* value;      
 } Token;
 
 typedef struct {   
@@ -108,6 +174,7 @@ typedef struct {
 /* == utility == */
 int    isin(const char *str, char c);
 int    is2arrin(const char *str[], char *str2);
+uint64_t find_lab_addr(const uint8_t* name);
  
 /* == expression evaluator == */
 long   parse_number(void);
@@ -117,11 +184,6 @@ long   eval_expr(const uint8_t *str);
  
 /* == string / char helpers == */
 char  *read_string(char *buff, char *dest, int line);
- 
-/* == little-endian serialisers == */
-void   As16(uint16_t a, unsigned char out[2]);
-void   As32(uint32_t a, unsigned char out[4]);
-void   As64(uint64_t a, unsigned char out[8]);
  
 /* == token management == */
 void   add_token(int type, char *value, int line);
@@ -141,6 +203,7 @@ AddrExpr parse_addr_expr(const uint8_t *expr);
 uint8_t encode_mov_reg_imm(uint8_t *mash_code, uint8_t reg_idx, uint64_t imm, uint8_t sz);
 uint8_t encode_mov_reg_reg(uint8_t *mash_code, uint8_t dest_idx, uint8_t src_idx, uint8_t sz);
 uint8_t encode_inst_rm_rm(uint8_t *mash_code, uint8_t reg_idx, AddrExpr *expr, uint8_t sz, uint8_t opcode);
+uint8_t encode_add_imm(uint8_t *mash_code, uint8_t reg, uint32_t imm, uint8_t sz);
 uint8_t encode_add_reg_reg(uint8_t *mash_code, uint8_t dest, uint8_t src, uint8_t sz);
 
 /* == lexer == */
@@ -153,6 +216,9 @@ AST   *PARSE(void);
 uint64_t collect_labels(void);
 void     resolve_labels(void);
  
+/* == expression resolver == */
+uint64_t resolve_expr(Expr expr, uint64_t pc);
+
 /* == code-gen passes == */
 void parseInst(AST *node);
 void parse_size_directives(AST *node);
