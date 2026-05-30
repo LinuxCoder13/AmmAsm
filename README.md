@@ -1,57 +1,77 @@
 # AmmAsm — x86-64 Assembler
 
-**Version:** 1.7
-**Author:** Ammar Najafli
-**License:** MIT
+**Version:** 1.8 
+**Author:** Ammar Najafli 
+**License:** MIT 
 
-AmmAsm is a lightweight, handwritten x86-64 assembler designed for simplicity and clarity. It compiles assembly code directly to machine code and produces ELF executables for Linux x86-64.
+AmmAsm is handwritten x86-64 assembler designed for simplicity and clarity. It compiles assembly code directly to machine code and produces ELF executables and PIE(Position-Independent Executable) for Linux x86-64.
 
 ---
 
-## What's New in v1.7
+## What's New in v1.8
 
-### Expression Support (Full)
+### PIE(Position-Independent Executable)
 
-AmmAsm v1.7 introduces full expression support in both instructions and data directives. Anywhere you can use a number or label, you can now use arbitrary arithmetic expressions.
+1) AmmAsm v1.8 introduces full PIE(Position-Independent Executable) binary. In computing, it is a specialized binary file that randomizes its memory  location every time it runs, virtual memory == offset in file, nevertheless in PIE mode instruction `mov r64, [label]` will not be executed how you expect becouse in this mode virt is 0x55XXXXXXXXXXXX0000, not 0x400000. Instead of this you should use RIP-REL adressing => `lea r64, [label]`.
 
-But: Expr(non-const) can be evaluate only in `mov r64, imm64`, `mov r32, imm32` and `add r32, imm32`
-I mean, Expr is relevant to imm64 & imm32
+2) New instructions: `sub`, `imul`, `lea`(full implemented)
 
-**Expression syntax:**
+3) Fixed Linker
 
-| Expression | Meaning |
-|------------|---------|
-| `msg` | Address of label `msg` |
-| `$-msg` | Current address - address of `msg` (negative) |
-| `msg+5` | Address of `msg` + 5 bytes |
-| `msg-8` | Address of `msg` - 8 bytes |
-| `label1+label2` | Sum of two addresses |
-| `'A' + 32` | ASCII code of 'a' (97) |
-| `msg+10-'A'` | Complex mixed expressions |
+4) Added tests with ScreenShots
+
+
+**IMUL (Signed Multiply) — full support:**
+- `imul r64` — RAX = RAX * r64
+- `imul r64, r64` — dest = dest * src
+- `imul r64, imm` — rax = rax * imm (sugar)
+- `imul r64, r64, imm` — dest = src * imm
+- All sizes (8/16/32/64), imm8/imm16/imm32 optimization
+
+
+**Hello, World in PIE via pointer**
+
+```ASM
+ptr: dq msg - $
+msg: db "Hello, World\n", 
+len: dq $ - msg
+
+_start:
+    mov rax, 1
+    mov rdi, 1
+    lea rsi, [b=ptr]
+    add rsi, [b=rsi]
+    mov rdx, [b=len]
+    syscall
+
+    mov rax, 60
+    syscall
+```
+
 
 **All expression features work in:**
 
-- `mov %rax, msg+5` -> absolute address
-- `mov %rax, [b=msg+5]` -> RIP-relative address
+- `mov rax, msg+5` -> absolute address
+- `mov rax, [b=msg+5]` -> RIP-relative address
 - `jmp msg+10` -> relative jump with offset
-- `u64 $-msg, msg+8, msg+16` -> data directives
-- `add %rax, $-_start` -> arithmetic with current address
-- `mov %rax, (((((10 * 2) << 2) + 5) & 0xFF) | 0x100) - 50` -> oh lord, I DID IT!!!!! 
+- `lab: dq $-msg, msg+8, msg+16` -> data directives
+- `add rax, $-_start` -> arithmetic with current address
+- `mov rax, (((((10 * 2) << 2) + $) & 0xFF) | 0x100) - label` -> mixed all
 
 **Expression examples:**
 
-```ASM
+```asm
 _start:
-    mov %rax, msg           ; address of msg (0x401000)
-    mov %rbx, $-_start      ; length from _start to current (negative)
-    mov %rcx, msg+5         ; address of 'W' in "Hello World"
-    mov %rdx, msg+8         ; address of 'r' in "World"
+    mov rax, msg           ; address of msg (0x401000)
+    mov rbx, $-_start      ; length from _start to current (negative)
+    mov rcx, msg+5         ; address of 'W' in "Hello World"
+    mov rdx, msg+8         ; address of 'r' in "World"
     
-    u64 $-msg, msg+5, msg+8, 0xdeadbeef
+    dq $-msg, msg+5, msg+8, 0xdeadbeef
     
     jmp _start
     
-msg: u8 "Hello World", 0
+msg: db "Hello World", 0
 ```
 
 ---
@@ -86,7 +106,7 @@ msg: u8 "Hello World", 0
 - Control flow — jmp, call, conditional jumps with relative addressing
 - Two-pass linker — Built-in symbol resolution and relocation
 - Numeric literals — 0xDEADBEEF, 0b1010, 0o777, decimal, negative
-- ELF output — Generates valid Linux x86-64 executables
+- ELF output — Generates valid Linux x86-64 ET_EXEC and PIE binary
 
 ---
 
@@ -96,7 +116,7 @@ msg: u8 "Hello World", 0
 
 Converts source text to a flat token stream.
 
-- Recognizes instructions, registers (%rax), literals, labels, directives
+- Recognizes instructions, registers (rax), literals, labels, directives
 - Comments: //, ;, /* ... */
 - Number bases: hex (0x), binary (0b), octal (0o), decimal
 - Label scoping: global label:, local .label: (scoped to last global)
@@ -116,14 +136,14 @@ Emits x86-64 machine code per AST node.
 
 - REX prefix construction
 - ModR/M and SIB encoding via encode_inst_rm_rm()
-- Displacement and immediate encoding (little-endian via As16/32/64)
+- Displacement and immediate encoding (little-endian)
 - Placeholder bytes (0x00000000) for unresolved label references
 
 ### 4. Linker (collect_labels + resolve_labels)
 
 Two-pass symbol resolution.
 
-- Pass 1 — Walks AST, assigns vaddr to each AST_LABEL (base 0x401000)
+- Pass 1 — Walks AST, assigns vaddr to each AST_LABEL (base 0x401000 or 0x1000(PIE))
 - Pass 2 — Patches placeholders:
   - MOV r64, label -> absolute 64-bit address (8 bytes at mc[2])
   - JMP/CALL/JCC label -> rel32 = target - (current_pc + inst_size)
@@ -139,25 +159,23 @@ Orchestrates all passes and writes the final binary buffer.
 
 ### Registers
 
-Prefix with %:
-
 ```asm
-mov %rax, 42        ; 64-bit
-mov %eax, 42        ; 32-bit
-mov %ax,  42        ; 16-bit
-mov %al,  42        ; 8-bit
-mov %r8,  %r15      ; Extended regs r8-r15
+mov rax, 42        ; 64-bit
+mov eax, 42        ; 32-bit
+mov ax,  42        ; 16-bit
+mov al,  42        ; 8-bit
+mov r8,  r15      ; Extended regs r8-r15
 ```
 
 ### Numeric Literals
 
 ```asm
-mov %rax, 42            ; Decimal
-mov %rax, 0xff          ; Hexadecimal
-mov %rax, 0b1010        ; Binary
-mov %rax, 0o777         ; Octal
-mov %rax, -10           ; Negative
-mov %al,  'A'           ; Character literal
+mov rax, 42            ; Decimal
+mov rax, 0xff          ; Hexadecimal
+mov rax, 0b1010        ; Binary
+mov rax, 0o777         ; Octal
+mov rax, -10           ; Negative
+mov al,  'A'           ; Character literal
 ```
 
 ### Memory Addressing
@@ -172,111 +190,84 @@ Unlike NASM, AmmAsm uses an explicit key-value format inside [...]:
 | d=N | Displacement | d=0x10 |
 
 ```asm
-mov %rax, [b=rbx]                       ; [rbx]
-mov %rax, [b=rbx, d=16]                 ; [rbx + 16]
-mov %rax, [b=rbx, i=rcx, s=8]           ; [rbx + rcx*8]
-mov %rax, [b=rbx, i=rcx, s=8, d=0x10]   ; [rbx + rcx*8 + 16]
-mov [b=rsp, d=8], %rax                  ; store to [rsp+8]
+mov rax, [b=rbx]                       ; [rbx]
+mov rax, [b=rbx, d=16]                 ; [rbx + 16]
+mov rax, [b=rbx, i=rcx, s=8]           ; [rbx + rcx*8]
+mov rax, [b=rbx, i=rcx, s=8, d=0x10]   ; [rbx + rcx*8 + 16]
+mov [b=rsp, d=8], rax                  ; store to [rsp+8]
 
-mov %rax, [b=msg]                       ; load from msg
-mov %rax, [b=msg, d=4]                  ; msg + 4
+mov rax, [b=msg]                       ; load from msg
+mov rax, [b=msg, d=4]                  ; msg + 4
 ```
 
 ### Data Directives
 
 ```asm
-msg:    u8  "Hello, World!", 0x0A, 0
-bytes:  u8  0x01, 0x02, 0x03, 'A', 'B'
-words:  u16 100, 200, 300, 0x1234
-dwords: u32 0xDEADBEEF, 1000000
-qwords: u64 0x123456789ABCDEF0, 0
+msg:    db  "Hello, World!", 0x0A, 0
+bytes:  db  0x01, 0x02, 0x03, 'A', 'B'
+words:  dw 100, 200, 300, 0x1234
+dwords: dd 0xDEADBEEF, 1000000
+qwords: dq 0x123456789ABCDEF0, 0
 ```
 
 ### Comparison
 ```asm
-cmp %rax, 42        ; rax vs immediate (64-bit)
-cmp %eax, %ebx      ; register vs register (32-bit)
-cmp %al,  'A'       ; 8-bit with char literal
+cmp rax, 42        ; rax vs immediate (64-bit)
+cmp eax, ebx       ; register vs register (32-bit)
+cmp al,  'A'       ; 8-bit with char literal
 ```
 
 ### Conditional Jumps
 ```asm
-cmp %rax, 0
-je  done:            ; jump if equal
-jne loop:            ; jump if not equal
-jl  less:            ; jump if less (signed)
-jg  greater:         ; jump if greater (signed)
-jb  below:           ; jump if below (unsigned)
-ja  above:           ; jump if above (unsigned)
+cmp rax, 0
+je  done            ; jump if equal
+jne loop            ; jump if not equal
+jl  less            ; jump if less (signed)
+jg  greater         ; jump if greater (signed)
+jb  below           ; jump if below (unsigned)
+ja  above           ; jump if above (unsigned)
 ```
 
 ### Unconditional Control Flow
 ```asm
-jmp  label:         ; relative jump  (E9 rel32)
-jmp  %rax           ; indirect jump  (FF /4)
-call func:          ; relative call  (E8 rel32)
-call %rbx           ; indirect call  (FF /2)
+jmp  label         ; relative jump  (E9 rel32)
+jmp  rax           ; indirect jump  (FF /4)
+call func          ; relative call  (E8 rel32)
+call rbx           ; indirect call  (FF /2)
 ```
 
 ### Load Label Address
 ```asm
-mov %rax, msg:      ; load virtual address of 'msg' into rax
+mov rax, msg      ; load virtual address of 'msg' into rax(Does not work in PIE)
 ```
 
 ---
-
-## Examples
-
-### Hello World
-```asm
-_start:
-    mov %rax, 1         ; sys_write
-    mov %rdi, 1         ; stdout
-    mov %rsi, msg:      ; buffer
-    mov %rdx, [b=len]   ; length
-    syscall
-
-    mov %rax, 60        ; sys_exit
-    mov %rdi, 0
-    syscall
-
-msg: u8 "Hello, World!", 0x0A
-len: u64 $ - msg
-```
-
 
 ## Building & Usage
 
 ```bash
 # Build
-gcc -O2 -std=c99 Aasm.c -o aasm
+gcc -std=c99 Aasm.c -o aasm
 
 # Compile assembly
 ./aasm input.asm
-./aasm f=input.asm o=output
-./aasm input.asm o=myprogram
+./aasm input.asm -o output
+./aasm -pie input.asm -o prog
 
 # Run
 chmod +x output && ./output
 ```
 
-**Options:**
-
-| Flag | Description |
-|------|-------------|
-| `f=<file>` or `<file>` | Input `.asm` file |
-| `o=<file>` | Output executable (default: `a.out`) |
-
 ---
 
 ## Known Limitations
 
-- Limited instruction set — `mov`, `add`, `cmp`, `jmp`, `call`, `jcc`, `syscall` (more coming)
+- Limited instruction set — `mov`, `add`, `sub`, `imul`, `cmp`, `jmp`, `lea`, `call`, `jcc`, `syscall` (more coming)
 - No multi-file linking
 - No `.data` / `.bss` sections (everything in `.text` + RWX)
 - No macro system
 - No floating-point (FPU/SSE)
-- No optimization passes (intentional)
+- No optimization passes (coming in 2.0-2.1)
 
 ---
 

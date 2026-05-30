@@ -1,4 +1,4 @@
-#pragma ones
+#pragma once
  
 #include <stdint.h>
 #include <stdio.h>
@@ -24,7 +24,6 @@ typedef enum {
     T_REG32,
     T_REG64,
     T_ADDR_EXPR,
-    T_LABEL_EXPR,
     T_STR,
     T_SOF,
     T_EOL,
@@ -120,6 +119,7 @@ typedef struct{
 
 } Operand;
 
+
 typedef enum {
     U64_INT,
     U64_EXPR
@@ -139,7 +139,7 @@ typedef struct AST {
     char cmd[12];  // mostly useing for ins
 
     union {     
-        struct { Operand  operands[2]; int oper_count; uint64_t pc;} ins; 
+        struct { Operand  operands[3]; int oper_count; uint64_t pc;} ins; 
         struct { uint8_t  data[64]; int size; } u8;
         struct { uint16_t data[64]; int size; } u16;
         struct { uint32_t data[64]; int size; } u32;
@@ -153,7 +153,7 @@ typedef struct AST {
         struct { uint64_t vaddr;} pc; // $
     };
 
-    uint8_t machine_code[16];
+    uint8_t machine_code[32]; 
     uint8_t machine_code_size;
         
 } AST;
@@ -175,6 +175,7 @@ typedef struct {
 int    isin(const char *str, char c);
 int    is2arrin(const char *str[], char *str2);
 uint64_t find_lab_addr(const uint8_t* name);
+uint8_t is_reg(const uint8_t* reg);
  
 /* == expression evaluator == */
 long   parse_number(void);
@@ -199,12 +200,18 @@ uint8_t find_reg8_index(const char *reg);
 /* == address-expression parser == */
 AddrExpr parse_addr_expr(const uint8_t *expr);
  
-/* == instruction encoders == */
+/* == instruction encoders == */ 
 uint8_t encode_mov_reg_imm(uint8_t *mash_code, uint8_t reg_idx, uint64_t imm, uint8_t sz);
 uint8_t encode_mov_reg_reg(uint8_t *mash_code, uint8_t dest_idx, uint8_t src_idx, uint8_t sz);
 uint8_t encode_inst_rm_rm(uint8_t *mash_code, uint8_t reg_idx, AddrExpr *expr, uint8_t sz, uint8_t opcode);
-uint8_t encode_add_imm(uint8_t *mash_code, uint8_t reg, uint32_t imm, uint8_t sz);
+uint8_t encode_add_imm(uint8_t *mash_code, uint8_t reg, uint32_t imm, uint8_t sz, int is_expr);
 uint8_t encode_add_reg_reg(uint8_t *mash_code, uint8_t dest, uint8_t src, uint8_t sz);
+uint8_t encode_sub_imm(uint8_t *mash_code, uint8_t reg, uint32_t imm, uint8_t sz, int is_expr);
+uint8_t encode_sub_reg_reg(uint8_t *mash_code, uint8_t dest, uint8_t src, uint8_t sz);
+uint8_t encode_imul_reg(uint8_t *mash_code, uint8_t reg, uint8_t sz);
+uint8_t encode_imul_reg_reg(uint8_t *mash_code, uint8_t src, uint8_t dest, uint8_t sz);
+uint8_t encode_cmp_imm(uint8_t *mash_code, uint8_t reg, uint32_t imm, uint8_t sz, int is_expr);
+uint8_t encode_cmp_reg_reg(uint8_t *mash_code, uint8_t dest, uint8_t src, uint8_t sz);
 
 /* == lexer == */
 int    LEXER(FILE *fl);
@@ -213,22 +220,22 @@ int    LEXER(FILE *fl);
 AST   *PARSE(void);
  
 /* == label resolver / linker == */
-uint64_t collect_labels(void);
+uint64_t collect_labels(int pie_mode);
 void     resolve_labels(void);
  
 /* == expression resolver == */
 uint64_t resolve_expr(Expr expr, uint64_t pc);
 
 /* == code-gen passes == */
-void parseInst(AST *node);
-void parse_size_directives(AST *node);
+uint8_t parseInst(AST* node, uint64_t *pc);
+void parse_size_directives(AST* node, uint64_t *pc);
  
 /* == ELF writer == */
-void ELFgenfile(FILE *fl, uint64_t e_entry, uint8_t *text_code, uint64_t text_size);
+int ELFgenfile(FILE *fl, uint64_t e_entry, uint8_t *text_code, uint64_t text_size, int pie_mode);
  
 /* == top-level pipeline == */
-void compiler(uint8_t *text, int *textsize, uint64_t *e_entry);
-void handl_pipeline(int argc, char **argv);
+void compiler(uint8_t *text, int *textsize, uint64_t *e_entry, int pie_mode);
+void handl_pipeline(int argc, char **argv, int pie_mode);
  
 /* == debug == */
 void DEBUG_PRINT_AST(void);
