@@ -1,1 +1,1 @@
-# Hello World in PIE(Position-Independent Executable) mode
+# Hello World in ET_EXEC mode

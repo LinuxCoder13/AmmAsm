@@ -1,58 +1,108 @@
-# AmmAsm — x86-64 Assembler
+# AmmAsm - x86-64 Assembler
 
-**Version:** 1.8 
-**Author:** Ammar Najafli 
-**License:** MIT 
+**Version:** 2.0.0       
+**Author:** Ammar Najafli     
+**License:** MIT         
 
-AmmAsm is handwritten x86-64 assembler designed for simplicity and clarity. It compiles assembly code directly to machine code and produces ELF executables and PIE(Position-Independent Executable) for Linux x86-64.
+AmmAsm a is handwritten x86-64 assembler designed for simplicity and clarity. It compiles assembly code directly to machine code and produces ELF executables, PIE binaries (Position-Independent Executables), and relocatable object files for Linux x86-64.
 
 ---
 
-## What's New in v1.8
+## What's New in v2.0.0
 
-### PIE(Position-Independent Executable)
+1) ### ELF64 Relocatable Object Files
 
-1) AmmAsm v1.8 introduces full PIE(Position-Independent Executable) binary. In computing, it is a specialized binary file that randomizes its memory  location every time it runs, virtual memory == offset in file, nevertheless in PIE mode instruction `mov r64, [label]` will not be executed how you expect becouse in this mode virt is 0x55XXXXXXXXXXXX0000, not 0x400000. Instead of this you should use RIP-REL adressing => `lea r64, [label]`.
+AmmAsm v2.0.0 introduces support for generating valid ELF64 relocatable object files (`.o`).
 
-2) New instructions: `sub`, `imul`, `lea`(full implemented)
+Generated object files can be linked with `ld`, `gcc`, and other GNU binutils-compatible tools. This allows AmmAsm output to be used in normal Linux build pipelines together with C code and other object files.
 
-3) Fixed Linker
+This is a major step toward making AmmAsm a real toolchain component instead of only a direct-to-executable assembler.
 
-4) Added tests with ScreenShots
+### Object Files contain
 
+AmmAsm-generated object files now include the core ELF64 sections required for relocation and linking:
 
-**IMUL (Signed Multiply) — full support:**
-- `imul r64` — RAX = RAX * r64
-- `imul r64, r64` — dest = dest * src
-- `imul r64, imm` — rax = rax * imm (sugar)
-- `imul r64, r64, imm` — dest = src * imm
-- All sizes (8/16/32/64), imm8/imm16/imm32 optimization
+- `.text` - executable machine code
+- `.data` - initialized data
+- `.strtab` - string table for symbol names
+- `.shstrtab` - string table for section names
+- `.symtab` - symbol table for labels and global symbols
+- `.rela.text` - relocation entries for code references that must be resolved by the linker
+- `.note.GNU-stack` - .note.GNU-stack - marks the stack as non-executable and avoid GNU linker warnings
 
+References to labels in RIP-relative addressing generate .rela.text entries, resolved later by `ld`, `gcc`, or other compatible linkers.
 
-**Hello, World in PIE via pointer**
+This makes it possible to generate object files with symbols, sections, and relocation metadata instead of only raw executable output.
+
+2) ### Global Symbols
+
+AmmAsm v2.0.0 adds support for the `global` directive.
+
+The directive marks one or more labels as externally visible symbols, allowing them to be used as entry points or referenced from other object files during linking
+
+> Note: global is meaningful only for object files (.o). It is useless when generating raw executables directly.
+
+Syntax:
+
+```asm
+global lab1, lab2, lab3, ...
+```
+
+Example:
+
+**Hello, World in object file**
 
 ```ASM
-ptr: dq msg - $
-msg: db "Hello, World\n", 
-len: dq $ - msg
+section data
+msg: db "Hello, World\n", 0
+msg_len: dq $ - msg
 
+section text
+global _start
 _start:
     mov rax, 1
     mov rdi, 1
-    lea rsi, [b=ptr]
-    add rsi, [b=rsi]
-    mov rdx, [b=len]
+    lea rsi, [b=msg]
+    mov rdx, msg_len
     syscall
 
     mov rax, 60
     syscall
 ```
 
+### Bootstrap Object Example
 
-**All expression features work in:**
+AmmAsm includes a small bootstrap object example: `strcmp.asm`.
+
+This file implements a simple `strcmp`-like function written in AmmAsm, assembled into `strcmp.o`, and linked back with `Aasm.c` during the build.
+
+
+3) New instructions: `push`, `pop` (currently register operands only)
+
+4) Added more tests
+
+# END
+---
+
+## Features
+
+- Direct x86-64 encoding - No NASM/GAS dependencies
+- Multiple operand sizes - 8/16/32/64-bit registers and immediates
+- Memory addressing - Full SIB/ModRM support with explicit key-value syntax
+- RIP-relative addressing - Automatic for label bases (v1.6)
+- Label support - Global and local labels with two-pass symbol resolution
+- Inline literals - Embed strings and data directly in .text
+- Control flow - jmp, call, conditional jumps with relative addressing
+- Two-pass linker - Built-in symbol resolution and relocation
+- Numeric literals - 0xDEADBEEF, 0b1010, 0o777, decimal, negative
+- **ELF output - Generates valid Linux x86-64 ET_EXEC, PIE and OBJ(v2.0.0) binary**
+
+---
+
+
+**Expression features:**
 
 - `mov rax, msg+5` -> absolute address
-- `mov rax, [b=msg+5]` -> RIP-relative address
 - `jmp msg+10` -> relative jump with offset
 - `lab: dq $-msg, msg+8, msg+16` -> data directives
 - `add rax, $-_start` -> arithmetic with current address
@@ -63,11 +113,11 @@ _start:
 ```asm
 _start:
     mov rax, msg           ; address of msg (0x401000)
-    mov rbx, $-_start      ; length from _start to current (negative)
+    mov rbx, $-_start      ; length from _start to current
     mov rcx, msg+5         ; address of 'W' in "Hello World"
     mov rdx, msg+8         ; address of 'r' in "World"
     
-    dq $-msg, msg+5, msg+8, 0xdeadbeef
+    .tmp: dq $-msg, msg+5, msg+8, 0xdeadbeef
     
     jmp _start
     
@@ -78,7 +128,7 @@ msg: db "Hello World", 0
 
 **Backend Refactoring**
 
-- resolve_expr() — New expression evaluator that supports:
+- resolve_expr() - New expression evaluator that supports:
 - Label resolution (msg)
 - Current address ($)
 - Character literals ('A')
@@ -91,22 +141,6 @@ msg: db "Hello World", 0
 > Assembling x86-64 code → generating machine code → running binary
 
 [![Demo](https://img.youtube.com/vi/P-bdMZXXyVg/0.jpg)](https://youtube.com/watch?v=P-bdMZXXyVg)
-
----
-
-
-## Features
-
-- Direct x86-64 encoding — No NASM/GAS dependencies
-- Multiple operand sizes — 8/16/32/64-bit registers and immediates
-- Memory addressing — Full SIB/ModRM support with explicit key-value syntax
-- RIP-relative addressing — Automatic for label bases (v1.6)
-- Label support — Global and local labels with two-pass symbol resolution
-- Inline literals — Embed strings and data directly in .text
-- Control flow — jmp, call, conditional jumps with relative addressing
-- Two-pass linker — Built-in symbol resolution and relocation
-- Numeric literals — 0xDEADBEEF, 0b1010, 0o777, decimal, negative
-- ELF output — Generates valid Linux x86-64 ET_EXEC and PIE binary
 
 ---
 
@@ -127,7 +161,7 @@ Converts source text to a flat token stream.
 Builds the Abstract Syntax Tree.
 
 - Validates operand combinations per instruction
-- Resolves operand types: O_REG8/16/32/64, O_IMM, O_MEM, O_LABEL, O_CHAR
+- Resolves operand types: O_REG8/16/32/64, O_IMM, O_MEM, O_LABEL, O_CHAR, O_EXPR
 - Produces typed AST nodes: AST_INS, AST_LABEL, AST_U8/16/32/64, etc.
 
 ### 3. Code Generator (parseInst)
@@ -143,8 +177,8 @@ Emits x86-64 machine code per AST node.
 
 Two-pass symbol resolution.
 
-- Pass 1 — Walks AST, assigns vaddr to each AST_LABEL (base 0x401000 or 0x1000(PIE))
-- Pass 2 — Patches placeholders:
+- Pass 1 - Walks AST, assigns vaddr to each AST_LABEL (base 0x401000 or 0x1000(PIE))
+- Pass 2 - Patches placeholders:
   - MOV r64, label -> absolute 64-bit address (8 bytes at mc[2])
   - JMP/CALL/JCC label -> rel32 = target - (current_pc + inst_size)
   - RIP-relative -> disp32 = target - (current_pc + inst_size) + user_disp
@@ -247,34 +281,36 @@ mov rax, msg      ; load virtual address of 'msg' into rax(Does not work in PIE)
 
 ```bash
 # Build
-gcc -std=c99 Aasm.c -o aasm
+gcc -std=gnu99 -O2 -Os Aasm.c bootstrap/*.o -o aasm
 
 # Compile assembly
 ./aasm input.asm
 ./aasm input.asm -o output
 ./aasm -pie input.asm -o prog
+./aasm input.asm -c prog.o
 
 # Run
 chmod +x output && ./output
+ld prog.o -o output && chmod +x output && ./output
 ```
 
 ---
 
 ## Known Limitations
 
-- Limited instruction set — `mov`, `add`, `sub`, `imul`, `cmp`, `jmp`, `lea`, `call`, `jcc`, `syscall` (more coming)
+- Limited instruction set - `mov`, `add`, `sub`, `imul`, `cmp`, `jmp`, `lea`, `call`, `jcc`, `push`, `pop`,`syscall` (more coming)
 - No multi-file linking
-- No `.data` / `.bss` sections (everything in `.text` + RWX)
+- No `.data` / `.bss` sections for direct compiling to raw executable, however data/text exist for obj files
 - No macro system
 - No floating-point (FPU/SSE)
-- No optimization passes (coming in 2.0-2.1)
+- No optimization passes (coming in ..., soon)
 
 ---
 
 ## Resources
 
-- [Intel SDM — IA-32/x86-64 Developer Manual](https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html)
-- [x86-64 Instruction Encoding — OSDev Wiki](https://wiki.osdev.org/X86-64_Instruction_Encoding)
+- [Intel SDM - IA-32/x86-64 Developer Manual](https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html)
+- [x86-64 Instruction Encoding - OSDev Wiki](https://wiki.osdev.org/X86-64_Instruction_Encoding)
 - [ELF Specification](https://refspecs.linuxfoundation.org/elf/elf.pdf)
 - [System V AMD64 ABI](https://refspecs.linuxbase.org/elf/x86_64-abi-0.99.pdf)
 

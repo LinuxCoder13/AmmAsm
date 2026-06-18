@@ -1,14 +1,18 @@
-star: db '*'
-nl: db 10
+section .data
+    star db '*'
+    nl   db 10
 
+section .text
+global _start
 _start:
-    mov rdi, 11
+    mov rdi, 6
     call star_up
 
-    mov rdi, 10
+    mov rdi, 5
     call star_down
 
     mov rax, 60
+    mov rdi, 0
     syscall
 
 star_up:
@@ -27,7 +31,7 @@ star_up:
     
     mov rax, 1
     mov rdi, 1
-    lea rsi, [b=star]
+    lea rsi, [b=star]      
     mov rdx, 1
     syscall
     
@@ -37,11 +41,11 @@ star_up:
 .print_nl:
     mov rax, 1
     mov rdi, 1
-    lea rsi, [b=nl]
+    lea rsi, [b=nl]       
     mov rdx, 1
     syscall
     
-    add r8, 1        ; увеличиваем на 1
+    add r8, 1        
     jmp .loop
     
 .done:
@@ -64,11 +68,10 @@ star_down:
     mov rdx, 1
     syscall
 
-    add r9, -1
+    sub r9, 1
     jmp .print_stars
 
 .print_nl:
-
     mov rax, 1
     mov rdi, 1
     lea rsi, [b=nl]

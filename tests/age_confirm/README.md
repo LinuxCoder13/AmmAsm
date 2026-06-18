@@ -1,2 +1,2 @@
-# Age test in PIE(Position-Independent Executable) mode
+# Age test in OBJ file mode
 Age verification program. Reads 3 chars from stdin, prints "you can go" if age >= 18, otherwise "you cant go". Input longer than 3 chars triggers "too long input" error. Implements hand writen stdin flush after read.

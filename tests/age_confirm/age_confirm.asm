@@ -1,3 +1,6 @@
+section data
+global msg, msg_len, passed, fail, passed_len, fail_len, b, b_len, age, atoi, flush, _start
+
 msg: db "how old are you: " 
 msg_len dq $ - msg
 
@@ -13,6 +16,8 @@ b_len: dq $ - b
 trash: db 0
 age: db 0, 0, 0, 0
 
+
+section text    
 ; atoi()
 atoi:
     mov r9, 10

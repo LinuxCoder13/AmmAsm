@@ -1,0 +1,1 @@
+# strcmp that is linked with Aasm.c code, in order to demonstrate that AmmAsm is able to be compatible with GCC, LD, ect.
