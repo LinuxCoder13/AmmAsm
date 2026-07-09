@@ -1,12 +1,15 @@
-msg: db "Hello, World\n", 
-len: dq $ - msg
+extern printf
+global _start
 
+section data
+msg: db "Hello, World\n", 0
+len: dq $ - msg + 5
+
+section text
 _start:
-    mov rax, 1
-    mov rdi, 1
-    lea rsi, [b=msg]
-    mov rdx, [b=len]
-    syscall
+    
+    lea rdi, [b=msg]
+    call printf
 
     mov rax, 60
     syscall

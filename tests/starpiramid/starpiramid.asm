@@ -78,7 +78,7 @@ star_down:
     mov rdx, 1
     syscall
 
-    add r8, -1
+    sub r8, 1
     jmp .loop
     
 .done:

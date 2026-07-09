@@ -59,8 +59,7 @@ flush:
     cmp rax, 0
     jz .done
 
-    mov r15b, [b=trash]
-    cmp r15b, '\n'
+    cmp [b=trash], byte '\n'
     jz .done
 
     jmp .loop
@@ -91,9 +90,8 @@ _start:
 
     cmp r14, 4
     jl .ok_input
-
-    mov r15b, [b=age, d=3]
-    cmp r15b, '\n'
+    
+    cmp [b=age, d=3], byte '\n'
     jne .warn
 
 .ok_input:

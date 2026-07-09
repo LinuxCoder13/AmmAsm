@@ -1,88 +1,90 @@
 # AmmAsm - x86-64 Assembler
 
-**Version:** 2.0.0       
+**Version:** 2.1.0       
 **Author:** Ammar Najafli     
 **License:** MIT         
 
-AmmAsm a is handwritten x86-64 assembler designed for simplicity and clarity. It compiles assembly code directly to machine code and produces ELF executables, PIE binaries (Position-Independent Executables), and relocatable object files for Linux x86-64.
+AmmAsm is a handwritten x86-64 assembler designed for simplicity and clarity. It compiles assembly code directly to machine code and produces ELF executables, PIE binaries (Position-Independent Executables), and relocatable object files for Linux x86-64, mainly in `Debian GNU/Linux 12 (bookworm) x86_64`.
 
 ---
 
-## What's New in v2.0.0
+## What's New in v2.1.0
 
-1) ### ELF64 Relocatable Object Files
+AmmAsm v2.1.0 is targeting to be more safe and stable rather than 2.0.0
 
-AmmAsm v2.0.0 introduces support for generating valid ELF64 relocatable object files (`.o`).
+1) Added `byte`, `word`, `dword`, `qword` for `inst [mem], imm` in order to define size of immediate
 
-Generated object files can be linked with `ld`, `gcc`, and other GNU binutils-compatible tools. This allows AmmAsm output to be used in normal Linux build pipelines together with C code and other object files.
+2) Added BrainFuck-test, such as `hello.bf`, `rot13.bf`, `dbfi.bf`, `mandelbrot.bf`
 
-This is a major step toward making AmmAsm a real toolchain component instead of only a direct-to-executable assembler.
+3) Added Clock-test (For any UTC + X)
 
-### Object Files contain
+3) Added `extern` symbol
 
-AmmAsm-generated object files now include the core ELF64 sections required for relocation and linking:
-
-- `.text` - executable machine code
-- `.data` - initialized data
-- `.strtab` - string table for symbol names
-- `.shstrtab` - string table for section names
-- `.symtab` - symbol table for labels and global symbols
-- `.rela.text` - relocation entries for code references that must be resolved by the linker
-- `.note.GNU-stack` - .note.GNU-stack - marks the stack as non-executable and avoid GNU linker warnings
-
-References to labels in RIP-relative addressing generate .rela.text entries, resolved later by `ld`, `gcc`, or other compatible linkers.
-
-This makes it possible to generate object files with symbols, sections, and relocation metadata instead of only raw executable output.
-
-2) ### Global Symbols
-
-AmmAsm v2.0.0 adds support for the `global` directive.
-
-The directive marks one or more labels as externally visible symbols, allowing them to be used as entry points or referenced from other object files during linking
-
-> Note: global is meaningful only for object files (.o). It is useless when generating raw executables directly.
-
-Syntax:
-
-```asm
-global lab1, lab2, lab3, ...
-```
-
-Example:
-
-**Hello, World in object file**
-
-```ASM
-section data
-msg: db "Hello, World\n", 0
-msg_len: dq $ - msg
-
-section text
-global _start
-_start:
-    mov rax, 1
-    mov rdi, 1
-    lea rsi, [b=msg]
-    mov rdx, msg_len
-    syscall
-
-    mov rax, 60
-    syscall
-```
-
-### Bootstrap Object Example
-
-AmmAsm includes a small bootstrap object example: `strcmp.asm`.
-
-This file implements a simple `strcmp`-like function written in AmmAsm, assembled into `strcmp.o`, and linked back with `Aasm.c` during the build.
-
-
-3) New instructions: `push`, `pop` (currently register operands only)
-
-4) Added more tests
+4) Added Dynamic arrays
 
 # END
 ---
+
+## Object File Support (ELF64 Relocatable)
+
+Starting from v2.0.0, AmmAsm can generate valid ELF64 relocatable object files (`.o`) in addition to executables.
+
+Generated object files are compatible with the standard Linux toolchain and can be linked using `ld`, `gcc`, or other GNU binutils-compatible linkers.
+
+This allows AmmAsm to participate in normal C/C++ build pipelines instead of being limited to standalone executable generation.
+
+### Supported Sections
+
+Generated object files contain:
+
+- `.text` - executable code
+- `.data` - initialized data
+- `.symtab` - symbol table
+- `.strtab` - symbol string table
+- `.shstrtab` - section-name string table
+- `.rela.text` - relocation records
+- `.note.GNU-stack` - marks stack as non-executable
+
+### Global and Extern Symbols
+
+The `global` and `extern` directivies exports labels into the ELF symbol table.
+
+```asm
+global _start, strcmp
+extern printf, __pthread_unregister_cancel_restore
+```
+
+Only object-file generation uses exported symbols. They have no effect when producing ET_EXEC.
+
+### Relocations
+
+References that cannot be resolved during assembly automatically generate relocation entries.
+
+Currently supported relocations include:
+
+- RIP-relative label references
+- External/global symbols
+- Symbol references requiring linker resolution
+
+Relocations are emitted into `.rela.text` and are resolved later by `ld`, `gcc`, or compatible ELF linkers.
+
+### Example
+
+```bash
+./aasm hello.asm -c hello.o
+gcc hello.o -o hello
+./hello
+```
+
+### Bootstrap Example
+
+The repository contains `bootstrap/strcmp.asm`, which is assembled into `strcmp.o` and linked together with `Aasm.c` during the build process.
+
+This demonstrates interoperability between AmmAsm-generated object files and ordinary C programs.
+
+
+---
+
 
 ## Features
 
@@ -306,14 +308,3 @@ ld prog.o -o output && chmod +x output && ./output
 - No optimization passes (coming in ..., soon)
 
 ---
-
-## Resources
-
-- [Intel SDM - IA-32/x86-64 Developer Manual](https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html)
-- [x86-64 Instruction Encoding - OSDev Wiki](https://wiki.osdev.org/X86-64_Instruction_Encoding)
-- [ELF Specification](https://refspecs.linuxfoundation.org/elf/elf.pdf)
-- [System V AMD64 ABI](https://refspecs.linuxbase.org/elf/x86_64-abi-0.99.pdf)
-
----
-
-**Made by a 15 y.o. systems programmer.**
