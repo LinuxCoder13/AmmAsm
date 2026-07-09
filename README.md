@@ -22,6 +22,8 @@ AmmAsm v2.1.0 is targeting to be more safe and stable rather than 2.0.0
 
 4) Added Dynamic arrays
 
+5) New instructions: `idiv`, `div`, `cqo`, `cdq`, `cwd`, `cdqe`, `cwde`, `cbw`
+
 # END
 ---
 
@@ -300,7 +302,7 @@ ld prog.o -o output && chmod +x output && ./output
 
 ## Known Limitations
 
-- Limited instruction set - `mov`, `add`, `sub`, `imul`, `cmp`, `jmp`, `lea`, `call`, `jcc`, `push`, `pop`,`syscall` (more coming)
+- Limited instruction set - `mov`, `add`, `sub`, `imul`, `cmp`, `jmp`, `lea`, `call`, `jcc`, `push`, `pop`,`syscall`, `idiv`, `div`, `cqo`, `cdq`, `cwd`, `cdqe`, `cwde`, `cbw` (more coming)
 - No multi-file linking
 - No `.data` / `.bss` sections for direct compiling to raw executable, however data/text exist for obj files
 - No macro system
