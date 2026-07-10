@@ -64,10 +64,10 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
  
     // I don't know why but GCC is puting this buffers to bss, not stack as expected
     uint8_t  *data_buf = malloc(65536);
-    uint16_t data_size = 0;
+    uint32_t data_size = 0;
  
     uint8_t  *text_buf = malloc(65536);
-    uint16_t text_size = 0;
+    uint32_t text_size = 0;
     
  
     /* Find .data and .text section boundaries in AST */
@@ -92,6 +92,7 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
             if (ast[i].machine_code_size > 0 &&
                 (ast[i].type == AST_U8  || ast[i].type == AST_U16 ||
                  ast[i].type == AST_U32 || ast[i].type == AST_U64)) {
+                if (data_size + ast[i].machine_code_size > 65536) break;
                 memcpy(data_buf + data_size, ast[i].machine_code, ast[i].machine_code_size);
                 data_size += ast[i].machine_code_size;
             }
@@ -103,6 +104,7 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
         for (int i = text_start_idx + 1; i < ast_len; i++) {
             if (ast[i].type == AST_SECTION) break;
             if ((ast[i].machine_code_size > 0 && ast[i].type == AST_INS) || ast[i].type == AST_U8 || ast[i].type == AST_U16 || ast[i].type == AST_U32 || ast[i].type == AST_U64) {
+                if (text_size + ast[i].machine_code_size > 65536) break;
                 memcpy(text_buf + text_size, ast[i].machine_code, ast[i].machine_code_size);
                 text_size += ast[i].machine_code_size;
             }
