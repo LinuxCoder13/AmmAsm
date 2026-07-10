@@ -1,6 +1,6 @@
 # AmmAsm - x86-64 Assembler
 
-**Version:** 2.1.0       
+**Version:** 2.1.2      
 **Author:** Ammar Najafli     
 **License:** MIT         
 
@@ -8,9 +8,9 @@ AmmAsm is a handwritten x86-64 assembler designed for simplicity and clarity. It
 
 ---
 
-## What's New in v2.1.0
+## What's New in v2.1.x
 
-AmmAsm v2.1.0 is targeting to be more safe and stable rather than 2.0.0
+AmmAsm v2.1.x is targeting to be more safe and stable rather than 2.0.0
 
 1) Added `byte`, `word`, `dword`, `qword` for `inst [mem], imm` in order to define size of immediate
 
