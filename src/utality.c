@@ -331,6 +331,11 @@ long parse_number() {
         return res;
     }
 
+    else {
+        fprintf(stderr, "AmmAsm: Invalid expr\n");
+        exit(1);
+    }
+
     // fallback
     return 0;
 }
@@ -395,28 +400,21 @@ long eval_expr(const uint8_t *str) {
 }
 
 
-void* append(int *len, int *cap, void* oldarr, const void* value, size_t sz) {
-    if (*cap <= 0) *cap = 4;
-
-    if (oldarr == NULL) {
-        oldarr = malloc(sz * (*cap));
+void *append(int *len, int *cap, void *arr, const void *value, size_t elem_size){
+    if (*cap == 0) {
+        *cap = 4;
+        arr = malloc(*cap * elem_size);
     }
 
-    if (*len >= *cap) {
+    if (*len == *cap) {
         *cap *= 2;
-        void* newarr = malloc(sz * (*cap));
-        if (newarr == NULL) return oldarr;
-
-        memcpy(newarr, oldarr, *len * sz);
-
-        free(oldarr); 
-        oldarr = newarr;
+        arr = realloc(arr, *cap * elem_size);
     }
 
-    //oldarr[*len] = value;
-    memcpy((uint8_t*)(oldarr + *len * sz), value, sz);
+    memcpy((char *)arr + *len * elem_size, value, elem_size);
     (*len)++;
-    return oldarr;
+
+    return arr;
 }
 
 // Mainly for Labels
@@ -520,4 +518,28 @@ void TwoDfree(uint8_t **arr, int count) {
         if (arr[i]) free(arr[i]);
     }
     free(arr);
+}
+
+uint8_t is_expr_token(TokenType t)
+{
+    switch (t) {
+        case T_INT:
+        case T_LAB:
+        case T_PC:
+        case T_CHAR:
+        case T_PLUS:
+        case T_MINUS:
+        case T_MULL:
+        case T_DIV:
+        case T_LPRANT:
+        case T_RPRANT:
+        case T_AND:
+        case T_OR:
+        case T_XOR:
+        case T_LSHIFT:
+        case T_RSHIFT:
+            return 1;
+        default:
+            return 0;
+    }
 }

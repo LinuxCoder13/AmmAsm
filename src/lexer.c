@@ -309,7 +309,7 @@ int LEXER(FILE* fl) {
         
         add_token(T_EOL, "", line);
     }
-    add_token(T_EOL, "", line); // for safety
+
     add_token(T_EOF, "", line);
     return line;
 }

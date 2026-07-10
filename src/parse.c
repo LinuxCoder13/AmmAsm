@@ -24,6 +24,10 @@ AST* PARSE(){
 
             while(pos < toks_len){
                 if(toks[pos].type == T_COMMA){ pos++; continue;}
+                if (node.ins.oper_count > 3) {
+                    fprintf(stderr, "AmmAsm:%d: too many operands\n", node.line);
+                    exit(1);
+                }
                 else if(toks[pos].type == T_REG8 || toks[pos].type == T_REG16 ||
                         toks[pos].type == T_REG32 || toks[pos].type == T_REG64 ){
                     int tt = toks[pos].type;
@@ -93,6 +97,14 @@ AST* PARSE(){
 
                     while (toks[pos].type != T_COMMA && toks[pos].type != T_EOL && toks[pos].type != T_EOF) {
 
+                        if (!is_expr_token(toks[pos].type)) {
+                            fprintf(stderr,
+                                "AmmAsm:%d: expected end of line before instruction '%s'\n",
+                                toks[pos].line,
+                                toks[pos].value);
+                            exit(1);
+                        }
+
                         ExprToken tok = {
                             .type = toks[pos].type,
                             .value = strdup(toks[pos].value)
@@ -129,12 +141,14 @@ AST* PARSE(){
                     pos++;
                     break;
                 }
+
                 else {
                     fprintf(stderr, "AmmAsm:%d: Unexpected token \"%s\"\n", node.line, toks[pos].value);
                     exit(1); 
                 }
             }
-            // ast = append(&ast_len, &ast_cap, ast, ASTptr, sizeof(AST)
+
+
             ast = append(&ast_len, &ast_cap, ast, ASTptr, sizeof(AST));
             if (pos < toks_len && toks[pos].type == T_EOL) while(toks[pos].type == T_EOL) pos++;;
             continue;

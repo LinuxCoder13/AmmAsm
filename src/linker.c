@@ -83,6 +83,14 @@ uint64_t collect_labels_sections() {
 
     for (int i = 0; i < ast_len; i++) {
         if (ast[i].type == AST_LABEL) {
+
+            for (int k = 0; k < i; k++) {
+                if (ast[k].type == AST_LABEL && !astrcmp(ast[k].label.name, ast[i].label.name)) {
+                    fprintf(stderr, "AmmAsm:%d: label `%s` already defined\n", ast[i].line, ast[i].label.name);
+                    exit(1);
+                }
+            }
+
             ast[i].label.adress = pie_mode ? current_pc : current_pc - 0x400000; // offset in file(for debug) 
             ast[i].label.vadress = current_pc;
             
@@ -99,6 +107,14 @@ uint64_t collect_labels_sections() {
         }
 
         else if (ast[i].type == AST_SECTION) {
+
+            for (int k = 0; k < i; k++) {
+                if (ast[k].type == AST_SECTION && !astrcmp(ast[k].section.secname, ast[i].section.secname)) {
+                    fprintf(stderr, "AmmAsm:%d: section `%s` already defined\n", ast[i].line, ast[i].section.secname);
+                    exit(1);
+                }
+            }
+
             ast[i].section.adress = pie_mode ? current_pc : current_pc - 0x400000; // offset in file(for debug) 
             ast[i].section.vadress = current_pc;
 

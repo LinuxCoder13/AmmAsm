@@ -67,7 +67,7 @@ typedef struct AST {
 
     // sizeof(AST) == 608
     union {     
-        struct { Operand  operands[3]; int oper_count; uint64_t pc;} ins; // biggest?
+        struct { Operand  operands[4]; int oper_count; uint64_t pc;} ins; // biggest?
         struct { uint8_t  *data; int data_len; int data_cap; } u8;
         struct { uint16_t *data; int data_len; int data_cap; } u16;
         struct { uint32_t *data; int data_len; int data_cap; } u32;
