@@ -1,10 +1,10 @@
 # AmmAsm - x86-64 Assembler
 
-**Version:** 2.1.3      
+**Version:** 2.1.5       
 **Author:** Ammar Najafli     
 **License:** MIT         
 
-AmmAsm is a handwritten x86-64 assembler designed for simplicity and clarity. It compiles assembly code directly to machine code and produces ELF executables, PIE binaries (Position-Independent Executables), and relocatable object files for Linux x86-64, mainly in `Debian GNU/Linux 12 (bookworm) x86_64`.
+AmmAsm is a handwritten x86-64 assembler designed for simplicity and clarity. It compiles assembly code directly to machine code and produces ELF executables, PIE binaries (Position-Independent Executables), and relocatable object files for Linux x86-64,`primarily tested on Debian GNU/Linux 12 (bookworm) x86-64`.
 
 ---
 
@@ -285,7 +285,7 @@ mov rax, msg      ; load virtual address of 'msg' into rax(Does not work in PIE)
 
 ```bash
 # Build
-gcc -std=gnu99 -O2 -Os Aasm.c bootstrap/*.o -o aasm
+./build.sh
 
 # Compile assembly
 ./aasm input.asm
