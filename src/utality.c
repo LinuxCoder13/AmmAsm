@@ -126,7 +126,7 @@ uint8_t externed_label(const uint8_t* name){
 uint64_t find_sec_addr(const uint8_t* name){
     for (int j = 0; j < ast_len; j++) {
         if (ast[j].type == AST_SECTION && astrcmp(ast[j].section.secname, name) == 0) {
-            return ast[j].label.vadress;
+            return ast[j].section.vadress;
         }
     }
 
@@ -350,7 +350,9 @@ long parse_term() {
         } 
         else if (*p == '/') {
             p++;
-            left /= parse_number();
+            long tmp = parse_number();
+            if(tmp == 0){ fprintf(stderr, "AmmAsm: Division by zero\n"); exit(1);}
+            else left /= tmp;
         } 
         else break;
     }

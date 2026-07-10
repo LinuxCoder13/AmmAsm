@@ -32,6 +32,7 @@ AST* PARSE(){
                         toks[pos].type == T_REG32 || toks[pos].type == T_REG64 ){
                     int tt = toks[pos].type;
                     strncpy(node.ins.operands[node.ins.oper_count].reg, toks[pos++].value, 8);
+
                     switch (tt) {
                         case T_REG8:  node.ins.operands[node.ins.oper_count++].type = O_REG8;  break;
                         case T_REG16: node.ins.operands[node.ins.oper_count++].type = O_REG16; break;
@@ -307,7 +308,7 @@ AST* PARSE(){
                 if (toks[pos].type == T_INT) {
                     uint32_t tmp = (uint32_t)eval_expr(toks[pos].value);
 
-                    node.u16.data = append(&node.u32.data_len,
+                    node.u32.data = append(&node.u32.data_len,
                                         &node.u32.data_cap,
                                         node.u32.data,
                                         &tmp,

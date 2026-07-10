@@ -35,7 +35,7 @@ typedef struct {
     OperandType type;
 
     union {
-        uint8_t reg[5];
+        uint8_t reg[8];
         Expr expr; // imm, label, $, char, ect.
         AddrExpr addr;
         uint64_t imm;
@@ -82,7 +82,7 @@ typedef struct AST {
         struct { uint8_t **labels; int labels_len; int labels_cap;} externs;
     };
 
-    uint8_t machine_code[512]; // Sorry
+    uint8_t machine_code[256]; // Sorry
     uint8_t machine_code_size;
         
 } AST;

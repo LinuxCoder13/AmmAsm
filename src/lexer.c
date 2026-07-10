@@ -23,7 +23,7 @@ void del_all_toks(void) {
 }
 
 char *read_string(char *buff, char *dest, int line) {
-    while (*buff != '"') {
+    while (*buff != '"' && *buff != '\0') {
         if (*buff == '\\') {
             switch (*(buff + 1)) {
                 case 'n': *dest++ = '\n'; buff += 2; continue;
@@ -56,8 +56,6 @@ int LEXER(FILE* fl) {
         char* buff = lexer.buf;
         line++;
         while (*buff) {
-
-            fflush(stdout);
             while (*buff == ' ') buff++;
             if (*buff == '\0' || *buff == '\n') break;
             if ((*buff == '/' && *(buff + 1) == '/') || *buff == ';') break; // skip comment till end of line
@@ -101,11 +99,13 @@ int LEXER(FILE* fl) {
                 int i = 0;
 
                 while (*buff && (
-                    (*buff >= '0' && *buff <= '9') || 
-                    (*buff >= '0' && *buff <= '9' && (*buff >= 'a' && *buff <= 'f') || (*buff >= 'A' && *buff <= 'F')) ||
-                    *buff == 'x' || *buff == 'X' || 
-                    *buff == 'o' || *buff == 'O' ||  
-                    *buff == 'b' || *buff == 'B' )){
+                    (*buff >= '0' && *buff <= '9') ||
+                    (*buff >= 'a' && *buff <= 'f') ||
+                    (*buff >= 'A' && *buff <= 'F') ||
+                    *buff == 'x' || *buff == 'X' ||
+                    *buff == 'o' || *buff == 'O' ||
+                    *buff == 'b' || *buff == 'B'
+                )) {
 
                     if (i < (int)(sizeof(num) - 1)) {
                         num[i++] = *buff;
@@ -122,7 +122,7 @@ int LEXER(FILE* fl) {
             else if (isin(LETEXT, *buff)) { 
                 char buf[256] = {0};
                 int i = 0;
-                while (isin(LETEXT, *buff) && i <= 256) {
+                while (isin(LETEXT, *buff) && i <= 255) {
                     buf[i++] = *buff++;
                 }
                 buf[i] = 0;

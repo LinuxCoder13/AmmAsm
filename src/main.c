@@ -23,7 +23,7 @@
 
 
 #include "main.h"
-#define VERSION "2.1.7"
+#define VERSION "2.1.8"
 
 void compiler(uint8_t *text, int *textsize, uint64_t *e_entry) {
     if (!text) return;
@@ -38,7 +38,7 @@ void compiler(uint8_t *text, int *textsize, uint64_t *e_entry) {
     }
  
     expand_local_labels();
-    *e_entry = collect_labels_sections(pie_mode, obj_file);
+    *e_entry = collect_labels_sections();
     resolve_labels();
  
     for (int i = 0; i < ast_len; ++i) {
@@ -72,7 +72,7 @@ void compiler(uint8_t *text, int *textsize, uint64_t *e_entry) {
 }
  
 void handl_pipeline(int argc, char **argv){ 
-    static uint8_t text[1024 * 64];
+    uint8_t text[1024 * 128];
     int textsize = 0;
     int flsz = 0;
  
@@ -139,7 +139,7 @@ int main(int argc, char **argv){
     }
  
     if(!out) {
-        fprintf(stderr, "AmmAsm: %s: option `-o' requires an argument", VERSION);
+        fprintf(stderr, "AmmAsm: %s: option `-o' and `-c' requires an argument\n", VERSION);
         return 1;
     }
  

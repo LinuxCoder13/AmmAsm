@@ -955,20 +955,28 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
             machine_code[1] = 0x99;
             *s = 2;
         }
-        else if (strcasecmp(cmd, "cdq") == 0 ||
-                strcasecmp(cmd, "cwd") == 0) {
+        else if (strcasecmp(cmd, "cdq") == 0) {
             machine_code[0] = 0x99;
             *s = 1;
+        }
+        else if (strcasecmp(cmd, "cwd") == 0) {
+            machine_code[0] = 0x66;
+            machine_code[1] = 0x99;
+            *s = 2;
         }
         else if (strcasecmp(cmd, "cdqe") == 0) {
             machine_code[0] = 0x48;
             machine_code[1] = 0x98;
             *s = 2;
         }
-        else if (strcasecmp(cmd, "cwde") == 0 ||
-                strcasecmp(cmd, "cbw") == 0) {
+        else if (strcasecmp(cmd, "cwde") == 0) {
             machine_code[0] = 0x98;
             *s = 1;
+        }
+        else if (strcasecmp(cmd, "cbw") == 0) {
+            machine_code[0] = 0x66;
+            machine_code[1] = 0x98;
+            *s = 2;
         }
 
         *pc += *s;
