@@ -1,6 +1,6 @@
 # AmmAsm - x86-64 Assembler
 
-**Version:** 2.1.2      
+**Version:** 2.1.3      
 **Author:** Ammar Najafli     
 **License:** MIT         
 
