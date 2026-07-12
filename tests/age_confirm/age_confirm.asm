@@ -21,11 +21,11 @@ section text
 ; atoi()
 atoi:
     mov r9, 10
-    mov r8, 0
+    xor r8, r8
     mov rbx, rdi
 
 .loop:
-    mov rax, 0
+    xor rax, rax
     mov al, [b=rbx]
 
     cmp al, 0
@@ -48,15 +48,15 @@ atoi:
 
 ; flush()
 flush:
-    mov rdi, 0
+    xor rdi, rdi
     lea rsi, [b=trash]
     mov rdx, 1
 
 .loop:
-    mov rax, 0
+    xor rax, rax
     syscall
 
-    cmp rax, 0
+    test rax, rax
     jz .done
 
     cmp [b=trash], byte '\n'
@@ -84,7 +84,7 @@ _start:
 
     mov r14, rax
 
-    cmp r14, 0
+    test r14, r14
     je .end
 
 
@@ -136,5 +136,5 @@ _start:
 
 .end:
     mov rax, 60
-    mov rdi, 0
+    xor rdi, rdi
     syscall

@@ -2,17 +2,17 @@ section text
 global astrcmp
 
 astrcmp:
-    cmp rdi, 0
+    test rdi, rdi
     je .null
 
-    cmp rsi, 0
+    test rsi, rdi
     je .null
 
-    mov rcx, 0
+    xor rcx, rcx
 
 .loop:
-    mov eax, 0
-    mov edx, 0
+    xor eax, eax
+    xor edx, edx
 
     mov al, [b=rdi, i=rcx]
     mov dl, [b=rsi, i=rcx]
@@ -20,7 +20,7 @@ astrcmp:
     cmp al, dl
     jne .done
 
-    cmp al, 0
+    test al, al
     je .done
 
     add rcx, 1

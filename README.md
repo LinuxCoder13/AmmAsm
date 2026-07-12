@@ -1,8 +1,19 @@
 # AmmAsm - x86-64 Assembler
 
-**Version:** 2.1.9       
-**Author:** Ammar Najafli     
-**License:** MIT         
+![Version](https://img.shields.io/badge/version-v2.1.10-blue)
+![Platform](https://img.shields.io/badge/platform-Linux_x86--64-success)
+![Language](https://img.shields.io/badge/language-C-00599C)
+![License](https://img.shields.io/badge/license-MIT-green)
+![ELF](https://img.shields.io/badge/output-ELF64-important)
+![Status](https://img.shields.io/badge/status-active-success)
+![Assembler](https://img.shields.io/badge/x86--64-Assembler-red)
+![Objects](https://img.shields.io/badge/ELF-relocatable-blueviolet)
+![Executables](https://img.shields.io/badge/ET_EXEC-supported-success)
+![PIE](https://img.shields.io/badge/PIE-supported-success)
+
+![GitHub last commit](https://img.shields.io/github/last-commit/LinuxCoder13/AmmAsm)
+     
+**Author:** Ammar Najafli           
 
 AmmAsm is a handwritten x86-64 assembler designed for simplicity and clarity. It compiles assembly code directly to machine code and produces ELF executables, PIE binaries (Position-Independent Executables), and relocatable object files for Linux x86-64,`primarily tested on Debian GNU/Linux 12 (bookworm) x86-64`.
 
@@ -18,13 +29,12 @@ AmmAsm v2.1.x is targeting to be more safe and stable rather than 2.0.0
 
 3) Added Clock-test (For any UTC + X)
 
-3) Added `extern` symbol
+4) Added `extern` symbol
 
-4) Added Dynamic arrays
+5) Added Dynamic arrays
 
-5) New instructions: `idiv`, `div`, `cqo`, `cdq`, `cwd`, `cdqe`, `cwde`, `cbw`
+6) New instructions: `idiv`, `div`, `cqo`, `cdq`, `cwd`, `cdqe`, `cwde`, `cbw`, `xor`, `adc`, `or`, `sbb`, `and`, `rol`, `ror`, `rcl`, `rcr`, `shl`, `shr`, `sar`, `sal`, `test`
 
-# END
 ---
 
 ## Object File Support (ELF64 Relocatable)
@@ -90,6 +100,7 @@ This demonstrates interoperability between AmmAsm-generated object files and ord
 
 ## Features
 
+- Compatible with GNU ld and GCC object-file linking
 - Direct x86-64 encoding - No NASM/GAS dependencies
 - Multiple operand sizes - 8/16/32/64-bit registers and immediates
 - Memory addressing - Full SIB/ModRM support with explicit key-value syntax
@@ -302,11 +313,9 @@ ld prog.o -o output && chmod +x output && ./output
 
 ## Known Limitations
 
-- Limited instruction set - `mov`, `add`, `sub`, `imul`, `cmp`, `jmp`, `lea`, `call`, `jcc`, `push`, `pop`,`syscall`, `idiv`, `div`, `cqo`, `cdq`, `cwd`, `cdqe`, `cwde`, `cbw` (more coming)
+- Limited instruction set - Only a subset of the x86-64 instruction set is currently implemented (look at ./src/instructions.c)
 - No multi-file linking
-- No `.data` / `.bss` sections for direct compiling to raw executable, however data/text exist for obj files
 - No macro system
 - No floating-point (FPU/SSE)
-- No optimization passes (coming in ..., soon)
 
 ---

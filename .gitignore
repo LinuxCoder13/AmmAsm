@@ -16,6 +16,7 @@
 *.gcda
 *.gcov
 
+aasm
 
 coverage/
 *.profraw
@@ -34,5 +35,7 @@ temp/
 
 # Cache
 .cache/
+
+input.asm
 
 a.out

@@ -317,13 +317,13 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
         for (int i = text_start_idx + 1; i < ast_len; i++) {
             if (ast[i].type == AST_SECTION) break;
             if (ast[i].type != AST_INS)     continue;
-            
+
             
             for (int op = 0; op < ast[i].ins.oper_count && rela_count < 256; op++) {
                 Operand *oper = &ast[i].ins.operands[op];
                 
                 // resolving R_X86_64_PC32
-                
+
                 // mov/lea/... rax, [rel label] | mov/lea/... [rel label], <size> imm
                 if (oper->type == O_MEM && oper->addr.is_rip_rel){
                     /* looking for label name in our symtab (trying to get index of symbol syms)*/
@@ -375,13 +375,14 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
                             if (imm_sz2 != 4) {
                                 fprintf(stderr,
                                     "AmmAsm:%d: warning: inst [mem], %s label: "
-                                    "only \'dd\' (4-byte) supported for R_X86_64_32; "
+                                    "only \'dword\' (4-byte) supported for R_X86_64_32; "
                                     "skipping relocation for \'%s\'\n",
                                     ast[i].line,
-                                    imm_sz2 == 1 ? "db" :
-                                    imm_sz2 == 2 ? "dw" : "dq",
+                                    imm_sz2 == 1 ? "byte" :
+                                    imm_sz2 == 2 ? "word" : "dword",
                                     lab2);
-                            } else if (rela_count < 256) {
+                            } 
+                            else if (rela_count < 256) {
                                 int sym_idx2 = data_section_sym_idx;
                                 for (int s2 = 0; s2 < sym_count; s2++) {
                                     if (syms[s2].st_name == 0) continue;

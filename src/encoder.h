@@ -38,3 +38,17 @@ extern uint8_t encode_cmp_reg_reg(uint8_t *mash_code, uint8_t dest, uint8_t src,
 extern uint8_t encode_push_reg(uint8_t *mash_code, uint8_t reg, uint8_t sz);
 extern uint8_t encode_pop_reg(uint8_t *mash_code, uint8_t reg, uint8_t sz);
 extern uint8_t encode_div_or_idiv_reg(uint8_t* mash_code, uint8_t reg ,uint8_t src, uint8_t sz);
+extern uint8_t encode_xor_imm(uint8_t *mash_code, uint8_t reg, uint32_t imm, uint8_t sz, int is_expr);
+extern uint8_t encode_xor_reg_reg(uint8_t *mash_code, uint8_t dest, uint8_t src, uint8_t sz);
+extern uint8_t encode_adc_imm(uint8_t *mash_code, uint8_t reg, uint32_t imm, uint8_t sz, int is_expr);
+extern uint8_t encode_adc_reg_reg(uint8_t *mash_code, uint8_t dest, uint8_t src, uint8_t sz);
+extern uint8_t encode_or_imm(uint8_t *mash_code, uint8_t reg, uint32_t imm, uint8_t sz, int is_expr);
+extern uint8_t encode_or_reg_reg(uint8_t *mash_code, uint8_t dest, uint8_t src, uint8_t sz);
+extern uint8_t encode_and_imm(uint8_t *mash_code, uint8_t reg, uint32_t imm, uint8_t sz, int is_expr);
+extern uint8_t encode_and_reg_reg(uint8_t *mash_code, uint8_t dest, uint8_t src, uint8_t sz);
+extern uint8_t encode_sbb_imm(uint8_t *mash_code, uint8_t reg, uint32_t imm, uint8_t sz, int is_expr);
+extern uint8_t encode_sbb_reg_reg(uint8_t *mash_code, uint8_t dest, uint8_t src, uint8_t sz);
+extern uint8_t encode_group2_reg_imm(uint8_t* mash_code, uint8_t dest, uint8_t opcode, uint8_t group_digit, uint8_t imm, uint8_t sz);
+extern uint8_t encode_group2_reg_cl(uint8_t* mash_code, uint8_t dest, uint8_t opcode, uint8_t group_digit, uint8_t sz);
+extern uint8_t encode_test_reg_reg(uint8_t *mash_code, uint8_t dest_idx, uint8_t src_idx, uint8_t sz);
+extern uint8_t encode_test_reg_imm(uint8_t *mash_code, uint8_t reg_idx, uint64_t imm, uint8_t sz);

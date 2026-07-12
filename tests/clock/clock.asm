@@ -44,7 +44,7 @@ loop_frame:
 
 
     mov rax, 201
-    mov rdi, 0
+    xor rdi, rdi
     syscall
 
     mov [b=time_var], rax
@@ -90,14 +90,14 @@ hour_ok:
 
     mov rax, 35      
     lea rdi, [b=ts_sec]
-    mov rsi, 0
+    xor rsi, rsi
     syscall
 
     jmp loop_frame
 
 draw_hand:
     mov r14b, [b=r10, i=r9]
-    mov r13b, 0
+    xor r13b, r13b
 rowt:
     cmp r14b, 10
     jl rowd
@@ -110,9 +110,8 @@ rowd:
     mov [b=r12, d=2], r13b 
     mov [b=r12, d=3], r14b  
 
-    ; загружаем колонку (col)
     mov r14b, [b=r11, i=r9]
-    mov r13b, 0
+    xor r13b, r13b
 colt:
     cmp r14b, 10
     jl cold
@@ -122,10 +121,9 @@ colt:
 cold:
     add r13b, 48
     add r14b, 48
-    mov [b=r12, d=5], r13b   ; десятки колонки
-    mov [b=r12, d=6], r14b   ; единицы колонки
+    mov [b=r12, d=5], r13b  
+    mov [b=r12, d=6], r14b   
 
-    ; вывод ANSI-последовательности (9 байт: ESC[YY;XXHX)
     mov rax, 1
     mov rdi, 1
     mov rsi, r12

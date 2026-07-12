@@ -12,7 +12,7 @@ _start:
     call star_down
 
     mov rax, 60
-    mov rdi, 0
+    xor rdi, rdi
     syscall
 
 star_up:
@@ -26,7 +26,7 @@ star_up:
     mov r10, r8
     
 .print_stars:
-    cmp r10, 0
+    test r10, r10
     je .print_nl
     
     mov rax, 1
@@ -54,12 +54,12 @@ star_up:
 star_down:
     mov r8, rdi
 .loop:
-    cmp r8, 0
+    test r8, r8
     je .done
     mov r9, r8 
 
 .print_stars:
-    cmp r9, 0
+    test r9, r9
     jz .print_nl
 
     mov rax, 1

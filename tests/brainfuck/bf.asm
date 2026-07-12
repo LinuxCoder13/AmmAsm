@@ -65,9 +65,9 @@ _start:
     mov rsi, r15
     mov rdx, 256 * 1024
     syscall
-    cmp rax, 0
+    test rax, rax
     jl error_read
-    cmp rax, 0
+    test rax, rax
     je error_empty
     cmp rax, 256 * 1024
     jge error_overflow
@@ -159,7 +159,7 @@ op_loop_start:
 
 op_loop_end:
     mov al, [b=r14]
-    cmp al, 0
+    test al, al
     je next_byte
     call find_matching_bracket_backward
     mov rbx, rax
@@ -187,7 +187,7 @@ find_matching_bracket_forward:
     jmp .next_fwd
 .dec_fwd:
     sub rcx, 1
-    cmp rcx, 0
+    test rcx, rcx
     je .found_fwd
 .next_fwd:
     add rbx, 1
@@ -199,7 +199,7 @@ find_matching_bracket_forward:
     ret
 .error_fwd:
     pop rbx
-    mov rax, 0
+    xor rax, rax
     ret
 
 find_matching_bracket_backward:
@@ -220,7 +220,7 @@ find_matching_bracket_backward:
     jmp .next_bwd
 .dec_bwd:
     sub rcx, 1
-    cmp rcx, 0
+    test rcx, rcx
     je .found_bwd
 .next_bwd:
     sub rbx, 1
@@ -232,7 +232,7 @@ find_matching_bracket_backward:
     ret
 .error_bwd:
     pop rbx
-    mov rax, 0
+    xor rax, rax
     ret
 
 exit_program:
