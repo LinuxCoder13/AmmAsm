@@ -145,6 +145,11 @@ int LEXER(FILE* fl) {
                 else if(strcasecmp(buf, HUMAN_AST2[2]) == 0) { add_token(T_DWORD, "dword", line); continue;}
                 else if(strcasecmp(buf, HUMAN_AST2[3]) == 0) { add_token(T_QWORD, "qword", line); continue;}
 
+                else if(strcasecmp(buf, "resb") == 0) { add_token(T_RESB, "resb", line);   continue;}
+                else if(strcasecmp(buf, "resw") == 0) { add_token(T_RESW, "resw", line);   continue;}
+                else if(strcasecmp(buf, "resd") == 0) { add_token(T_RESD, "resd", line); continue;}
+                else if(strcasecmp(buf, "resq") == 0) { add_token(T_RESQ, "resq", line); continue;}
+
                 else if (strcasecmp(buf, "section") == 0) {
                     while (*buff == ' ' || *buff == '\t') buff++;
                     char secname[64] = {0};
@@ -295,11 +300,6 @@ int LEXER(FILE* fl) {
                 continue;
             }
 
-            else if (strncasecmp(buff, "resb", 4) == 0){ add_token(T_RESB, buff, line); buff += 4; while (*buff == ' ') buff++; continue;}
-            else if (strncasecmp(buff, "resw", 4) == 0){ add_token(T_RESQ, buff, line); buff += 4; while (*buff == ' ') buff++; continue;}
-            else if (strncasecmp(buff, "resd", 4) == 0){ add_token(T_RESD, buff, line); buff += 4; while (*buff == ' ') buff++; continue;}
-            else if (strncasecmp(buff, "resq", 4) == 0){ add_token(T_RESL, buff, line); buff += 4; while (*buff == ' ') buff++; continue;}
-                
             else{ 
                 fprintf(stderr, "AmmAsm:%d: unvalid syntax or char\n", line); 
                 exit(1); 

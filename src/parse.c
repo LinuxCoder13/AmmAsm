@@ -381,29 +381,35 @@ AST* PARSE(){
             continue;
         }
 
-        // else if(tok->type == T_RESB || tok->type == T_RESQ || tok->type == T_RESD || tok->type == T_RESL){
-        //     Token *pp = tok;
-        //     if(toks[(pos-1)].type != T_LAB || toks[(pos+1)].type != T_INT){ 
-        //         fprintf(stderr, "AmmAsm: syntax erorr. expected identifier before \"%s\" and decimal number after\n", 
-        //             (pp->type == T_RESB) ? "resb" : 
-        //             (pp->type == T_RESQ) ? "resq" : 
-        //             (pp->type == T_RESD) ? "resd" : 
-        //             (pp->type == T_RESL) ? "resl" : "?");                    
-        //         exit(1);    
-        //     }
+        else if(tok->type == T_RESB || tok->type == T_RESW || tok->type == T_RESD || tok->type == T_RESQ){
+            Token *pp = tok;
+            node.type = AST_BSS_RES;
 
-        //     switch (tok->type){
-        //     case T_RESB: node.type = AST_RESB; node.resb.size = (long)eval_expr(toks[pos].value); break;
-        //     case T_RESQ: node.type = AST_RESQ; node.resq.size = (long)eval_expr(toks[pos].value); break;
-        //     case T_RESD: node.type = AST_RESD; node.resd.size = (long)eval_expr(toks[pos].value); break;
-        //     case T_RESL: node.type = AST_RESL; node.resl.size = (long)eval_expr(toks[pos].value); break;
-        //     }
-        //     pos += 1;
+            if(toks[(pos+1)].type != T_INT){ 
+                fprintf(stderr, "AmmAsm: syntax erorr. expected \"%s\" and decimal number \n", 
+                    (pp->type == T_RESB) ? "resb" : 
+                    (pp->type == T_RESW) ? "resq" : 
+                    (pp->type == T_RESD) ? "resd" : 
+                    (pp->type == T_RESQ) ? "resl" : "?");                    
+                exit(1);    
+            }
 
-        //     ast = append(&ast_len, &ast_cap, ast, ASTptr, sizeof(AST));
-        //     if(pos < toks_len && toks[pos].type == T_EOL) ++pos;
-        //     continue;              
-        // }
+            pos++;
+            long value = eval_expr(toks[pos].value);
+
+            switch (toks[pos-1].value[3]){
+                case 'b': node.bss_res.res += 1 * value; break;
+                case 'w': node.bss_res.res += 2 * value; break;
+                case 'd': node.bss_res.res += 4 * value; break;
+                case 'q': node.bss_res.res += 8 * value; break;
+            }
+
+            pos += 1;
+
+            ast = append(&ast_len, &ast_cap, ast, ASTptr, sizeof(AST));
+            if(pos < toks_len && toks[pos].type == T_EOL) ++pos;
+            continue;              
+        }
 
         else {
             fprintf(stderr,

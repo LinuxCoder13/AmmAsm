@@ -14,6 +14,8 @@
 #include "lexer.h"
 #include "elf.h"
 #include "debug.h"
+#include "preprocessor.h"
+#include <sys/stat.h>
 
 extern void compiler(uint8_t *text, int *textsize, uint64_t *e_entry);
 extern void handl_pipeline(int argc, char **argv);

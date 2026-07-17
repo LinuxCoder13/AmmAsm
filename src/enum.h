@@ -35,9 +35,9 @@ typedef enum __attribute__((packed)){
     T_QWORD,
     T_COMMA,
     T_RESB,
-    T_RESQ,
+    T_RESW,
     T_RESD,
-    T_RESL,
+    T_RESQ,
     T_PC,
     T_GLOBAL,
     T_EXTERN
@@ -51,10 +51,6 @@ typedef enum __attribute__((packed)){
     AST_U16,
     AST_U32,
     AST_U64,
-    AST_RESB,
-    AST_RESQ,
-    AST_RESD,
-    AST_RESL,
     AST_EXPR, 
     AST_LABEL,
     AST_COMMA,
@@ -64,6 +60,7 @@ typedef enum __attribute__((packed)){
     AST_PC,
     AST_GLOBAL,
     AST_EXTERN,
+    AST_BSS_RES,
     AST_UNKNOWN
 } ASTType;
 

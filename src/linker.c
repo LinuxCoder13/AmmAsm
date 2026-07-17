@@ -127,8 +127,13 @@ uint64_t collect_labels_sections() {
                  (ast[i].type == AST_U8  && ast[i].machine_code_size > 0) ||
                  (ast[i].type == AST_U16 && ast[i].machine_code_size > 0) ||
                  (ast[i].type == AST_U32 && ast[i].machine_code_size > 0) ||
-                 (ast[i].type == AST_U64 && ast[i].machine_code_size > 0))
+                 (ast[i].type == AST_U64 && ast[i].machine_code_size > 0) ||
+                 (ast[i].type == AST_BSS_RES && ast[i].machine_code_size > 0)){
+
+            if(ast[i].type == AST_BSS_RES && obj_file) goto skip;
             current_pc += ast[i].machine_code_size; 
+            skip:
+        }
     }
     
     if(!e_entry_defined && !obj_file){

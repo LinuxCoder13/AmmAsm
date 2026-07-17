@@ -4,3 +4,4 @@
 extern uint8_t debug;
 extern uint8_t pie_mode;
 extern uint8_t obj_file;
+extern uint8_t stop_compile;

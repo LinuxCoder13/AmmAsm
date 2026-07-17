@@ -45,9 +45,9 @@ void DEBUG_PRINT_TOKENS() {
             case T_LPRANT: type_str = "T_LPRANT"; break;
             case T_RPRANT: type_str = "T_RPRANT"; break;
             case T_RESB: type_str = "T_RESB"; break;
-            case T_RESQ: type_str = "T_RESQ"; break;
+            case T_RESW: type_str = "T_RESW"; break;
             case T_RESD: type_str = "T_RESD"; break;
-            case T_RESL: type_str = "T_RESL"; break;
+            case T_RESQ: type_str = "T_RESQ"; break;
             case T_GLOBAL: type_str = "T_GLOBAL"; break;
             case T_EXTERN: type_str = "T_EXTERN"; break;
         }
@@ -72,10 +72,7 @@ void DEBUG_PRINT_AST() {
             case AST_U16: type_str = "AST_U16"; break;
             case AST_U32: type_str = "AST_U32"; break;
             case AST_U64: type_str = "AST_U64"; break;
-            case AST_RESB: type_str = "AST_RESB"; break;
-            case AST_RESQ: type_str = "AST_RESQ"; break;
-            case AST_RESD: type_str = "AST_RESD"; break;
-            case AST_RESL: type_str = "AST_RESL"; break;
+            case AST_BSS_RES: type_str = "AST_BSS_RES"; break;
             case AST_LABEL: type_str = "AST_LABEL"; break;
             case AST_ADDR_EXPR: type_str = "AST_ADDR_EXPR"; break;
             case AST_CHAR: type_str = "AST_CHAR"; break;
@@ -223,20 +220,8 @@ void DEBUG_PRINT_AST() {
                 printf("]");
                 break;
                 
-            case AST_RESB:
-                printf(" size=%ld bytes", node->resb.size);
-                break;
-                
-            case AST_RESQ:
-                printf(" size=%ld qwords", node->resq.size);
-                break;
-                
-            case AST_RESD:
-                printf(" size=%ld dwords", node->resd.size);
-                break;
-                
-            case AST_RESL:
-                printf(" size=%ld lbytes", node->resl.size);
+            case AST_BSS_RES:
+                printf(" size=%ld ", node->bss_res.res);
                 break;
         }
         

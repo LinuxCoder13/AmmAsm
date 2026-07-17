@@ -65,17 +65,14 @@ typedef struct AST {
     char cmd[8];  // mostly useing for ins
     uint16_t line;
 
-    // sizeof(AST) == 608
+    // sizeof(AST) == 712
     union {     
         struct { Operand  operands[4]; int oper_count; uint64_t pc;} ins; // biggest?
         struct { uint8_t  *data; int data_len; int data_cap; } u8;
         struct { uint16_t *data; int data_len; int data_cap; } u16;
         struct { uint32_t *data; int data_len; int data_cap; } u32;
         struct { U64Entry *entries; int entries_len; int entries_cap; uint64_t pc; } u64; 
-        struct { uint64_t size; } resb;
-        struct { uint64_t size; } resq;
-        struct { uint64_t size; } resd;
-        struct { uint64_t size; } resl;
+        struct { uint64_t res; /* count of bytes */} bss_res;
         struct { uint8_t secname[64]; uint64_t adress; uint64_t vadress;} section;
         struct { uint8_t name[64]; uint64_t adress; uint64_t vadress; int is_global; } label; 
         struct { uint8_t **labels; int labels_len; int labels_cap;} global;

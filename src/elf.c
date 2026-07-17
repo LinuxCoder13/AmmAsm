@@ -7,6 +7,7 @@
  *   [ELF header]
  *   [.data bytes]           offset = 0x40
  *   [.text machine code]    offset = 0x40 + data_size  (aligned 16)
+ *   [.bss]                  offset = 0x40 + text_size + data_size
  *   [.shstrtab]
  *   [.symtab]
  *   [.strtab]
@@ -17,11 +18,12 @@
  *   0  NULL
  *   1  .data
  *   2  .text
- *   3  .shstrtab
- *   4  .symtab
- *   5  .strtab
- *   6  .rela.text
- *   7  .note.GNU-stack
+ *   3  .data
+ *   4  .shstrtab
+ *   5  .symtab
+ *   6  .strtab
+ *   7  .rela.text
+ *   8  .note.GNU-stack
  * ============================================================ */
  
 // relocation types for x86-64 ELF (will be added more in new version)
@@ -49,6 +51,8 @@
 #define SHT_SYMTAB     2 // symbol table
 #define SHT_STRTAB     3 // string table
 #define SHT_RELA       4 // relocation with addend
+// ...
+#define SHT_NOBITS     8 // for bss
 
 // flags
 
@@ -62,17 +66,19 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
     if (!fl) return -1;
     /*  1. Scan AST: collect .data bytes and .text machine code */
  
-    // I don't know why but GCC is puting this buffers to bss, not stack as expected
+    // I don't know why but GCC is puting this buffers to bss, not stack as expected, so I made by malloc
     uint8_t  *data_buf = malloc(65536);
     uint32_t data_size = 0;
  
     uint8_t  *text_buf = malloc(65536);
     uint32_t text_size = 0;
-    
+
+    uint64_t bss_size = 0;
  
-    /* Find .data and .text section boundaries in AST */
+    /* Find .data and .text and .bss section boundaries in AST */
     int data_start_idx = -1;
     int text_start_idx = -1;
+    int bss_start_idx = -1;
  
     for (int i = 0; i < ast_len; i++) {
         if (ast[i].type == AST_SECTION) {
@@ -82,6 +88,9 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
             else if (strcasecmp(ast[i].section.secname, ".text") == 0 ||
                      strcasecmp(ast[i].section.secname, "text")  == 0)
                 text_start_idx = i;
+            else if (strcasecmp(ast[i].section.secname, ".bss") == 0 ||
+                    strcasecmp(ast[i].section.secname, "bss")  == 0)
+                bss_start_idx = i;
         }
     }
  
@@ -107,6 +116,16 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
                 if (text_size + ast[i].machine_code_size > 65536) break;
                 memcpy(text_buf + text_size, ast[i].machine_code, ast[i].machine_code_size);
                 text_size += ast[i].machine_code_size;
+            }
+        }
+    }
+
+    // bss
+    if (bss_start_idx >= 0) {
+        for (int i = bss_start_idx + 1; i < ast_len; i++) {
+            if (ast[i].type == AST_SECTION) break;
+            if ((ast[i].type == AST_BSS_RES)) {
+                bss_size += ast[i].bss_res.res;
             }
         }
     }
@@ -163,6 +182,19 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
         }
     }
      
+    if (bss_start_idx >= 0) {
+        uint32_t off = 0;
+        for (int i = bss_start_idx + 1; i < ast_len; i++) {
+            if (ast[i].type == AST_SECTION) break;
+            if (ast[i].type == AST_LABEL) {
+                ast[i].label.adress = off;   /* section-relative offset */
+            }
+            if (ast[i].type == AST_BSS_RES) {
+                off += ast[i].bss_res.res; // already evaluted       
+            }
+        }
+    }
+    
     /*  3. Build symbol table (for GNU LD) */
     /*
      * Symbol order (required by ELF spec: all STB_LOCAL before STB_GLOBAL):
@@ -222,7 +254,16 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
     sym_count++;
     int text_section_sym_idx = sym_count - 1; 
 
-    // we will add .bss, .rodata in future versions :)
+    // sym[3]: section fucking .bss
+    syms[sym_count].st_name  = 0;
+    syms[sym_count].st_info  = ST_INFO(STB_LOCAL, STT_SECTION);
+    syms[sym_count].st_shndx = (bss_start_idx >= 0) ? 3 : SHN_UNDEF;
+    sym_count++;
+    int bss_section_sym_idx = sym_count - 1; 
+
+
+    // the fucking comment below is old comment. I don't want to delete.
+    // we will add .bss in future versions :) 
  
     /* Collect labels that belong to .data section (between data_start_idx and next section) */
     /* Then collect labels belonging to .text section */
@@ -288,6 +329,24 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
                 sym_count++;
             }
         }
+        /* .bss labels */
+        if (bss_start_idx >= 0) {
+            for (int i = bss_start_idx + 1; i < ast_len; i++) {
+                if (ast[i].type == AST_SECTION) break;
+                if (ast[i].type != AST_LABEL) continue;
+
+                int is_global = ast[i].label.is_global;
+                if (is_global != want_global) continue;
+                if (sym_count >= MAX_SYMS) break;
+
+                syms[sym_count].st_name  = STRTAB_ADD(ast[i].label.name);
+                syms[sym_count].st_info  = ST_INFO(is_global ? STB_GLOBAL : STB_LOCAL, STT_OBJECT);
+                syms[sym_count].st_shndx = 3 ; // fucking .bss
+                syms[sym_count].st_value = ast[i].label.adress;
+                sym_count++;
+            }
+        }
+
     }
  
     /* first_global_sym: index of first STB_GLOBAL symbol (for sh_info of .symtab) */
@@ -535,16 +594,18 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
     memcpy(shstrtab_buf + shstrtab_size, ".data",     6); shstrtab_size += 6;
     uint32_t sh_name_text     = shstrtab_size;
     memcpy(shstrtab_buf + shstrtab_size, ".text",     6); shstrtab_size += 6;
-    uint32_t sh_name_shstrtab = shstrtab_size;
-    memcpy(shstrtab_buf + shstrtab_size, ".shstrtab", 10); shstrtab_size += 10;
+    uint32_t sh_name_bss      = shstrtab_size;    
+    memcpy(shstrtab_buf + shstrtab_size, ".bss",      5); shstrtab_size += 5;
+    uint32_t sh_name_shstrtab = shstrtab_size;              
+    memcpy(shstrtab_buf + shstrtab_size, ".shstrtab",10); shstrtab_size += 10;
     uint32_t sh_name_symtab   = shstrtab_size;
     memcpy(shstrtab_buf + shstrtab_size, ".symtab",   8); shstrtab_size += 8;
     uint32_t sh_name_strtab   = shstrtab_size;
     memcpy(shstrtab_buf + shstrtab_size, ".strtab",   8); shstrtab_size += 8;
     uint32_t sh_name_rela     = shstrtab_size;
-    memcpy(shstrtab_buf + shstrtab_size, ".rela.text", 11); shstrtab_size += 11;
+    memcpy(shstrtab_buf + shstrtab_size, ".rela.text",11); shstrtab_size += 11;
     uint32_t sh_name_gnustack = shstrtab_size;
-    memcpy(shstrtab_buf + shstrtab_size, ".note.GNU-stack", 16);
+    memcpy(shstrtab_buf + shstrtab_size, ".note.GNU-stack",16);
     shstrtab_size += 16;
  
     (void)sh_name_null; /* index 0 is implicitly null */
@@ -554,6 +615,7 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
      * Offset 0x00: ELF header     (64 bytes)
      * Offset 0x40: .data          (data_size bytes)
      * Offset 0x40 + data_size     : .text  (text_size bytes, align 16)
+     * 
      * then: .shstrtab, .symtab, .strtab, .rela.text
      * then: section header table  (8 headers * 64 bytes)
      */
@@ -563,14 +625,15 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
  
     uint64_t off_data     = 0x40; // start after ELF header
     uint64_t off_text     = ALIGN16(off_data + data_size);
-    uint64_t off_shstrtab = ALIGN16(off_text + text_size);
+    uint64_t off_bss      = ALIGN16(off_text + text_size);
+    uint64_t off_shstrtab = off_bss;  
     uint64_t off_symtab   = ALIGN16(off_shstrtab + shstrtab_size);
     uint64_t off_strtab   = ALIGN16(off_symtab + sym_count * sizeof(Elf64_Sym));
     uint64_t off_rela     = ALIGN16(off_strtab + strtab_size);
     uint64_t off_shdr     = ALIGN16(off_rela + rela_count * sizeof(Elf64_Rela));
  
-    /* 8 section headers: NULL, .data, .text, .shstrtab, .symtab, .strtab, .rela.text, .note.GNU-stack */
-    int shnum = 8; // will be added more in new version
+    /* 8 section headers: NULL, .data, .text, .bss, .shstrtab, .symtab, .strtab, .rela.text, .note.GNU-stack */
+    int shnum = 9; // will be added more in new version
  
     /*  Write ELF header  */
     uint8_t hdr[64];
@@ -588,7 +651,7 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
     *(uint16_t*)(hdr + 54) = 56;    //  e_phentsize         
     *(uint16_t*)(hdr + 58) = 64;     // e_shentsize         
     *(uint16_t*)(hdr + 60) = shnum;  // e_shnum             
-    *(uint16_t*)(hdr + 62) = 3;      // e_shstrndx = 3 (.shstrtab) 
+    *(uint16_t*)(hdr + 62) = 4;      // e_shstrndx = 4 (.shstrtab) 
     fwrite(hdr, 64, 1, fl);
  
     //  8. Write section data  
@@ -607,6 +670,8 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
     }
     fwrite(text_buf, 1, text_size, fl);
     free(text_buf);
+
+    // fucking bss bytes are not in file (ph_memsz - ph_filesz)
  
     /* Pad to off_shstrtab */
     {
@@ -644,7 +709,7 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
     }
  
     /* ---- 9. Write section header table ---- */
-    Elf64_Shdr shdrs[8];
+    Elf64_Shdr shdrs[9];
     memset(shdrs, 0, sizeof shdrs);
  
     /* [0] NULL */
@@ -664,49 +729,57 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
     shdrs[2].sh_offset    = off_text;
     shdrs[2].sh_size      = text_size;
     shdrs[2].sh_addralign = 16;
- 
-    /* [3] .shstrtab */
-    shdrs[3].sh_name      = sh_name_shstrtab;
-    shdrs[3].sh_type      = SHT_STRTAB;
-    shdrs[3].sh_offset    = off_shstrtab;
-    shdrs[3].sh_size      = shstrtab_size;
-    shdrs[3].sh_addralign = 1;
- 
-    /* [4] .symtab */
-    shdrs[4].sh_name      = sh_name_symtab;
-    shdrs[4].sh_type      = SHT_SYMTAB;
-    shdrs[4].sh_offset    = off_symtab;
-    shdrs[4].sh_size      = sym_count * sizeof(Elf64_Sym);
-    shdrs[4].sh_link      = 5;                  /* .strtab index */
-    shdrs[4].sh_info      = first_global_sym;   /* first global  */
-    shdrs[4].sh_addralign = 8;
-    shdrs[4].sh_entsize   = sizeof(Elf64_Sym);
- 
-    /* [5] .strtab */
-    shdrs[5].sh_name      = sh_name_strtab;
-    shdrs[5].sh_type      = SHT_STRTAB;
-    shdrs[5].sh_offset    = off_strtab;
-    shdrs[5].sh_size      = strtab_size;
-    shdrs[5].sh_addralign = 1;
- 
-    /* [6] .rela.text */
-    shdrs[6].sh_name      = sh_name_rela;
-    shdrs[6].sh_type      = SHT_RELA;
-    shdrs[6].sh_flags     = 0;
-    shdrs[6].sh_offset    = off_rela;
-    shdrs[6].sh_size      = rela_count * sizeof(Elf64_Rela);
-    shdrs[6].sh_link      = 4;   /* .symtab index          */
-    shdrs[6].sh_info      = 2;   /* applies to .text (idx 2) */
-    shdrs[6].sh_addralign = 8;
-    shdrs[6].sh_entsize   = sizeof(Elf64_Rela);
 
-    /* [7] .note.GNU-stack */
-    shdrs[7].sh_name      = sh_name_gnustack;
-    shdrs[7].sh_type      = SHT_PROGBITS;
+    // [3] .bss
+    shdrs[3].sh_name      = sh_name_bss;
+    shdrs[3].sh_type      = SHT_NOBITS;
+    shdrs[3].sh_flags     = SHF_ALLOC | SHF_WRITE;
+    shdrs[3].sh_offset    = off_bss;
+    shdrs[3].sh_size      = bss_size;
+    shdrs[3].sh_addralign = 4; 
+    
+    /* [4].shstrtab */
+    shdrs[4].sh_name      = sh_name_shstrtab;
+    shdrs[4].sh_type      = SHT_STRTAB;
+    shdrs[4].sh_offset    = off_shstrtab;
+    shdrs[4].sh_size      = shstrtab_size;
+    shdrs[4].sh_addralign = 1;
+ 
+    /* [5] .symtab */
+    shdrs[5].sh_name      = sh_name_symtab;
+    shdrs[5].sh_type      = SHT_SYMTAB;
+    shdrs[5].sh_offset    = off_symtab;
+    shdrs[5].sh_size      = sym_count * sizeof(Elf64_Sym);
+    shdrs[5].sh_link      = 6;                  /* .strtab index */
+    shdrs[5].sh_info      = first_global_sym;   /* first global  */
+    shdrs[5].sh_addralign = 8;
+    shdrs[5].sh_entsize   = sizeof(Elf64_Sym);
+ 
+    /*   [6] .strtab */
+    shdrs[6].sh_name      = sh_name_strtab;
+    shdrs[6].sh_type      = SHT_STRTAB;
+    shdrs[6].sh_offset    = off_strtab;
+    shdrs[6].sh_size      = strtab_size;
+    shdrs[6].sh_addralign = 1;
+ 
+    /*   [7] .rela.text */
+    shdrs[7].sh_name      = sh_name_rela;
+    shdrs[7].sh_type      = SHT_RELA;
     shdrs[7].sh_flags     = 0;
-    shdrs[7].sh_offset    = off_shdr; 
-    shdrs[7].sh_size      = 0;
-    shdrs[7].sh_addralign = 1;
+    shdrs[7].sh_offset    = off_rela;
+    shdrs[7].sh_size      = rela_count * sizeof(Elf64_Rela);
+    shdrs[7].sh_link      = 5;   /* .symtab index          */
+    shdrs[7].sh_info      = 2;   /* applies to .text (idx 2) */
+    shdrs[7].sh_addralign = 8;
+    shdrs[7].sh_entsize   = sizeof(Elf64_Rela);
+
+    /*   [8] .note.GNU-stack */
+    shdrs[8].sh_name      = sh_name_gnustack;
+    shdrs[8].sh_type      = SHT_PROGBITS;
+    shdrs[8].sh_flags     = 0;
+    shdrs[8].sh_offset    = off_shdr; 
+    shdrs[8].sh_size      = 0;
+    shdrs[8].sh_addralign = 1;
  
     fwrite(shdrs, sizeof(Elf64_Shdr), shnum, fl);
  

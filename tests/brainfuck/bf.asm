@@ -1,89 +1,114 @@
 ; Brainfuck Interpreter for AmmAsm (x86-64 Linux)
-; mmap version - tape and code buffer are allocated at runtime
+; Via macro
+
+macro syscallWrite(std, msg, len) {
+    mov rax, 1
+    mov rdi, std
+    mov rsi, msg
+    mov rdx, len
+    syscall
+}
+
+macro syscallExit(code) {
+    mov rax, 60
+    mov rdi, code
+    syscallz
+}
+
+macro syscallOpen(path, flags) {
+    mov rax, 2
+    mov rdi, path
+    mov rsi, flags
+    mov rdx, 0
+    syscall
+}
+
+macro syscallRead(fd, buf, count) {
+    mov rax, 0
+    mov rdi, fd
+    mov rsi, buf
+    mov rdx, count
+    syscall
+}
+
+macro syscallClose(fd) {
+    mov rax, 3
+    mov rdi, fd
+    syscall
+}
+
+macro mmap_anon(size) {
+    mov rax, 9
+    mov rdi, 0
+    mov rsi, size
+    mov rdx, 3               ; PROT_READ | PROT_WRITE
+    mov r10, 0x22            ; MAP_PRIVATE | MAP_ANONYMOUS
+    mov r8, -1
+    mov r9, 0
+    syscall
+}
 
 
 section .data
+    usage_msg: db "Usage: bf <file.bf>", 10
+    usage_msg_len DQ $ - usage_msg
 
-msg_open: db "Error: cannot open file", 10
-msg_read: db "Error: cannot read file", 10
-msg_empty: db "Error: empty file", 10
-msg_overflow: db "Error: program too large", 10
-usage_msg: db "Usage: bf <file.bf>", 10
-usage_msg_len: dq $ - usage_msg
+    msg_open: db "Error: cannot open file", 10
+    msg_open_len DQ $ - msg_open
+
+    msg_read: db "Error: cannot read file", 10
+    msg_read_len DQ $ - msg_read
+
+    msg_empty: db "Error: empty file", 10
+    msg_empty_len DQ $ - msg_empty
+
+    msg_overflow: db "Error: program too large", 10
+    msg_overflow_len DQ $ - msg_overflow
+
 
 section .text
 global _start
 
 _start:
 
-    cmp [b=rsp], dword 2
-    jnz print_usage_msg
+    cmp qword [b=rsp], 2       ; argc
+    jne print_usage_msg
 
-    ;  mmap tape (32768 bytes, RW, anonymous private)
-    mov rax, 9
-    mov rdi, 0
-    mov rsi, 32768
-    mov rdx, 3              ; PROT_READ | PROT_WRITE
-    mov r10, 0x22           ; MAP_PRIVATE | MAP_ANONYMOUS
-    mov r8, -1
-    mov r9, 0
-    syscall
 
-    mov rbp, rax            ; tape base
+    mmap_anon(32768)
+    mov rbp, rax  
     mov r9, rbp
-    add r9, 32767           ; tape end
+    add r9, 32767 
 
-    ; mmap code_buf (256 KiB, RW, anonymous private)
-    push r9                
 
-    mov rax, 9
-    mov rdi, 0
-    mov rsi, 256 * 1024
-    mov rdx, 3
-    mov r10, 0x22
-    mov r8, -1
-    mov r9, 0
-    syscall
+    push r9
+    mmap_anon(256 * 1024)
+    mov r15, rax 
+    pop r9         
 
-    mov r15, rax            ; code_buf base
 
-    pop r9          
-
-    ; open 
-    mov rax, 2
-    mov rdi, [b=rsp, d=16]
-    mov rsi, 0
-    mov rdx, 0
-    syscall
+    mov rdi, [b=rsp, d=16]      ; argv[1]
+    syscallOpen(rdi, 0)      ; O_RDONLY
     cmp rax, 0
     jl error_open
-    mov r12, rax
+    mov r12, rax             ; fd
 
-    ; read into code_buf
-    mov rax, 0
-    mov rdi, r12
-    mov rsi, r15
-    mov rdx, 256 * 1024
-    syscall
+
+    syscallRead(r12, r15, 256 * 1024)
     test rax, rax
     jl error_read
     test rax, rax
     je error_empty
     cmp rax, 256 * 1024
     jge error_overflow
+    mov r13, rax          
 
-    mov r13, rax
+    syscallClose(r12)
 
-    ; close file
-    mov rax, 3
-    mov rdi, r12
-    syscall
-
-    ; setup pointers
     mov r12, r15
     add r12, r13
-    mov rbx, r15         
-    mov r14, rbp         
+    mov rbx, r15           
+    mov r14, rbp             
 
 main_loop:
     cmp rbx, r12
@@ -122,15 +147,15 @@ op_dec_ptr:
     jmp next_byte
 
 op_inc_val:
-    mov al, [b=r14]
+    mov al,  [b=r14]
     add al, 1
-    mov [b=r14], al
+    mov  [b=r14], al
     jmp next_byte
 
 op_dec_val:
     mov al, [b=r14]
     sub al, 1
-    mov [b=r14], al
+    mov byte [b=r14], al
     jmp next_byte
 
 op_output:
@@ -169,6 +194,7 @@ next_byte:
     add rbx, 1
     jmp main_loop
 
+
 find_matching_bracket_forward:
     push rbx
     mov rcx, 1
@@ -176,7 +202,7 @@ find_matching_bracket_forward:
 .search_fwd:
     cmp rbx, r12
     jge .error_fwd
-    mov al, [b=rbx]
+    mov al,  [b=rbx]
     cmp al, '['
     je .inc_fwd
     cmp al, ']'
@@ -235,57 +261,26 @@ find_matching_bracket_backward:
     xor rax, rax
     ret
 
+
 exit_program:
-    mov rax, 60
-    mov rdi, 0
-    syscall
-
-error_open:
-    mov rax, 1
-    mov rdi, 2
-    mov rsi, [b=rsp, d=16]
-    mov rdx, 24
-    syscall
-    mov rax, 60
-    mov rdi, 2
-    syscall
-
-error_read:
-    mov rax, 1
-    mov rdi, 2
-    mov rsi, msg_read
-    mov rdx, 24
-    syscall
-    mov rax, 60
-    mov rdi, 3
-    syscall
-
-error_empty:
-    mov rax, 1
-    mov rdi, 2
-    mov rsi, msg_empty
-    mov rdx, 18
-    syscall
-    mov rax, 60
-    mov rdi, 4
-    syscall
-
-error_overflow:
-    mov rax, 1
-    mov rdi, 2
-    mov rsi, msg_overflow
-    mov rdx, 25
-    syscall
-    mov rax, 60
-    mov rdi, 5
-    syscall
+    syscallExit(0)
 
 print_usage_msg:
-    mov rax, 1
-    mov rdi, 2
-    mov rsi, usage_msg
-    mov rdx, [b=usage_msg_len]
-    syscall
-    mov rax, 60
-    mov rdi, 6
-    syscall
+    syscallWrite(2, usage_msg, [b=usage_msg_len])
+    syscallExit(6)
+
+error_open:
+    syscallWrite(2, msg_open, [b=msg_open_len]) 
+    syscallExit(2)
+
+error_read:
+    syscallWrite(2, msg_read, [b=msg_read_len])
+    syscallExit(3)
+
+error_empty:
+    syscallWrite(2, msg_empty, [b=msg_empty_len])
+    syscallExit(4)
+
+error_overflow:
+    syscallWrite(2, msg_overflow, [b=msg_overflow_len])
+    syscallExit(5)

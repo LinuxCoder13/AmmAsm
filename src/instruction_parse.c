@@ -1480,5 +1480,13 @@ void parse_size_directives(AST* node, uint64_t *pc) {
             *pc += offset;
             break;
         }
+
+        case AST_BSS_RES: {
+            if(!obj_file){
+                node->machine_code_size = node->bss_res.res;
+                printf("%d", node->machine_code_size);
+                memset(mc, 0, node->machine_code_size);
+            }
+        }
     }
 }

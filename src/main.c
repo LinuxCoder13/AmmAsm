@@ -5,7 +5,7 @@
 
 
 #include "main.h"
-#define VERSION "2.1.10"
+#define VERSION "2.2.0"
 
 void compiler(uint8_t *text, int *textsize, uint64_t *e_entry) {
     if (!text) return;
@@ -16,7 +16,7 @@ void compiler(uint8_t *text, int *textsize, uint64_t *e_entry) {
  
     for(int i = 0; i < ast_len; i++){
         if(ast[i].type == AST_INS) parseInst(&ast[i], &pc);
-        else if(ast[i].type == AST_U8 || ast[i].type == AST_U16 || ast[i].type == AST_U32 || ast[i].type == AST_U64) parse_size_directives(&ast[i], &pc);
+        else if(ast[i].type == AST_U8 || ast[i].type == AST_U16 || ast[i].type == AST_U32 || ast[i].type == AST_U64 || ast[i].type == AST_BSS_RES) parse_size_directives(&ast[i], &pc);
     }
  
     expand_local_labels();
@@ -24,29 +24,20 @@ void compiler(uint8_t *text, int *textsize, uint64_t *e_entry) {
     resolve_labels();
  
     for (int i = 0; i < ast_len; ++i) {
-        if(ast[i].type == AST_INS && ast[i].machine_code_size > 0){
-            memcpy(&text[pos], ast[i].machine_code, ast[i].machine_code_size);
-            pos += ast[i].machine_code_size;
-        }
-        // U8 
-        else if(ast[i].type == AST_U8 && ast[i].machine_code_size > 0){
-            memcpy(&text[pos], ast[i].machine_code, ast[i].machine_code_size);
-            pos += ast[i].machine_code_size;
-        }
-        // U16
-        else if(ast[i].type == AST_U16 && ast[i].machine_code_size > 0){
-            memcpy(&text[pos], ast[i].machine_code, ast[i].machine_code_size);
-            pos += ast[i].machine_code_size;
-        }
-        // U32
-        else if(ast[i].type == AST_U32 && ast[i].machine_code_size > 0){
-            memcpy(&text[pos], ast[i].machine_code, ast[i].machine_code_size);
-            pos += ast[i].machine_code_size;
-        }
-        // U64
-        else if(ast[i].type == AST_U64 && ast[i].machine_code_size > 0){
-            memcpy(&text[pos], ast[i].machine_code, ast[i].machine_code_size);
-            pos += ast[i].machine_code_size;
+        switch (ast[i].type) {
+            case AST_INS:
+            case AST_U8:
+            case AST_U16:
+            case AST_U32:
+            case AST_U64:
+            case AST_BSS_RES:
+                if (ast[i].machine_code_size > 0) {
+                    if(obj_file && ast[i].type == AST_BSS_RES) goto skip;
+                    memcpy(text + pos, ast[i].machine_code, ast[i].machine_code_size);
+                    pos += ast[i].machine_code_size;
+                    skip:
+                }
+                break;
         }
     }
  
@@ -54,6 +45,15 @@ void compiler(uint8_t *text, int *textsize, uint64_t *e_entry) {
 }
  
 void handl_pipeline(int argc, char **argv){ 
+
+    char *prosesedfile = Preprocess(argv[0]);
+
+    if(stop_compile){
+        printf("AmmAsm: Preprocessed successfully! %s\n", prosesedfile);
+        free(prosesedfile);
+        exit(0);
+    }
+
     uint8_t text[1024 * 128];
     int textsize = 0;
     int flsz = 0;
@@ -61,11 +61,12 @@ void handl_pipeline(int argc, char **argv){
 
     uint64_t entry_point = (pie_mode) ? 0x78 : 0x400078; 
  
-    FILE *input = fopen(argv[0], "r");
+    FILE *input = fopen(prosesedfile, "r");
     LEXER(input);
     DEBUG_PRINT_TOKENS();
  
     fclose(input);
+    remove(prosesedfile);
     
     PARSE();
     
@@ -74,7 +75,8 @@ void handl_pipeline(int argc, char **argv){
     compiler(text, &textsize, &entry_point);
     DEBUG_PRINT_AST();
     flsz += obj_file ? GenObjElfFile(output, argv[0]) : ELFgenfile(output, entry_point, text, textsize, pie_mode);
- 
+    
+    chmod(argv[1], 0775); // +x
     fclose(output);
     printf("AmmAsm: Compiled successfully! %s (%d bytes)\n", argv[1], flsz);
  
@@ -93,6 +95,7 @@ int main(int argc, char **argv){
     for (int i = 1; i < argc; ++i){
         if (!astrcmp(argv[i], "-o")){ out = argv[i+1]; i++; continue; }
         if (!astrcmp(argv[i], "-pie")){ pie_mode = 1;  continue; }
+        if (!astrcmp(argv[i], "-E")){ stop_compile = 1;  continue; }
         if (!astrcmp(argv[i], "-c")){ out = argv[i+1]; i++; obj_file = 1; continue; }
         if (!astrcmp(argv[i], "-v")){ printf("AASM version %s\n", VERSION); exit(0);}
         if (!astrcmp(argv[i], "-d") || !astrcmp(argv[i], "--debug")) { debug = 1; continue;}
@@ -106,22 +109,26 @@ int main(int argc, char **argv){
             puts("  -pie           Enable Position Independent Executable mode.");
             puts("  -d, --debug    Display a debug information while compiling.");
             puts("  -v             Display the version of AASM and exit.");
-            puts("  -h, --help     Display this help menu and exit.\n");
-            puts("Examples:");
-            puts("  ./aasm main.asm -o main.bin");
-            puts("  ./aasm -c obj.o source.asm");
+            puts("  -h, --help     Display this help menu and exit.");
+            puts("  -E             Run the preprocessor only and generate <input>.i\n");
+            puts("Report bugs to: https://github.com/LinuxCoder13/AmmAsm/issues");
             exit(0);
         }
         if (argv[i][0] != '-') input = argv[i];
     }
  
     if (!input) {
-        fprintf(stderr, "AmmAsm %s: \033[5;41mFatal: No input file given\033[0m\n", VERSION);
+        fprintf(stderr, "AmmAsm: \033[5;41mFatal: No input file given\033[0m\n");
         return 1; 
     }
  
     if(!out) {
-        fprintf(stderr, "AmmAsm: %s: option `-o' and `-c' requires an argument\n", VERSION);
+        fprintf(stderr, "AmmAsm: option `-o' and `-c' requires an argument\n");
+        return 1;
+    }
+
+    if(pie_mode && obj_file){
+        fprintf(stderr, "AmmAsm: can't combinate pie and obj file mode\n");
         return 1;
     }
  

@@ -1,6 +1,6 @@
 # AmmAsm - x86-64 Assembler
 
-![Version](https://img.shields.io/badge/version-v2.1.10-blue)
+![Version](https://img.shields.io/badge/version-v2.2.0-blue)
 ![Platform](https://img.shields.io/badge/platform-Linux_x86--64-success)
 ![Language](https://img.shields.io/badge/language-C-00599C)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -10,30 +10,25 @@
 ![Objects](https://img.shields.io/badge/ELF-relocatable-blueviolet)
 ![Executables](https://img.shields.io/badge/ET_EXEC-supported-success)
 ![PIE](https://img.shields.io/badge/PIE-supported-success)
+[![AI](https://img.shields.io/badge/AI--assisted-blueviolet)](#)
 
 ![GitHub last commit](https://img.shields.io/github/last-commit/LinuxCoder13/AmmAsm)
      
 **Author:** Ammar Najafli           
 
+AmmAsm - Assembler that sucks less
+
 AmmAsm is a handwritten x86-64 assembler designed for simplicity and clarity. It compiles assembly code directly to machine code and produces ELF executables, PIE binaries (Position-Independent Executables), and relocatable object files for Linux x86-64,`primarily tested on Debian GNU/Linux 12 (bookworm) x86-64`.
 
 ---
 
-## What's New in v2.1.x
+## What's New in v2.2.x
 
-AmmAsm v2.1.x is targeting to be more safe and stable rather than 2.0.0
+1) New macro system. Look doc/macro.txt in order to know it syntax
 
-1) Added `byte`, `word`, `dword`, `qword` for `inst [mem], imm` in order to define size of immediate
+2) Added bss Section support for ET_REL
 
-2) Added BrainFuck-test, such as `hello.bf`, `rot13.bf`, `dbfi.bf`, `mandelbrot.bf`
-
-3) Added Clock-test (For any UTC + X)
-
-4) Added `extern` symbol
-
-5) Added Dynamic arrays
-
-6) New instructions: `idiv`, `div`, `cqo`, `cdq`, `cwd`, `cdqe`, `cwde`, `cbw`, `xor`, `adc`, `or`, `sbb`, `and`, `rol`, `ror`, `rcl`, `rcr`, `shl`, `shr`, `sar`, `sal`, `test`
+3) `-E` flag, that runs the preprocessor only and generate <input>.i
 
 ---
 
@@ -100,6 +95,7 @@ This demonstrates interoperability between AmmAsm-generated object files and ord
 
 ## Features
 
+- Macro system(v2.2.0)
 - Compatible with GNU ld and GCC object-file linking
 - Direct x86-64 encoding - No NASM/GAS dependencies
 - Multiple operand sizes - 8/16/32/64-bit registers and immediates
@@ -161,7 +157,17 @@ msg: db "Hello World", 0
 
 ## Pipeline Stages
 
-### 1. Lexer (LEXER)
+### 1. Preprocess 
+
+Parse all macro and replace them in called place.
+
+- Parse macro body, store it args, content in memory.
+- Parses all macros and expands them where they are called.
+- Recursively expands nested macros.
+- After finishing, creates file.asm.i file and gives this file to Lexer
+
+
+### 2. Lexer (LEXER)
 
 Converts source text to a flat token stream.
 
@@ -171,15 +177,15 @@ Converts source text to a flat token stream.
 - Label scoping: global label:, local .label: (scoped to last global)
 - Character literals: 'A', '\n', '\0'
 
-### 2. Parser (PARSE)
+### 3. Parser (PARSE)
 
 Builds the Abstract Syntax Tree.
 
 - Validates operand combinations per instruction
-- Resolves operand types: O_REG8/16/32/64, O_IMM, O_MEM, O_LABEL, O_CHAR, O_EXPR
+- Resolves operand types: O_REG8/16/32/64, O_IMM, O_MEM, O_CHAR, O_EXPR
 - Produces typed AST nodes: AST_INS, AST_LABEL, AST_U8/16/32/64, etc.
 
-### 3. Code Generator (parseInst)
+### 4. Code Generator (parseInst)
 
 Emits x86-64 machine code per AST node.
 
@@ -188,7 +194,7 @@ Emits x86-64 machine code per AST node.
 - Displacement and immediate encoding (little-endian)
 - Placeholder bytes (0x00000000) for unresolved label references
 
-### 4. Linker (collect_labels + resolve_labels)
+### 5. Linker (collect_labels + resolve_labels)
 
 Two-pass symbol resolution.
 
@@ -198,7 +204,7 @@ Two-pass symbol resolution.
   - JMP/CALL/JCC label -> rel32 = target - (current_pc + inst_size)
   - RIP-relative -> disp32 = target - (current_pc + inst_size) + user_disp
 
-### 5. Compiler (compiler)
+### 6. Compiler (compiler)
 
 Orchestrates all passes and writes the final binary buffer.
 
@@ -302,7 +308,8 @@ mov rax, msg      ; load virtual address of 'msg' into rax(Does not work in PIE)
 ./aasm input.asm
 ./aasm input.asm -o output
 ./aasm -pie input.asm -o prog
-./aasm input.asm -c prog.o
+./aasm input.asm -c prog.o -d
+./aasm input.asm -c prog.o -E
 
 # Run
 chmod +x output && ./output
@@ -314,8 +321,6 @@ ld prog.o -o output && chmod +x output && ./output
 ## Known Limitations
 
 - Limited instruction set - Only a subset of the x86-64 instruction set is currently implemented (look at ./src/instructions.c)
-- No multi-file linking
-- No macro system
 - No floating-point (FPU/SSE)
 
 ---
