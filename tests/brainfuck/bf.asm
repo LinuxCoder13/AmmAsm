@@ -12,7 +12,7 @@ macro syscallWrite(std, msg, len) {
 macro syscallExit(code) {
     mov rax, 60
     mov rdi, code
-    syscallz
+    syscall
 }
 
 macro syscallOpen(path, flags) {
