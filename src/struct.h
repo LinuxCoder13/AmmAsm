@@ -65,7 +65,7 @@ typedef struct AST {
     char cmd[8];  // mostly useing for ins
     uint16_t line;
 
-    // sizeof(AST) == 712
+    // sizeof(AST) == 715
     union {     
         struct { Operand  operands[4]; int oper_count; uint64_t pc;} ins; // biggest?
         struct { uint8_t  *data; int data_len; int data_cap; } u8;
@@ -80,7 +80,7 @@ typedef struct AST {
     };
 
     uint8_t machine_code[256]; // Sorry
-    uint8_t machine_code_size;
+    uint64_t machine_code_size;
         
 } AST;
 

@@ -31,12 +31,16 @@ void compiler(uint8_t *text, int *textsize, uint64_t *e_entry) {
             case AST_U32:
             case AST_U64:
             case AST_BSS_RES:
-                if (ast[i].machine_code_size > 0) {
-                    if(obj_file && ast[i].type == AST_BSS_RES) goto skip;
-                    memcpy(text + pos, ast[i].machine_code, ast[i].machine_code_size);
-                    pos += ast[i].machine_code_size;
-                    skip:
+                if (ast[i].type == AST_BSS_RES) {
+                    if (!obj_file) {
+                        memset(text + pos, 0, ast[i].machine_code_size);
+                        pos += ast[i].machine_code_size;
+                    }
+                    break;
                 }
+
+                memcpy(text + pos, ast[i].machine_code, ast[i].machine_code_size);
+                pos += ast[i].machine_code_size;
                 break;
         }
     }

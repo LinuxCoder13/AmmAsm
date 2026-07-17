@@ -12,7 +12,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
     uint8_t *machine_code = node->machine_code;
     
     memset(node->machine_code, 0, sizeof(node->machine_code));
-    uint8_t* s = &node->machine_code_size;
+    uint64_t* s = &node->machine_code_size;
     *s = 0;
 
 
@@ -1484,8 +1484,6 @@ void parse_size_directives(AST* node, uint64_t *pc) {
         case AST_BSS_RES: {
             if(!obj_file){
                 node->machine_code_size = node->bss_res.res;
-                printf("%d", node->machine_code_size);
-                memset(mc, 0, node->machine_code_size);
             }
         }
     }
