@@ -481,7 +481,7 @@ char* Preprocess(const uint8_t* flname){
         exit(1);
     }    
 
-    fseek(fl, 0, SEEK_END);
+    if (fseek(fl, 0, SEEK_END) != 0) { fprintf(stderr, "AmmAsm: Can't read file '%s'\n", flname); exit(1); }
     int size = ftell(fl);
     
     rewind(fl); // go back to start
@@ -506,6 +506,10 @@ char* Preprocess(const uint8_t* flname){
     outname[namelen + 2] = 0;
 
     FILE *out = fopen(outname, "w");
+    if(!out){
+        fprintf(stderr, "AmmAsm: Could not open file '%s'\n", outname);
+        exit(1);
+    }
 
     int line = 1;
     int stack[MAX_MACRO_DEPTH];

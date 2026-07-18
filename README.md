@@ -1,6 +1,6 @@
 # AmmAsm - x86-64 Assembler
 
-![Version](https://img.shields.io/badge/version-v2.2.0-blue)
+![Version](https://img.shields.io/badge/version-v2.2.1-blue)
 ![Platform](https://img.shields.io/badge/platform-Linux_x86--64-success)
 ![Language](https://img.shields.io/badge/language-C-00599C)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -320,7 +320,7 @@ ld prog.o -o output && chmod +x output && ./output
 
 ## Known Limitations
 
-- Limited instruction set - Only a subset of the x86-64 instruction set is currently implemented (look at ./src/instructions.c)
+- Limited instruction set - Only a subset of the x86-64 instruction set is currently implemented (look at `./src/instructions.c`)
 - No floating-point (FPU/SSE)
 
 ---

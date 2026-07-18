@@ -5,7 +5,7 @@
 
 
 #include "main.h"
-#define VERSION "2.2.0"
+#define VERSION "2.2.1"
 
 void compiler(uint8_t *text, int *textsize, uint64_t *e_entry) {
     if (!text) return;
@@ -31,6 +31,10 @@ void compiler(uint8_t *text, int *textsize, uint64_t *e_entry) {
             case AST_U32:
             case AST_U64:
             case AST_BSS_RES:
+                if (pos >= (1024 * 1024)){
+                    fprintf(stderr, "AmmAsm: .text size is to big. Max 1MB\n");
+                    exit(1);
+                }
                 if (ast[i].type == AST_BSS_RES) {
                     if (!obj_file) {
                         memset(text + pos, 0, ast[i].machine_code_size);
@@ -58,7 +62,7 @@ void handl_pipeline(int argc, char **argv){
         exit(0);
     }
 
-    uint8_t text[1024 * 128];
+    uint8_t text[1024 * 1024];
     int textsize = 0;
     int flsz = 0;
  

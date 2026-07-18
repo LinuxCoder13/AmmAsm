@@ -66,11 +66,10 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
     if (!fl) return -1;
     /*  1. Scan AST: collect .data bytes and .text machine code */
  
-    // I don't know why but GCC is puting this buffers to bss, not stack as expected, so I made by malloc
-    uint8_t  *data_buf = malloc(65536);
+    uint8_t  data_buf[1024 * 1024];
     uint32_t data_size = 0;
  
-    uint8_t  *text_buf = malloc(65536);
+    uint8_t  text_buf[1024 * 1024];
     uint32_t text_size = 0;
 
     uint64_t bss_size = 0;
@@ -101,7 +100,7 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
             if (ast[i].machine_code_size > 0 &&
                 (ast[i].type == AST_U8  || ast[i].type == AST_U16 ||
                  ast[i].type == AST_U32 || ast[i].type == AST_U64)) {
-                if (data_size + ast[i].machine_code_size > 65536) break;
+                if (data_size + ast[i].machine_code_size > (1024 * 1024)) break;
                 memcpy(data_buf + data_size, ast[i].machine_code, ast[i].machine_code_size);
                 data_size += ast[i].machine_code_size;
             }
@@ -113,7 +112,7 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
         for (int i = text_start_idx + 1; i < ast_len; i++) {
             if (ast[i].type == AST_SECTION) break;
             if ((ast[i].machine_code_size > 0 && ast[i].type == AST_INS) || ast[i].type == AST_U8 || ast[i].type == AST_U16 || ast[i].type == AST_U32 || ast[i].type == AST_U64) {
-                if (text_size + ast[i].machine_code_size > 65536) break;
+                if (text_size + ast[i].machine_code_size > (1024 * 1024)) break;
                 memcpy(text_buf + text_size, ast[i].machine_code, ast[i].machine_code_size);
                 text_size += ast[i].machine_code_size;
             }
@@ -661,7 +660,6 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
         while (cur < (long)off_data) { fputc(0, fl); cur++; }
     }
     fwrite(data_buf, 1, data_size, fl);
-    free(data_buf);
  
     /* Pad to off_text */
     {
@@ -669,7 +667,6 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
         while (cur < (long)off_text) { fputc(0, fl); cur++; }
     }
     fwrite(text_buf, 1, text_size, fl);
-    free(text_buf);
 
     // fucking bss bytes are not in file (ph_memsz - ph_filesz)
  
