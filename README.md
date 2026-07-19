@@ -1,6 +1,6 @@
 # AmmAsm - x86-64 Assembler
 
-![Version](https://img.shields.io/badge/version-v2.2.1-blue)
+![Version](https://img.shields.io/badge/version-v2.2.2-blue)
 ![Platform](https://img.shields.io/badge/platform-Linux_x86--64-success)
 ![Language](https://img.shields.io/badge/language-C-00599C)
 ![License](https://img.shields.io/badge/license-MIT-green)

@@ -221,9 +221,9 @@ AST* PARSE(){
 
         if(tok->type == T_U8){  
             node.type = AST_U8;
-
             pos++;
-            while(pos < toks_len){  
+            while(pos < toks_len){
+                if(node.u8.data_len >= 256) {fprintf(stderr, "AmmAsm:%d: Too many 'db' data (max 256)\n", node.line); exit(1);}  
                 if (toks[pos].type == T_EOL || toks[pos].type == T_EOF) break;
                 if(toks[pos].type == T_COMMA){ pos++; continue;}
                 
@@ -259,6 +259,7 @@ AST* PARSE(){
 
             pos++;
             while (pos < toks_len) {
+                if(node.u16.data_len >= 128) {fprintf(stderr, "AmmAsm:%d: Too many 'dw' data (max 128)\n", node.line); exit(1);}
                 if (toks[pos].type == T_EOL || toks[pos].type == T_EOF)
                     break;
 
@@ -297,6 +298,7 @@ AST* PARSE(){
 
             pos++;
             while (pos < toks_len) {
+                if(node.u32.data_len >= 64) {fprintf(stderr, "AmmAsm:%d: Too many 'dd' data (max 64)\n", node.line); exit(1);}
                 if (toks[pos].type == T_EOL || toks[pos].type == T_EOF)
                     break;
 
@@ -335,6 +337,7 @@ AST* PARSE(){
             pos++; 
 
             while (pos < toks_len && toks[pos].type != T_EOL && toks[pos].type != T_EOF) {
+                if(node.u64.entries_len >= 32) {fprintf(stderr, "AmmAsm:%d: Too many 'dq' data (max 32)\n", node.line); exit(1);}
                 if (toks[pos].type == T_COMMA){ pos++; continue; }
                 
                 if (toks[pos].type == T_INT && (toks[pos+1].type == T_COMMA || toks[pos+1].type == T_EOL || toks[pos+1].type == T_EOF)) {
