@@ -153,9 +153,9 @@ msg: db "Hello World", 0
 
 ---
 
-> Assembling x86-64 code → generating machine code → running binary
+> Assembling x86-64 code -> generating object-files -> linking via `ld` -> running binary
 
-[![Demo](https://img.youtube.com/vi/P-bdMZXXyVg/0.jpg)](https://youtube.com/watch?v=P-bdMZXXyVg)
+[![Demo](https://img.youtube.com/vi/PPIjjfSJy1k/0.jpg)](https://www.youtube.com/watch?v=PPIjjfSJy1k)
 
 ---
 
