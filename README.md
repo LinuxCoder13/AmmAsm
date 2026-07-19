@@ -32,6 +32,8 @@ AmmAsm is a handwritten x86-64 assembler designed for simplicity and clarity. It
 
 4) Added new instruction: `not`, `neg`, `mul` (full group 3 implemented)
 
+5) Added Fibonacci-test
+
 ---
 
 ## Object File Support (ELF64 Relocatable)

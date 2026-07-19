@@ -185,12 +185,12 @@ uint8_t encode_mov_reg_reg(uint8_t *mash_code, uint8_t dest_idx, uint8_t src_idx
     uint8_t reg = src_idx;
     
     if(dest_idx >= 8){ 
-        rex |= REX_B;
+        rex |=  REX_BASE | REX_B;
         rm -= 8;
     }
 
     if(src_idx >= 8){ 
-        rex |= REX_R;
+        rex |= REX_BASE | REX_R;
         reg -= 8;
     }
 
@@ -1438,12 +1438,12 @@ uint8_t encode_test_reg_reg(uint8_t *mash_code, uint8_t dest_idx, uint8_t src_id
     uint8_t reg = src_idx;
     
     if(dest_idx >= 8){ 
-        rex |= REX_B;
+        rex |= REX_BASE | REX_B;
         rm -= 8;
     }
 
     if(src_idx >= 8){ 
-        rex |= REX_R;
+        rex |= REX_BASE | REX_R;
         reg -= 8;
     }
 
