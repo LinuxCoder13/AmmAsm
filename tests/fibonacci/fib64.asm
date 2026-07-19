@@ -27,7 +27,7 @@ macro syscallExit(code) {
 section .data 
     msg1 db "Enter number of iterations: "
     len1 dq $ - msg1
-    msg2 db "To big number, max '93' (64-bit limit)", 10, 0
+    msg2 db "Too big number, max '93' (64-bit limit)", 10, 0
     len2 dq $ - msg2
     nl db 10
     msg3 db "too long input(max 3)", 10, 0
@@ -65,14 +65,14 @@ fib:
     syscallRead(0, num_s, 3)
 
     cmp rax, 3
-    jg .warn                     ; >3 байт — точно переполнение
+    jg .warn
 
-    xor r10d, r10d               ; флаг переполнения = 0
+    xor r10d, r10d 
     cmp rax, 3
     jne .check_number
-    cmp byte [b=num_s, d=2], 10     ; последний символ — '\n'?
-    je .check_number             ; да — всё прочитано, переполнения нет
-    mov r10b, 1                  ; нет — буфер переполнен
+    cmp byte [b=num_s, d=2], 10
+    je .check_number 
+    mov r10b, 1               
 
 .check_number:
     mov rdi, num_s
