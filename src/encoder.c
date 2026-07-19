@@ -1520,7 +1520,7 @@ uint8_t encode_group2_reg_cl(uint8_t* mash_code, uint8_t dest, uint8_t opcode, u
 }
 
 
-uint8_t encode_group3_reg_imm(uint8_t* mash_code, uint8_t dest, uint8_t opcode, uint8_t group_digit, uint8_t sz){
+uint8_t encode_group3_reg(uint8_t* mash_code, uint8_t dest, uint8_t opcode, uint8_t group_digit, uint8_t sz){
     uint8_t legacy_prefix = 0x66;
     uint8_t rex = 0;
     uint8_t modrm = 0;
@@ -1585,3 +1585,5 @@ uint8_t encode_test_reg_imm(uint8_t *mash_code, uint8_t reg_idx, uint64_t imm, u
 
     return pos; // mashine code size
 }
+
+// uint8_t encode_not_reg()

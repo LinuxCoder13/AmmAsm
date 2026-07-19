@@ -529,7 +529,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         else if (strcasecmp(node->cmd, "shr") == 0)   group_digit = 5;
         else if (strcasecmp(node->cmd, "sar") == 0)   group_digit = 7;
 
-        // ── 1. op reg, 1  /  op [mem], 1 ────────────────────────────────────
+        // 1. op reg, 1  /  op [mem], 1
         if ((b.type == O_IMM && b.imm == 1)) {
 
             if (a.type == O_REG64) {
@@ -578,7 +578,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
             }
         }
 
-        // ── 2. op reg, imm8  /  op [mem], imm8 ──────────────────────────────
+        // 2. op reg, imm8  /  op [mem], imm8
         else if (b.type == O_IMM || b.type == O_CHAR) {
             uint8_t imm = (b.type == O_IMM) ? (uint8_t)b.imm : (uint8_t)b.c;
 
@@ -681,6 +681,66 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
                 }
                 *pc += *s;
             }
+        }
+    }
+
+    // Group 3 instructions: not, neg, mul
+    else if (strcasecmp(node->cmd, "not") == 0 ||
+            strcasecmp(node->cmd, "neg") == 0 ||
+            strcasecmp(node->cmd, "mul") == 0) {
+
+        uint8_t group_digit;
+
+        // instructions such as imul, mul, div, idiv, test also includes to group, as they implemented below
+
+        if (strcasecmp(node->cmd, "not") == 0)        group_digit = 2;
+        else if (strcasecmp(node->cmd, "neg") == 0)   group_digit = 3;
+        else if (strcasecmp(node->cmd, "mul") == 0)   group_digit = 4;
+
+        if (a.type == O_REG64) {
+            uint8_t reg = find_reg64_index(a.reg);
+            node->ins.pc = *pc;
+            *s = encode_group3_reg(machine_code, reg, 0xF7, group_digit, 64);
+            *pc += *s;
+        }
+        else if (a.type == O_REG32) {
+            uint8_t reg = find_reg32_index(a.reg);
+            node->ins.pc = *pc;
+            *s = encode_group3_reg(machine_code, reg, 0xF7, group_digit, 32);
+            *pc += *s;
+        }
+        else if (a.type == O_REG16) {
+            uint8_t reg = find_reg16_index(a.reg);
+            node->ins.pc = *pc;
+            *s = encode_group3_reg(machine_code, reg, 0xF7, group_digit, 16);
+            *pc += *s;
+        }
+        else if (a.type == O_REG8) {
+            uint8_t reg = find_reg8_index(a.reg);
+            node->ins.pc = *pc;
+            *s = encode_group3_reg(machine_code, reg, 0xF6, group_digit, 8);
+            *pc += *s;
+        }
+        else if (a.type == O_MEM) {
+            AddrExpr mem = a.addr;
+            node->ins.pc = *pc;
+
+            switch (node->ins.operands[1].imm_sz) {
+                case 1:
+                    *s = encode_inst_rm_rm(machine_code, group_digit, &mem, 8, 0xF6, 111, 0);
+                    break;
+                case 2:
+                    *s = encode_inst_rm_rm(machine_code, group_digit, &mem, 16, 0xF7, 111, 0);
+                    break;
+                case 4:
+                    *s = encode_inst_rm_rm(machine_code, group_digit, &mem, 32, 0xF7, 111, 0);
+                    break;
+                case 8:
+                    *s = encode_inst_rm_rm(machine_code, group_digit, &mem, 64, 0xF7, 111, 0);
+                    break;
+            }
+
+            *pc += *s;
         }
     }
 
@@ -1033,113 +1093,63 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         
     }
 
-    // DIV—Unsigned Divide
-    else if(!strcasecmp(cmd, "div")){
+    // DIV-Unsigned Divide
+    // IDIV-Signed Divide
+    else if (!strcasecmp(cmd, "div") || !strcasecmp(cmd, "idiv")){
         
-        // div reg64        
+        uint8_t group_digit = !strcasecmp(cmd, "div") ? 6 : 7;
+
+        // i/div reg64        
         if(a.type == O_REG64){
             uint8_t src = find_reg64_index(a.reg);
 
-            *s = encode_div_or_idiv_reg(machine_code, 6, src, 64);
+            *s = encode_div_or_idiv_reg(machine_code, group_digit, src, 64);
             *pc += *s;
         }
 
-        // div reg32      
+        // i/div reg32      
         else if(a.type == O_REG32){
             uint8_t src = find_reg32_index(a.reg);
 
-            *s = encode_div_or_idiv_reg(machine_code, 6, src, 32);
+            *s = encode_div_or_idiv_reg(machine_code, group_digit, src, 32);
             *pc += *s;
         }
 
-        // div reg16        
+        // i/div reg16        
         else if(a.type == O_REG16){
             uint8_t src = find_reg16_index(a.reg);
 
-            *s = encode_div_or_idiv_reg(machine_code, 6, src, 16);
+            *s = encode_div_or_idiv_reg(machine_code, group_digit, src, 16);
             *pc += *s;
         }
 
-        // div reg8        
+        // i/div reg8        
         else if(a.type == O_REG8){
             uint8_t src = find_reg8_index(a.reg);
 
-            *s = encode_div_or_idiv_reg(machine_code, 6, src, 8);
+            *s = encode_div_or_idiv_reg(machine_code, group_digit, src, 8);
             *pc += *s;
         }
 
         // =========
-        // div [mem] 
+        // i/div [mem] 
         // =========       
         else if(a.type == O_MEM){
             AddrExpr mem = a.addr;
             
             node->ins.pc = *pc;
             switch (node->ins.operands[1].imm_sz){                 /* div [mem] does not gain imm*/
-                case 1: *s = encode_inst_rm_rm(machine_code, 6, &mem, 8,  0xF6, 111, 0); break;
-                case 2: *s = encode_inst_rm_rm(machine_code, 6, &mem, 16, 0xF7, 111, 0); break;
-                case 4: *s = encode_inst_rm_rm(machine_code, 6, &mem, 32, 0xF7, 111, 0); break;
-                case 8: *s = encode_inst_rm_rm(machine_code, 6, &mem, 64, 0xF7, 111, 0); break; 
+                case 1: *s = encode_inst_rm_rm(machine_code, group_digit, &mem, 8,  0xF6, 111, 0); break;
+                case 2: *s = encode_inst_rm_rm(machine_code, group_digit, &mem, 16, 0xF7, 111, 0); break;
+                case 4: *s = encode_inst_rm_rm(machine_code, group_digit, &mem, 32, 0xF7, 111, 0); break;
+                case 8: *s = encode_inst_rm_rm(machine_code, group_digit, &mem, 64, 0xF7, 111, 0); break; 
             }
             *pc += *s;
             
         }
 
     }
- 
-    // IDIV—Signed Divide
-    else if(!strcasecmp(cmd, "idiv")){
-        
-        // idiv reg64        
-        if(a.type == O_REG64){
-            uint8_t src = find_reg64_index(a.reg);
-
-            *s = encode_div_or_idiv_reg(machine_code, 7, src, 64);
-            *pc += *s;
-        }
-
-        // idiv reg32      
-        else if(a.type == O_REG32){
-            uint8_t src = find_reg32_index(a.reg);
-
-            *s = encode_div_or_idiv_reg(machine_code, 7, src, 32);
-            *pc += *s;
-        }
-
-        // idiv reg16        
-        else if(a.type == O_REG16){
-            uint8_t src = find_reg16_index(a.reg);
-
-            *s = encode_div_or_idiv_reg(machine_code, 7, src, 16);
-            *pc += *s;
-        }
-
-        // idiv reg8        
-        else if(a.type == O_REG8){
-            uint8_t src = find_reg8_index(a.reg);
-
-            *s = encode_div_or_idiv_reg(machine_code, 7, src, 8);
-            *pc += *s;
-        }
-
-
-        // =========
-        // idiv [mem] 
-        // =========       
-        else if(a.type == O_MEM){
-            AddrExpr mem = a.addr;
-            
-            node->ins.pc = *pc;
-            switch (node->ins.operands[1].imm_sz){                 /* idiv [mem] does not gain imm so I hard-coded as '111', soryyy...*/
-                case 1: *s = encode_inst_rm_rm(machine_code, 7, &mem, 8,  0xF6, 111, 0); break;
-                case 2: *s = encode_inst_rm_rm(machine_code, 7, &mem, 16, 0xF7, 111, 0); break;
-                case 4: *s = encode_inst_rm_rm(machine_code, 7, &mem, 32, 0xF7, 111, 0); break;
-                case 8: *s = encode_inst_rm_rm(machine_code, 7, &mem, 64, 0xF7, 111, 0); break; 
-            }
-            *pc += *s;
-            
-        }
-    }
+   
 
     else if (is2arrin(Sign_extensions, (char*)cmd)) {
         if (strcasecmp(cmd, "cqo") == 0) {

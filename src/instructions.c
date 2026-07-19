@@ -4,7 +4,7 @@
 const char *CMDS[] = {"mov", "cmp", "jmp", "lea", "push", "pop", "syscall", "call", "add", "sub", "imul", "div", "idiv",
                "cqo", "cdq", "cwd", "cdqe", "cwde", "cbw", "xor", "adc", "or", "sbb", "and", 
                "rol", "ror", "rcl", "rcr", "shl", "shr", "sar", "sal",
-               "test", 
+               "test", "not", "neg", "mul",
                "je", "jne", "jg", "jl", "jge", "jle", "jz", "ja", "jb", "jnz", "jc", "jae", "jbe",
                "nop", "ret", NULL};
 
