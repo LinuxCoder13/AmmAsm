@@ -58,7 +58,7 @@ void resolve_imm(AST* node, int expr_idx, int imm_size) {
     uint64_t tmp = resolve_expr(node->ins.operands[expr_idx].expr, node->ins.pc, node->line);
     uint64_t val = (tmp == (uint64_t)-2) ? 0 : tmp;
 
-    int offset = node->machine_code_size - imm_size;
+    int offset = node->machine_code_len - imm_size;
     
     switch(imm_size) {
         case 1: *(uint8_t*) (node->machine_code   + offset) = (uint8_t) val; break;

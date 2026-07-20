@@ -9,10 +9,12 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
     Operand b = node->ins.operands[1];
     Operand c = node->ins.operands[2];
     const uint8_t *cmd = node->cmd;
-    uint8_t *machine_code = node->machine_code;
     
-    memset(node->machine_code, 0, sizeof(node->machine_code));
-    uint64_t* s = &node->machine_code_size;
+    node->machine_code = malloc(16);
+    uint8_t *machine_code = node->machine_code;
+    node->machine_code_cap = 16;
+    memset(node->machine_code, 0, node->machine_code_cap);
+    uint64_t* s = &node->machine_code_len;
     *s = 0;
 
 
@@ -1441,60 +1443,73 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
 
 
 
-void parse_size_directives(AST* node, uint64_t *pc) {
-    int type = node->type;
-    uint8_t *mc = (uint8_t*)node->machine_code;
+void parse_size_directives(AST *node, uint64_t *pc){
+    node->machine_code_len = 0;
 
-    switch(type) {
-        case AST_U8:
-            memcpy(mc, node->u8.data, node->u8.data_len);
-            node->machine_code_size = node->u8.data_len; 
-            *pc += node->u8.data_len;
-            break;
+    switch (node->type) {
 
-        case AST_U16: {
-            int offset = 0;
-            for(int i = 0; i < node->u16.data_len; ++i){
-                *(uint16_t*)(mc + offset) = (uint16_t)node->u16.data[i];
-                offset += sizeof(uint16_t);
-            }
-            node->machine_code_size = offset; 
-            *pc += offset;
-            break;
+    case AST_U8:
+        for (int i = 0; i < node->u8.data_len; ++i)
+            node->machine_code = append(
+                (int *)&node->machine_code_len,
+                (int *)&node->machine_code_cap,
+                node->machine_code,
+                &node->u8.data[i],
+                sizeof(uint8_t));
+
+        *pc += node->machine_code_len;
+        break;
+
+    case AST_U16:
+        for (int i = 0; i < node->u16.data_len; ++i)
+            node->machine_code = append(
+                (int *)&node->machine_code_len,
+                (int *)&node->machine_code_cap,
+                node->machine_code,
+                &node->u16.data[i],
+                sizeof(uint16_t));
+
+        *pc += (uint64_t)node->machine_code_len * sizeof(uint16_t);
+        break;
+
+    case AST_U32:
+        for (int i = 0; i < node->u32.data_len; ++i)
+            node->machine_code = append(
+                (int *)&node->machine_code_len,
+                (int *)&node->machine_code_cap,
+                node->machine_code,
+                &node->u32.data[i],
+                sizeof(uint32_t));
+
+        *pc += (uint64_t)node->machine_code_len * sizeof(uint32_t);
+        break;
+
+    case AST_U64: {
+        int count = 0;
+
+        for (int i = 0; i < node->u64.entries_len; ++i) {
+            uint64_t value = 0;
+
+            if (node->u64.entries[i].type != U64_EXPR)
+                value = node->u64.entries[i].imm;
+
+            node->machine_code = append(
+                (int *)&count,
+                (int *)&node->machine_code_cap,
+                node->machine_code,
+                &value,
+                sizeof(uint64_t));
         }
 
-        case AST_U32: {
-            int offset = 0;
-            for(int i = 0; i < node->u32.data_len; ++i){
-                *(uint32_t*)(mc + offset) = node->u32.data[i];
-                offset += sizeof(uint32_t);
-            }
-            node->machine_code_size = offset;
-            *pc += offset;
-            break;
-        }
+        node->machine_code_len = count * sizeof(uint64_t);
+        node->u64.pc = *pc;
+        *pc += node->machine_code_len;
+        break;
+    }
 
-        case AST_U64: {
-            int offset = 0;
-            for(int i = 0; i < node->u64.entries_len; ++i){
-                if(node->u64.entries[i].type == U64_EXPR){
-                    *(uint64_t*)(mc + offset) = 0x0; // placeholder, resolved later
-                }  
-                else {
-                    *(uint64_t*)(mc + offset) = node->u64.entries[i].imm;
-                }
-                offset += sizeof(uint64_t);
-            }
-            node->machine_code_size = offset;
-            node->u64.pc = *pc; 
-            *pc += offset;
-            break;
-        }
-
-        case AST_BSS_RES: {
-            if(!obj_file){
-                node->machine_code_size = node->bss_res.res;
-            }
-        }
+    case AST_BSS_RES:
+        if (!obj_file)
+            node->machine_code_len = node->bss_res.res;
+        break;
     }
 }

@@ -123,15 +123,15 @@ uint64_t collect_labels_sections() {
             }
             l++;   
         }
-        else if ((ast[i].type == AST_INS && ast[i].machine_code_size > 0) ||
-                 (ast[i].type == AST_U8  && ast[i].machine_code_size > 0) ||
-                 (ast[i].type == AST_U16 && ast[i].machine_code_size > 0) ||
-                 (ast[i].type == AST_U32 && ast[i].machine_code_size > 0) ||
-                 (ast[i].type == AST_U64 && ast[i].machine_code_size > 0) ||
-                 (ast[i].type == AST_BSS_RES && ast[i].machine_code_size > 0)){
+        else if ((ast[i].type == AST_INS && ast[i].machine_code_len > 0) ||
+                 (ast[i].type == AST_U8  && ast[i].machine_code_len > 0) ||
+                 (ast[i].type == AST_U16 && ast[i].machine_code_len > 0) ||
+                 (ast[i].type == AST_U32 && ast[i].machine_code_len > 0) ||
+                 (ast[i].type == AST_U64 && ast[i].machine_code_len > 0) ||
+                 (ast[i].type == AST_BSS_RES && ast[i].machine_code_len > 0)){
 
             if(ast[i].type == AST_BSS_RES && obj_file) goto skip;
-            current_pc += ast[i].machine_code_size; 
+            current_pc += ast[i].machine_code_len; 
             skip:
         }
     }
@@ -191,8 +191,8 @@ void resolve_labels() {
             uint64_t addr = resolve_expr(node->ins.operands[0].expr, node->ins.pc, node->line);
             int32_t rel32;
             if(addr == (uint64_t)-2) rel32 = 0x0; 
-            else rel32 = (int32_t)(addr - (node->ins.pc + node->machine_code_size));
-            *(uint32_t*)(node->machine_code + node->machine_code_size - 4) = rel32;
+            else rel32 = (int32_t)(addr - (node->ins.pc + node->machine_code_len));
+            *(uint32_t*)(node->machine_code + node->machine_code_len - 4) = rel32;
         }
 
         // [RIP REL] (DISP32)
@@ -221,18 +221,18 @@ void resolve_labels() {
                     exit(1);
                 }
 
-                int32_t disp32 = (int32_t)((int64_t)addr_for_disp - (int64_t)(node->ins.pc + node->machine_code_size)) + mem->disp;
+                int32_t disp32 = (int32_t)((int64_t)addr_for_disp - (int64_t)(node->ins.pc + node->machine_code_len)) + mem->disp;
                 uint8_t real_imm_sz = node->ins.operands[1].imm_sz == 8 ? 4 : node->ins.operands[1].imm_sz;
                 
-                if(real_imm_sz) *(uint32_t*)(node->machine_code + node->machine_code_size - real_imm_sz - 4) = disp32;
-                else *(uint32_t*)(node->machine_code + node->machine_code_size - 4) = disp32;
+                if(real_imm_sz) *(uint32_t*)(node->machine_code + node->machine_code_len - real_imm_sz - 4) = disp32;
+                else *(uint32_t*)(node->machine_code + node->machine_code_len - 4) = disp32;
                 
                 // inst [mem], label
                 if(node->ins.operands[1].type == O_EXPR){
                     uint32_t expr_addr = (uint32_t)resolve_expr(node->ins.operands[1].expr, node->ins.pc, node->line);
-                    if(expr_addr == (uint32_t)-2) *(uint32_t*)(node->machine_code + node->machine_code_size - 4) = 0x0;
-                    else *(uint32_t*)(node->machine_code + node->machine_code_size - 4) = expr_addr;
-                    *(uint32_t*)(node->machine_code + node->machine_code_size - real_imm_sz - 4) = disp32;
+                    if(expr_addr == (uint32_t)-2) *(uint32_t*)(node->machine_code + node->machine_code_len - 4) = 0x0;
+                    else *(uint32_t*)(node->machine_code + node->machine_code_len - 4) = expr_addr;
+                    *(uint32_t*)(node->machine_code + node->machine_code_len - real_imm_sz - 4) = disp32;
                 }
 
             }

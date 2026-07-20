@@ -157,6 +157,7 @@ AST* PARSE(){
         if(tok->type == T_LAB){
             node.type = AST_LABEL;
             node.label.is_global = 0; // by default
+            if(strlen(node.label.name)+1 > sizeof(node.label.name)){ fprintf(stderr, "AmmAsm:%d: Label name is too long\n", node.line);}
             if(tok->type != T_EOF && tok->type != T_EOL){
                 strncpy(node.label.name, toks[pos++].value, sizeof(node.label.name));
             }
@@ -168,6 +169,7 @@ AST* PARSE(){
 
         if(tok->type == T_SEC){
             node.type = AST_SECTION;
+            if(strlen(node.label.name)+1 > sizeof(node.label.name)){ fprintf(stderr, "AmmAsm:%d: Section name is too long\n", node.line);}
             if(tok->type != T_EOF && tok->type != T_EOL){
                 strncpy(node.section.secname, toks[pos++].value, sizeof(node.section.secname));
             }
@@ -223,7 +225,6 @@ AST* PARSE(){
             node.type = AST_U8;
             pos++;
             while(pos < toks_len){
-                if(node.u8.data_len >= 256) {fprintf(stderr, "AmmAsm:%d: Too many 'db' data (max 256)\n", node.line); exit(1);}  
                 if (toks[pos].type == T_EOL || toks[pos].type == T_EOF) break;
                 if(toks[pos].type == T_COMMA){ pos++; continue;}
                 
@@ -259,7 +260,6 @@ AST* PARSE(){
 
             pos++;
             while (pos < toks_len) {
-                if(node.u16.data_len >= 128) {fprintf(stderr, "AmmAsm:%d: Too many 'dw' data (max 128)\n", node.line); exit(1);}
                 if (toks[pos].type == T_EOL || toks[pos].type == T_EOF)
                     break;
 
@@ -298,7 +298,6 @@ AST* PARSE(){
 
             pos++;
             while (pos < toks_len) {
-                if(node.u32.data_len >= 64) {fprintf(stderr, "AmmAsm:%d: Too many 'dd' data (max 64)\n", node.line); exit(1);}
                 if (toks[pos].type == T_EOL || toks[pos].type == T_EOF)
                     break;
 
@@ -337,7 +336,6 @@ AST* PARSE(){
             pos++; 
 
             while (pos < toks_len && toks[pos].type != T_EOL && toks[pos].type != T_EOF) {
-                if(node.u64.entries_len >= 32) {fprintf(stderr, "AmmAsm:%d: Too many 'dq' data (max 32)\n", node.line); exit(1);}
                 if (toks[pos].type == T_COMMA){ pos++; continue; }
                 
                 if (toks[pos].type == T_INT && (toks[pos+1].type == T_COMMA || toks[pos+1].type == T_EOL || toks[pos+1].type == T_EOF)) {
@@ -399,6 +397,10 @@ AST* PARSE(){
 
             pos++;
             long value = eval_expr(toks[pos].value);
+            if(value <= (long)-1){
+                fprintf(stderr, "AmmAsm:%d: integer constant too large\n", node.line);
+                exit(1);
+            }
 
             switch (toks[pos-1].value[3]){
                 case 'b': node.bss_res.res += 1 * value; break;

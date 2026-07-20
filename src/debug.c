@@ -148,7 +148,7 @@ void DEBUG_PRINT_AST() {
                     }
                     printf("]");
                 }
-                printf(" inst size=%d", node->machine_code_size);
+                printf(" inst size=%d", node->machine_code_len);
                 break;
             
             case AST_GLOBAL:
@@ -177,59 +177,67 @@ void DEBUG_PRINT_AST() {
 
             case AST_U8:
                 printf(" size=%d data=[", node->u8.data_len);
-                for (int j = 0; j < node->u8.data_len; j++) {
+                for (int j = 0; j < node->u8.data_len; ++j) {
                     printf("%02x", node->u8.data[j]);
-                    if (j < node->u8.data_len - 1) printf(" ");
+                    if (j + 1 != node->u8.data_len)
+                        printf(" ");
                 }
                 printf("]");
                 break;
-                
+
             case AST_U16:
-                printf(" size=%d data=[", node->u16.data_len * sizeof(short));
-                for (int j = 0; j < node->u16.data_len; j++) {
+                printf(" size=%zu data=[", node->u16.data_len * sizeof(uint16_t));
+                for (int j = 0; j < node->u16.data_len; ++j) {
                     printf("%04x", node->u16.data[j]);
-                    if (j < node->u16.data_len - 1) printf(" ");
+                    if (j + 1 != node->u16.data_len)
+                        printf(" ");
                 }
                 printf("]");
                 break;
-                
+
             case AST_U32:
-                printf(" size=%d data=[", node->u32.data_len * sizeof(int));
-                for (int j = 0; j < node->u32.data_len; j++) {
+                printf(" size=%zu data=[", node->u32.data_len * sizeof(uint32_t));
+                for (int j = 0; j < node->u32.data_len; ++j) {
                     printf("%08x", node->u32.data[j]);
-                    if (j < node->u32.data_len - 1) printf(" ");
+                    if (j + 1 != node->u32.data_len)
+                        printf(" ");
                 }
                 printf("]");
                 break;
-                
+
             case AST_U64:
-                printf(" size=%d data=[", node->u64.entries_len);
-                for (int j = 0; j < node->u64.entries_len; j++) {
+                printf(" size=%zu data=[", node->u64.entries_len * sizeof(uint64_t));
+                for (int j = 0; j < node->u64.entries_len; ++j) {
                     if (node->u64.entries[j].type == U64_INT) {
-                        printf("%016llx", node->u64.entries[j].imm);
+                        printf("%016llx",
+                            (unsigned long long)node->u64.entries[j].imm);
                     } else {
                         printf("(");
-                        for (int k = 0; k < node->u64.entries[j].expr.count; k++) {
+                        for (int k = 0; k < node->u64.entries[j].expr.count; ++k) {
                             printf("%s", node->u64.entries[j].expr.tokens[k].value);
-                            if (k < node->u64.entries[j].expr.count - 1) printf(" ");
+                            if (k + 1 != node->u64.entries[j].expr.count)
+                                printf(" ");
                         }
                         printf(")");
                     }
-                    if (j < node->u64.entries_len - 1) printf(", ");
+
+                    if (j + 1 != node->u64.entries_len)
+                        printf(", ");
                 }
                 printf("]");
                 break;
-                
+
             case AST_BSS_RES:
-                printf(" size=%ld ", node->bss_res.res);
+                printf(" size=%zu", (size_t)node->bss_res.res);
                 break;
+            
         }
         
-        if (node->machine_code_size > 0) {
+        if (node->machine_code_len > 0) {
             printf(" machine_code=[");
-            for (int j = 0; j < node->machine_code_size; j++) {
+            for (int j = 0; j < node->machine_code_len; j++) {
                 printf("%02x", node->machine_code[j]);
-                if (j < node->machine_code_size - 1) printf(" ");
+                if (j < node->machine_code_len - 1) printf(" ");
             }
             printf("]");
         }

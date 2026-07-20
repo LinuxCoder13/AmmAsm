@@ -97,12 +97,12 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
     if (data_start_idx >= 0) {
         for (int i = data_start_idx + 1; i < ast_len; i++) {
             if (ast[i].type == AST_SECTION) break;  /* next section */
-            if (ast[i].machine_code_size > 0 &&
+            if (ast[i].machine_code_len > 0 &&
                 (ast[i].type == AST_U8  || ast[i].type == AST_U16 ||
                  ast[i].type == AST_U32 || ast[i].type == AST_U64)) {
-                if (data_size + ast[i].machine_code_size > (1024 * 1024)) break;
-                memcpy(data_buf + data_size, ast[i].machine_code, ast[i].machine_code_size);
-                data_size += ast[i].machine_code_size;
+                if (data_size + ast[i].machine_code_len > (1024 * 1024)) break;
+                memcpy(data_buf + data_size, ast[i].machine_code, ast[i].machine_code_len);
+                data_size += ast[i].machine_code_len;
             }
         }
     }
@@ -111,10 +111,10 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
     if (text_start_idx >= 0) {
         for (int i = text_start_idx + 1; i < ast_len; i++) {
             if (ast[i].type == AST_SECTION) break;
-            if ((ast[i].machine_code_size > 0 && ast[i].type == AST_INS) || ast[i].type == AST_U8 || ast[i].type == AST_U16 || ast[i].type == AST_U32 || ast[i].type == AST_U64) {
-                if (text_size + ast[i].machine_code_size > (1024 * 1024)) break;
-                memcpy(text_buf + text_size, ast[i].machine_code, ast[i].machine_code_size);
-                text_size += ast[i].machine_code_size;
+            if ((ast[i].machine_code_len > 0 && ast[i].type == AST_INS) || ast[i].type == AST_U8 || ast[i].type == AST_U16 || ast[i].type == AST_U32 || ast[i].type == AST_U64) {
+                if (text_size + ast[i].machine_code_len > (1024 * 1024)) break;
+                memcpy(text_buf + text_size, ast[i].machine_code, ast[i].machine_code_len);
+                text_size += ast[i].machine_code_len;
             }
         }
     }
@@ -148,7 +148,7 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
     if (text_start_idx >= 0) {
         for (int i = text_start_idx + 1; i < ast_len; i++) {
             if (ast[i].type == AST_SECTION) break;
-            if (ast[i].type == AST_INS && ast[i].machine_code_size > 0) {
+            if (ast[i].type == AST_INS && ast[i].machine_code_len > 0) {
                 text_start_pc = ast[i].ins.pc;
                 break;
             }
@@ -163,10 +163,10 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
             if (ast[i].type == AST_LABEL) {
                 ast[i].label.adress  = off;   /* section-relative offset */
             }
-            if (ast[i].machine_code_size > 0 &&
+            if (ast[i].machine_code_len > 0 &&
                 (ast[i].type == AST_U8  || ast[i].type == AST_U16 ||
                  ast[i].type == AST_U32 || ast[i].type == AST_U64)) {
-                off += ast[i].machine_code_size;
+                off += ast[i].machine_code_len;
             }
         }
     }
@@ -403,10 +403,10 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
 
                     uint64_t reloc_off;
                     if (!real_imm_sz) {
-                        reloc_off = (ast[i].ins.pc - text_start_pc) + (ast[i].machine_code_size - 4);
+                        reloc_off = (ast[i].ins.pc - text_start_pc) + (ast[i].machine_code_len - 4);
                     } 
                     else {
-                        reloc_off = (ast[i].ins.pc - text_start_pc) +(ast[i].machine_code_size - real_imm_sz - 4);
+                        reloc_off = (ast[i].ins.pc - text_start_pc) +(ast[i].machine_code_len - real_imm_sz - 4);
                     }
 
                     relas[rela_count].r_offset = reloc_off;
@@ -450,7 +450,7 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
     
                                 uint64_t imm_reloc_off =
                                     (ast[i].ins.pc - text_start_pc) +
-                                    (ast[i].machine_code_size - 4);
+                                    (ast[i].machine_code_len - 4);
     
                                 relas[rela_count].r_offset = imm_reloc_off;
                                 relas[rela_count].r_info   = ((uint64_t)sym_idx2 << 32) | R_X86_64_32;
@@ -472,7 +472,7 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
 
                     /* looking for label name in our symtab (trying to get index of symbol syms)*/
                     int sym_idx = text_section_sym_idx; /* default: .text section sym */
-                    uint64_t reloc_off = (ast[i].ins.pc - text_start_pc) + (ast[i].machine_code_size - 4);
+                    uint64_t reloc_off = (ast[i].ins.pc - text_start_pc) + (ast[i].machine_code_len - 4);
                     const uint8_t *lab = get_label_from_expr(ast[i].ins.operands[0].expr);
                     if (!lab || !*lab) {fprintf(stderr, "AmmAsm:%d: branch relocation requires label\n", ast[i].line); exit(1);}
 
@@ -522,7 +522,7 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
                         }
                         uint64_t imm_reloc_off =
                             (ast[i].ins.pc - text_start_pc) +
-                            (ast[i].machine_code_size - 4);
+                            (ast[i].machine_code_len - 4);
                         relas[rela_count].r_offset = imm_reloc_off;
                         relas[rela_count].r_info   = ((uint64_t)sym_idx2 << 32) | R_X86_64_32;
                         relas[rela_count].r_addend = 0;
@@ -559,8 +559,8 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
                     }
 
                     uint64_t vaddr = find_lab_addr(lab);
-                    uint64_t imm64 = *(uint64_t*)(ast[i].machine_code + ast[i].machine_code_size - 8);
-                    uint64_t reloc_off = (ast[i].ins.pc - text_start_pc) + (ast[i].machine_code_size - 8);
+                    uint64_t imm64 = *(uint64_t*)(ast[i].machine_code + ast[i].machine_code_len - 8);
+                    uint64_t reloc_off = (ast[i].ins.pc - text_start_pc) + (ast[i].machine_code_len - 8);
 
                     relas[rela_count].r_offset = reloc_off;
                     relas[rela_count].r_info   = ((uint64_t)sym_idx << 32) | R_X86_64_64;

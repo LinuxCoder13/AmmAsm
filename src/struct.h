@@ -79,8 +79,10 @@ typedef struct AST {
         struct { uint8_t **labels; int labels_len; int labels_cap;} externs;
     };
 
-    uint8_t machine_code[256]; // Sorry
-    uint64_t machine_code_size;
+    // we finally did it!!!!
+    uint8_t *machine_code;
+    uint64_t machine_code_len;
+    uint64_t machine_code_cap;
         
 } AST;
 
@@ -92,7 +94,7 @@ typedef struct {
 
 typedef struct {   
     const char* filename;  
-    char        buf[1024]; 
+    char        buf[1024*1024]; 
     Token*      toks;
     char labelscope[64]; 
 } Lexer;

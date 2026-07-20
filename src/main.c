@@ -32,19 +32,23 @@ void compiler(uint8_t *text, int *textsize, uint64_t *e_entry) {
             case AST_U64:
             case AST_BSS_RES:
                 if (pos >= (1024 * 1024)){
-                    fprintf(stderr, "AmmAsm: .text size is to big. Max 1MB\n");
+                    fprintf(stderr, "AmmAsm: data size is too big. Max 1MB\n");
                     exit(1);
                 }
                 if (ast[i].type == AST_BSS_RES) {
                     if (!obj_file) {
-                        memset(text + pos, 0, ast[i].machine_code_size);
-                        pos += ast[i].machine_code_size;
+                        if(ast[i].machine_code_len > (1024 * 1024)){
+                            fprintf(stderr, "AmmAsm: data size is too big. Max 1MB\n");
+                            exit(1);
+                        }
+                        memset(text + pos, 0, ast[i].machine_code_len);
+                        pos += ast[i].machine_code_len;
                     }
                     break;
                 }
 
-                memcpy(text + pos, ast[i].machine_code, ast[i].machine_code_size);
-                pos += ast[i].machine_code_size;
+                memcpy(text + pos, ast[i].machine_code, ast[i].machine_code_len);
+                pos += ast[i].machine_code_len;
                 break;
         }
     }
