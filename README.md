@@ -22,19 +22,11 @@ AmmAsm is a handwritten x86-64 assembler designed for simplicity and clarity. It
 
 ---
 
-## What's New in v2.2.x
+## What's New in v2.3.x
 
-1) New macro system. Look doc/macro.txt in order to know it syntax
+1) Added new instructions: `not`, `neg`, `mul`, `inc`, `dec`, `movzx`, `movsx`, full `CMOVcc`, full `SETcc`, basic `SSE` support
 
-2) Added bss Section support for ET_REL
-
-3) `-E` flag, that runs the preprocessor only and generate .i
-
-4) Added new instructions: `not`, `neg`, `mul`, `inc`, `dec`, `movzx`, `movsx`, full `CMOVcc`, full `SETcc`, basic `SSE` support
-
-5) Added XMM registers (XMM0–XMM15)
-
-6) Added Fibonacci-test
+2) Added XMM registers (XMM0–XMM15)
 
 ---
 
@@ -101,7 +93,7 @@ This demonstrates interoperability between AmmAsm-generated object files and ord
 
 ## Features
 
-- Basic SSE support
+- Basic SSE support (v2.3.0)
 - Macro system (v2.2.0)
 - Compatible with GNU ld and GCC object-file linking
 - Direct x86-64 encoding - No NASM/GAS dependencies
