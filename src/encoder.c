@@ -210,9 +210,47 @@ uint8_t encode_mov_reg_reg(uint8_t *mash_code, uint8_t dest_idx, uint8_t src_idx
     return pos;
 }
 
+uint8_t encode_two_byte_opcode_reg(uint8_t *mash_code, uint8_t opcode, uint8_t dest, uint8_t src, uint8_t destsz){
+    uint8_t legacy_prefix = 0x66;
+    uint8_t rex = 0;
+    uint8_t modrm = 0;
+    int pos = 0;
+
+    uint8_t rm = src;
+    uint8_t reg = dest;
+    
+    if(dest>= 8){ 
+        rex |=  REX_BASE | REX_B;
+        rm -= 8;
+    }
+
+    if(src >= 8){ 
+        rex |= REX_BASE | REX_R;
+        reg -= 8;
+    }
+    
+    if((src >= 4) && (src <= 7)) rex |= REX_BASE;
+
+    switch(destsz){
+        case 128: break; // none
+        case 64: rex = REX_BASE | REX_W; break;
+        case 32: break;
+        case 16: mash_code[pos++] = legacy_prefix; break;
+        case 8: break; // no return as we have SETcc
+    }   
+
+    modrm = emit_modrm(0b11, reg, rm);
+
+    if(rex) mash_code[pos++] = rex;
+    mash_code[pos++] = 0x0F;
+    mash_code[pos++] = opcode;
+    mash_code[pos++] = modrm;
+    
+    return pos;
+}
 
 
-// most powerfull encoder in AmmAsm!!!!!!!!!!!!!!!!!!
+// 2 the most powerfull encoders in AmmAsm!!!!!!!!!!!!!!!!!!
 
 // inst reg, [addr] | inst [addr], reg/imm
 uint8_t encode_inst_rm_rm(uint8_t *mash_code, uint8_t reg, AddrExpr *expr, uint8_t sz,  uint8_t opcode, uint8_t imm_sz, uint64_t imm){
@@ -343,7 +381,7 @@ uint8_t encode_inst_rm_rm(uint8_t *mash_code, uint8_t reg, AddrExpr *expr, uint8
         else {*(uint32_t*)(mash_code + pos) = expr->disp; pos+=4; }
     }
     
-    if(expr->is_rip_rel){*(uint32_t*)(mash_code + pos) = 0x0; pos+=4; } // placeholder
+    if(expr->is_rip_rel){*(uint32_t*)(mash_code + pos) = 0x0; pos+=4; expr->disp_offset = pos-4;} // placeholder
     
     if(imm_sz > 0){
         switch(imm_sz){
@@ -355,6 +393,162 @@ uint8_t encode_inst_rm_rm(uint8_t *mash_code, uint8_t reg, AddrExpr *expr, uint8
     return pos;
 }
 
+
+/* mainly copy paste*/
+// inst reg, <SIZE> r/m
+// 0F B6/B7/BE/BF.......
+uint8_t encode_inst_reg_rm2(uint8_t *machine_code, uint8_t opcode2, uint8_t reg, AddrExpr *expr, uint8_t dst_sz)
+{
+    uint8_t rex = 0;
+    uint8_t modrm = 0;
+    uint8_t sib = 0;
+    uint8_t need_sib = 0;
+    uint8_t disp_sz = 0;
+    uint8_t mod;
+    int pos = 0;
+
+    uint8_t base  = expr->base;
+    uint8_t index = expr->index;
+    uint8_t scale = 0;
+
+    switch (dst_sz) {
+        case 64: rex |= REX_W; break;
+        case 32: break;
+        case 16: machine_code[pos++] = 0x66; break;
+        case 8: break;
+    }
+
+    switch (expr->scale) {
+        case 1: scale = 0b00; break;
+        case 2: scale = 0b01; break;
+        case 4: scale = 0b10; break;
+        case 8: scale = 0b11; break;
+    }
+
+    if (reg >= 8)   rex |= REX_R;
+    if (base >= 8)  rex |= REX_B;
+    if (index >= 8) rex |= REX_X;
+
+    if ((expr->have_base || expr->have_index) &&
+        expr->have_disp &&
+        expr->disp == 0)
+    {
+        expr->have_disp = 0;
+    }
+
+    if (!expr->have_disp) {
+        mod = 0b00;
+        expr->have_disp = 0;
+    }
+    else if (expr->disp >= -128 && expr->disp <= 127) {
+        mod = 0b01;
+        expr->have_disp = 1;
+        disp_sz = 1;
+    }
+    else {
+        mod = 0b10;
+        expr->have_disp = 1;
+        disp_sz = 4;
+    }
+
+    // 8,9
+    if (expr->have_index && !expr->is_rip_rel) {
+
+        if ((base & 7) == 0b101 && !expr->have_disp) {
+            mod = 0b01;
+            expr->disp = 0;
+            expr->have_disp = 1;
+            disp_sz = 1;
+        }
+
+        modrm = emit_modrm(mod, reg, 0b100);
+        sib   = emit_sib(scale, index, base);
+        need_sib = 1;
+    }
+
+    // 4,5,6
+    else if ((base & 7) == 0b100) {
+
+        modrm = emit_modrm(mod, reg, 0b100);
+        sib   = emit_sib(0b00, 0b100, base);
+        need_sib = 1;
+    }
+
+    // 7
+    else if ((base & 7) == 0b101) {
+
+        if (!expr->have_disp) {
+            mod = 0b01;
+            expr->disp = 0;
+            expr->have_disp = 1;
+            disp_sz = 1;
+        }
+
+        modrm = emit_modrm(mod, reg, base);
+    }
+
+    // 1,2,3
+    else if (expr->have_base && !expr->have_index) {
+
+        modrm = emit_modrm(mod, reg, base);
+        need_sib = 0;
+    }
+
+    // 10
+    else if (!expr->is_rip_rel &&
+             !expr->have_base &&
+             expr->have_disp)
+    {
+        modrm = emit_modrm(0b00, reg, 0b100);
+        sib   = emit_sib(scale, index, 0b101);
+        need_sib = 1;
+        expr->have_disp = 1;
+        disp_sz = 4;
+    }
+
+    // 11
+    else if (expr->is_rip_rel && !expr->have_base) {
+
+        modrm = emit_modrm(0b00, reg, 0b101);
+        need_sib = 0;
+    }
+
+    if (expr->is_rip_rel &&
+        !expr->have_base &&
+        expr->have_index)
+    {
+        fprintf(stderr,
+                "AmmAsm: RIP-relative addressing cannot use index register\n");
+        exit(1);
+    }
+
+    if (rex)
+        machine_code[pos++] = rex | REX_BASE;
+
+    machine_code[pos++] = 0x0F;
+    machine_code[pos++] = opcode2;
+    machine_code[pos++] = modrm;
+
+    if (need_sib)
+        machine_code[pos++] = sib;
+
+    if (expr->have_disp && !expr->is_rip_rel) {
+        if (disp_sz == 1) {
+            machine_code[pos++] = (uint8_t)expr->disp;
+        } else {
+            *(uint32_t *)(machine_code + pos) = expr->disp;
+            pos += 4;
+        }
+    }
+
+    if (expr->is_rip_rel) {
+        expr->disp_offset = pos;
+        *(uint32_t *)(machine_code + pos) = 0;
+        pos += 4;
+    }
+
+    return pos;
+}
 
 uint8_t encode_add_imm(uint8_t *mash_code, uint8_t reg, uint32_t imm, uint8_t sz, int is_expr){
     uint8_t rex = 0;
@@ -1586,4 +1780,11 @@ uint8_t encode_test_reg_imm(uint8_t *mash_code, uint8_t reg_idx, uint64_t imm, u
     return pos; // mashine code size
 }
 
-// uint8_t encode_not_reg()
+// inc/dec reg8
+uint8_t encode_group4_reg(uint8_t* mash_code, uint8_t dest, uint8_t opcode, uint8_t group_digit, uint8_t sz){
+    return encode_group3_reg(mash_code, dest, opcode, group_digit, sz);
+}
+
+uint8_t encode_group5_reg(uint8_t* mash_code, uint8_t dest, uint8_t opcode, uint8_t group_digit, uint8_t sz){
+    return encode_group3_reg(mash_code, dest, opcode, group_digit, sz);
+}

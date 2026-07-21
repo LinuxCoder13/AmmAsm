@@ -1,6 +1,6 @@
 # AmmAsm - x86-64 Assembler
 
-![Version](https://img.shields.io/badge/version-v2.2.3-blue)
+![Version](https://img.shields.io/badge/version-v2.3.0-blue)
 ![Platform](https://img.shields.io/badge/platform-Linux_x86--64-success)
 ![Language](https://img.shields.io/badge/language-C-00599C)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -28,11 +28,13 @@ AmmAsm is a handwritten x86-64 assembler designed for simplicity and clarity. It
 
 2) Added bss Section support for ET_REL
 
-3) `-E` flag, that runs the preprocessor only and generate <input>.i
+3) `-E` flag, that runs the preprocessor only and generate .i
 
-4) Added new instruction: `not`, `neg`, `mul` (full group 3 implemented)
+4) Added new instructions: `not`, `neg`, `mul`, `inc`, `dec`, `movzx`, `movsx`, full `CMOVcc`, full `SETcc`, basic `SSE` support
 
-5) Added Fibonacci-test
+5) Added XMM registers (XMM0–XMM15)
+
+6) Added Fibonacci-test
 
 ---
 
@@ -99,7 +101,8 @@ This demonstrates interoperability between AmmAsm-generated object files and ord
 
 ## Features
 
-- Macro system(v2.2.0)
+- Basic SSE support
+- Macro system (v2.2.0)
 - Compatible with GNU ld and GCC object-file linking
 - Direct x86-64 encoding - No NASM/GAS dependencies
 - Multiple operand sizes - 8/16/32/64-bit registers and immediates
@@ -325,6 +328,6 @@ ld prog.o -o output && chmod +x output && ./output
 ## Known Limitations
 
 - Limited instruction set - Only a subset of the x86-64 instruction set is currently implemented (look at `./src/instructions.c`)
-- No floating-point (FPU/SSE)
+- x87 FPU not implemented
 
 ---

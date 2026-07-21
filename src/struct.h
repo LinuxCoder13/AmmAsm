@@ -15,7 +15,7 @@ typedef struct {
 
     uint8_t is_rip_rel;
     uint8_t label[64];
-    int64_t addend;
+    uint8_t disp_offset; // from start of machine_code
 
 } AddrExpr;
 
@@ -74,7 +74,7 @@ typedef struct AST {
         struct { U64Entry *entries; int entries_len; int entries_cap; uint64_t pc; } u64; // 32
         struct { uint64_t res; /* count of bytes */} bss_res;
         struct { uint8_t secname[64]; uint64_t adress; uint64_t vadress;} section;
-        struct { uint8_t name[64]; uint64_t adress; uint64_t vadress; int is_global; } label; 
+        struct { uint8_t name[128]; uint64_t adress; uint64_t vadress; int is_global; } label; 
         struct { uint8_t **labels; int labels_len; int labels_cap;} global;
         struct { uint8_t **labels; int labels_len; int labels_cap;} externs;
     };

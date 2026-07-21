@@ -275,6 +275,12 @@ uint8_t find_reg8_index(const char* r) {
     return -1;
 }
 
+uint8_t find_xmm_index(const char* r) {
+    const char* p = r;
+    p += 3; // skip "xmm"
+    return eval_expr(p);
+}
+
 
 // calc
 long parse_number() {

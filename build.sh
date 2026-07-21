@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -e
-gcc -std=gnu99 -O2 -Oz \
+gcc -std=gnu99 -Oz \
     -ffunction-sections \
     -fdata-sections \
     -fomit-frame-pointer \

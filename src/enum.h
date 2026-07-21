@@ -19,6 +19,7 @@ typedef enum __attribute__((packed)){
     T_REG16,
     T_REG32,
     T_REG64,
+    T_XMM,
     T_ADDR_EXPR,
     T_STR,
     T_EOL,
@@ -70,6 +71,7 @@ typedef enum __attribute__((packed)){
     O_REG16,
     O_REG32,
     O_REG64,
+    O_XMM,
     O_EXPR, // imm, lab, pc, char
     O_PC,
     O_CHAR, 

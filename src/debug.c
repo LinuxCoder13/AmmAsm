@@ -94,6 +94,7 @@ void DEBUG_PRINT_AST() {
                         case O_REG16: otype_str = "REG16"; break;
                         case O_REG32: otype_str = "REG32"; break;
                         case O_REG64: otype_str = "REG64"; break;
+                        case O_XMM: otype_str = "XMM"; break;
                         case O_IMM: otype_str = "IMM"; break;
                         case O_MEM: otype_str = "MEM"; break;
                         case O_EXPR: otype_str = "EXPR"; break;
@@ -107,6 +108,7 @@ void DEBUG_PRINT_AST() {
                         case O_REG16:
                         case O_REG32:
                         case O_REG64:
+                        case O_XMM:
                             printf("'%s'", node->ins.operands[j].reg);
                             break;
                         case O_IMM:

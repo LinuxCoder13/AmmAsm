@@ -224,8 +224,8 @@ void resolve_labels() {
                 int32_t disp32 = (int32_t)((int64_t)addr_for_disp - (int64_t)(node->ins.pc + node->machine_code_len)) + mem->disp;
                 uint8_t real_imm_sz = node->ins.operands[1].imm_sz == 8 ? 4 : node->ins.operands[1].imm_sz;
                 
-                if(real_imm_sz) *(uint32_t*)(node->machine_code + node->machine_code_len - real_imm_sz - 4) = disp32;
-                else *(uint32_t*)(node->machine_code + node->machine_code_len - 4) = disp32;
+                // if(real_imm_sz) *(uint32_t*)(node->machine_code + node->machine_code_len - real_imm_sz - 4) = disp32;
+                *(uint32_t*)(node->machine_code + node->ins.operands[idx].addr.disp_offset) = disp32;
                 
                 // inst [mem], label
                 if(node->ins.operands[1].type == O_EXPR){

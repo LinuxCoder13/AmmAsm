@@ -27,3 +27,6 @@ extern const char* regs64[];
 
 // 64-bit general-purpose (r8–r15)
 extern const char* regs64GP[];
+
+// XMM0 - XMM16
+extern const char* Xmmregs[];

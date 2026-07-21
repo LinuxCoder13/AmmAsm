@@ -77,7 +77,7 @@ static char *SkipComment(char *buf, int *line){
 
 static char* ParseMacroBody(char *buffer, macro* macros, int *line){
     uint8_t in_char = 0, in_string = 0, in_comment = 0;
-    uint8_t entry[64] = {0};
+    uint8_t entry[4096] = {0};
     int entry_len = 0;
 
     char *buf = buffer;
@@ -107,6 +107,7 @@ static char* ParseMacroBody(char *buffer, macro* macros, int *line){
             }
             in_comment = 0;
             entry[entry_len] = 0;
+            if(entry_len >= 4096) {fprintf(stderr, "AmmAsm:%d: Line is too big, max 4096 chars\n", *line); exit(1); }
             entry_len = 0;
             if(macros){
                 if((!strncasecmp(entry, "macro", 5) && (entry[5] == ' ' || entry[5] == '\t'))){fprintf(stderr, "AmmAsm:%d: Can't define nested macro\n", *line); exit(1);}
@@ -134,9 +135,6 @@ static char* ParseMacroName(char *buffer, macro* macros, int *line){
     char *buf = buffer;
     for(i = 0; i < 63 && *buf && *buf != '(' && *buf != ' ' && *buf != '\n'; i++){
         skips;
-        if(!isin(LETEXT, *buf)){
-            fprintf(stderr, "AmmAsm:%d: Macro name can include only alpha letters\n", *line); exit(1);
-        }
         if(macros)macros->name[i] = *buf;
         buf++;
     }

@@ -29,7 +29,7 @@ AST* PARSE(){
                     exit(1);
                 }
                 else if(toks[pos].type == T_REG8 || toks[pos].type == T_REG16 ||
-                        toks[pos].type == T_REG32 || toks[pos].type == T_REG64 ){
+                        toks[pos].type == T_REG32 || toks[pos].type == T_REG64 || toks[pos].type == T_XMM ){
                     int tt = toks[pos].type;
                     strncpy(node.ins.operands[node.ins.oper_count].reg, toks[pos++].value, 8);
 
@@ -38,6 +38,7 @@ AST* PARSE(){
                         case T_REG16: node.ins.operands[node.ins.oper_count++].type = O_REG16; break;
                         case T_REG32: node.ins.operands[node.ins.oper_count++].type = O_REG32; break;
                         case T_REG64: node.ins.operands[node.ins.oper_count++].type = O_REG64; break;
+                        case T_XMM: node.ins.operands[node.ins.oper_count++].type = O_XMM;     break;  // yeah, we did it!!!!!!!
                         default:      node.ins.operands[node.ins.oper_count++].type = O_NONE;  break;
                     }
                 } 
@@ -157,7 +158,7 @@ AST* PARSE(){
         if(tok->type == T_LAB){
             node.type = AST_LABEL;
             node.label.is_global = 0; // by default
-            if(strlen(node.label.name)+1 > sizeof(node.label.name)){ fprintf(stderr, "AmmAsm:%d: Label name is too long\n", node.line);}
+            if(strlen(toks[pos].value) >= sizeof(node.label.name)){ fprintf(stderr, "AmmAsm:%d: Label name is too long\n", node.line); exit(1);}
             if(tok->type != T_EOF && tok->type != T_EOL){
                 strncpy(node.label.name, toks[pos++].value, sizeof(node.label.name));
             }
@@ -169,7 +170,6 @@ AST* PARSE(){
 
         if(tok->type == T_SEC){
             node.type = AST_SECTION;
-            if(strlen(node.label.name)+1 > sizeof(node.label.name)){ fprintf(stderr, "AmmAsm:%d: Section name is too long\n", node.line);}
             if(tok->type != T_EOF && tok->type != T_EOL){
                 strncpy(node.section.secname, toks[pos++].value, sizeof(node.section.secname));
             }

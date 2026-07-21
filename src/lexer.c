@@ -120,9 +120,9 @@ int LEXER(FILE* fl) {
             }
 
             else if (isin(LETEXT, *buff)) { 
-                char buf[256] = {0};
+                char buf[1024 * 1024] = {0};
                 int i = 0;
-                while (isin(LETEXT, *buff) && i <= 255) {
+                while (isin(LETEXT, *buff) && i <= 1024 * 1024) {
                     buf[i++] = *buff++;
                 }
                 buf[i] = 0;
@@ -154,7 +154,8 @@ int LEXER(FILE* fl) {
                     while (*buff == ' ' || *buff == '\t') buff++;
                     char secname[64] = {0};
                     i = 0;
-                    while ((isin(LETEXT, *buff) || *buff == '.') && i < 63) {
+                    while ((isin(LETEXT, *buff) || *buff == '.')) {
+                        if(i >= 64){fprintf(stderr, "AmmAsm:%d: Section name is too long\n", line); exit(1);}
                         secname[i++] = *buff++;
                     }
                     secname[i] = 0;
@@ -174,12 +175,14 @@ int LEXER(FILE* fl) {
                     continue;
                 }
 
-                // registers
+                // registers (GPR)
                 else if(is2arrin(regs8, buf)  || is2arrin(regs8GP, buf))  {add_token(T_REG8, buf, line);  continue;}
                 else if(is2arrin(regs16, buf) || is2arrin(regs16GP, buf)) {add_token(T_REG16, buf, line); continue;}
                 else if(is2arrin(regs32, buf) || is2arrin(regs32GP, buf)) {add_token(T_REG32, buf, line); continue;}
                 else if(is2arrin(regs64, buf) || is2arrin(regs64GP, buf)) {add_token(T_REG64, buf, line); continue;} 
 
+                // XMM
+                else if(is2arrin(Xmmregs, buf)){add_token(T_XMM, buf, line); continue;}
 
                 // directives
                 else if(strcasecmp(buf, HUMAN_AST[0]) == 0) add_token(T_U8, buf, line); 
