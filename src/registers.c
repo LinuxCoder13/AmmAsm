@@ -62,6 +62,7 @@ const char* Xmmregs[] = {
     "xmm3", "xmm4", "xmm5",
     "xmm6", "xmm7", "xmm8",
     "xmm9", "xmm10", "xmm11",
-    "xmm12", "xmm14", "xmm15",
+    "xmm12", "xmm13", "xmm14",
+    "xmm15",
     NULL 
 };

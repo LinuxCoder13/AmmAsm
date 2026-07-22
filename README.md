@@ -28,6 +28,8 @@ AmmAsm is a handwritten x86-64 assembler designed for simplicity and clarity. It
 
 2) Added XMM registers (XMM0–XMM15)
 
+3) Added tests for `CMOVcc`, `SETcc` and `SEE` instructions
+
 ---
 
 ## Object File Support (ELF64 Relocatable)
