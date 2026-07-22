@@ -22,7 +22,7 @@ coverage/
 *.profraw
 *.profdata
 
-*.log
+.log
 
 .vscode/
 .idea/
