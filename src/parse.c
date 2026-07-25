@@ -309,13 +309,18 @@ AST* PARSE(){
                 if (toks[pos].type == T_INT) {
                     uint32_t tmp = (uint32_t)eval_expr(toks[pos].value);
 
-                    node.u32.data = append(&node.u32.data_len,
-                                        &node.u32.data_cap,
-                                        node.u32.data,
-                                        &tmp,
-                                        sizeof(tmp));
+                    node.u32.data = append(&node.u32.data_len, &node.u32.data_cap, node.u32.data, &tmp, sizeof(tmp));
                     pos++;
                 }
+
+                else if(toks[pos].type == T_FLOAT){
+                    // first float in whole AmmAsm base code
+                    union { float f; uint32_t u;} ieee;
+                    ieee.f = strtof(toks[pos].value, NULL);
+                    node.u32.data = append(&node.u32.data_len, &node.u32.data_cap, node.u32.data, &ieee.u, sizeof(float));
+                    pos++;
+                }
+
                 else {
                     fprintf(stderr, "AmmAsm:%d: unexpected token in u32\n", toks[pos].line);
                     exit(1);
@@ -340,8 +345,7 @@ AST* PARSE(){
                 
                 if (toks[pos].type == T_INT && (toks[pos+1].type == T_COMMA || toks[pos+1].type == T_EOL || toks[pos+1].type == T_EOF)) {
                     U64Entry entry = {.type = U64_INT, .imm = (uint64_t)eval_expr(toks[pos].value)};
-                    node.u64.entries = append(&node.u64.entries_len, &node.u64.entries_cap,
-                                               node.u64.entries, &entry, sizeof(U64Entry));
+                    node.u64.entries = append(&node.u64.entries_len, &node.u64.entries_cap, node.u64.entries, &entry, sizeof(U64Entry));
                     pos++;
                 } 
                 else if((toks[pos].type == T_LAB || toks[pos].type == T_INT ||
@@ -371,6 +375,7 @@ AST* PARSE(){
                     node.u64.entries = append(&node.u64.entries_len, &node.u64.entries_cap,
                                                node.u64.entries, &entry, sizeof(U64Entry));
                 }
+
                 else {
                     fprintf(stderr, "AmmAsm:%d: unexpected token in u64\n", toks[pos].line);
                     exit(1);
@@ -380,6 +385,43 @@ AST* PARSE(){
             ast = append(&ast_len, &ast_cap, ast, ASTptr, sizeof(AST));
             if (pos < toks_len && toks[pos].type == T_EOL) while(toks[pos].type == T_EOL) pos++;
             continue;
+        }
+
+        else if(tok->type == T_ALIGN){
+            node.type = AST_ALIGN;
+            pos++;
+
+            if(toks[pos].type != T_INT){ fprintf(stderr, "AmmAsm:%d: Expected digit after 'align' symbol\n", node.line);exit(1);}
+            long value = eval_expr(toks[pos].value);
+
+            if(value <= (long)-1){
+                fprintf(stderr, "AmmAsm:%d: size constant too large\n", node.line);
+                exit(1);
+            }
+
+            if((value <= 0) || (value & (value - 1))){
+                fprintf(stderr, "AmmAsm:%d: the number must be divisible by 2\n", node.line);
+                exit(1);
+            }
+
+            node.align.size = (uint64_t)value;
+            pos++;
+
+            if(toks[pos].type == T_COMMA) ++pos;
+            if(toks[pos].type != T_INT) { fprintf(stderr, "AmmAsm:%d: Expected align syntax: align <scale>, <decimal>\n", node.line);exit(1);}
+
+            long decimal = eval_expr(toks[pos].value);
+
+            if((decimal <= (long)-1) || !(decimal >= -128 && decimal <= 255)){
+                fprintf(stderr, "AmmAsm:%d: decimal constant too large\n", node.line);
+                exit(1);
+            }
+
+            node.align.desimal = (uint8_t)decimal;
+            pos++;
+            
+            ast = append(&ast_len, &ast_cap, ast, ASTptr, sizeof(AST));
+            if(pos < toks_len && toks[pos].type == T_EOL) ++pos;       
         }
 
         else if(tok->type == T_RESB || tok->type == T_RESW || tok->type == T_RESD || tok->type == T_RESQ){

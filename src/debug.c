@@ -26,6 +26,9 @@ void DEBUG_PRINT_TOKENS() {
             case T_REG16: type_str = "T_REG16"; break;
             case T_REG32: type_str = "T_REG32"; break;
             case T_REG64: type_str = "T_REG64"; break;
+            case T_XMM: type_str = "T_XMM"; break;
+            case T_ALIGN: type_str = "T_ALIGN"; break;
+            case T_FLOAT: type_str = "T_FLOAT"; break;
             case T_ADDR_EXPR: type_str = "T_ADDR_EXPR"; break;
             case T_PC: type_str = "T_PC"; break;
             case T_STR: type_str = "T_STR"; break;
@@ -80,6 +83,7 @@ void DEBUG_PRINT_AST() {
             case AST_GLOBAL: type_str = "AST_GLOBAL"; break;
             case AST_SECTION: type_str = "AST_SECTION"; break;
             case AST_EXTERN: type_str = "AST_EXTERN"; break;
+            case AST_ALIGN: type_str = "AST_ALIGN"; break;
         }
         
         printf("AST[%d]: type=%-15s", i, type_str);
@@ -167,6 +171,10 @@ void DEBUG_PRINT_AST() {
                     printf("%s%c ", node->externs.labels[i], (i+1 == node->externs.labels_len) ? '\0' : ','); // more readable :)
                 }
                 printf("]");
+                break;
+
+            case AST_ALIGN:
+                printf(" align=%d ", node->align);
                 break;
     
             case AST_LABEL:

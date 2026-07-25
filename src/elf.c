@@ -74,6 +74,9 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
 
     uint64_t bss_size = 0;
  
+
+
+
     /* Find .data and .text and .bss section boundaries in AST */
     int data_start_idx = -1;
     int text_start_idx = -1;
@@ -98,21 +101,24 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
         for (int i = data_start_idx + 1; i < ast_len; i++) {
             if (ast[i].type == AST_SECTION) break;  /* next section */
             if (ast[i].machine_code_len > 0 &&
-                (ast[i].type == AST_U8  || ast[i].type == AST_U16 ||
-                 ast[i].type == AST_U32 || ast[i].type == AST_U64)) {
+                ((ast[i].type == AST_U8  || ast[i].type == AST_U16 ||
+                 ast[i].type == AST_U32 || ast[i].type == AST_U64) || ast[i].type == AST_ALIGN)) {
                 if (data_size + ast[i].machine_code_len > (1024 * 1024)) break;
                 memcpy(data_buf + data_size, ast[i].machine_code, ast[i].machine_code_len);
                 data_size += ast[i].machine_code_len;
             }
         }
     }
+
+
  
     /* Collect .text machine code */
     if (text_start_idx >= 0) {
         for (int i = text_start_idx + 1; i < ast_len; i++) {
             if (ast[i].type == AST_SECTION) break;
-            if ((ast[i].machine_code_len > 0 && ast[i].type == AST_INS) || ast[i].type == AST_U8 || ast[i].type == AST_U16 || ast[i].type == AST_U32 || ast[i].type == AST_U64) {
+            if ((ast[i].machine_code_len > 0 && ast[i].type == AST_INS) || ast[i].type == AST_U8 || ast[i].type == AST_U16 || ast[i].type == AST_U32 || ast[i].type == AST_U64 || ast[i].type == AST_ALIGN) {
                 if (text_size + ast[i].machine_code_len > (1024 * 1024)) break;
+                
                 memcpy(text_buf + text_size, ast[i].machine_code, ast[i].machine_code_len);
                 text_size += ast[i].machine_code_len;
             }
@@ -148,10 +154,7 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
     if (text_start_idx >= 0) {
         for (int i = text_start_idx + 1; i < ast_len; i++) {
             if (ast[i].type == AST_SECTION) break;
-            if (ast[i].type == AST_INS && ast[i].machine_code_len > 0) {
-                text_start_pc = ast[i].ins.pc;
-                break;
-            }
+            text_start_pc = ast[text_start_idx].section.vadress;
         }
     }
 
@@ -165,7 +168,7 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
             }
             if (ast[i].machine_code_len > 0 &&
                 (ast[i].type == AST_U8  || ast[i].type == AST_U16 ||
-                 ast[i].type == AST_U32 || ast[i].type == AST_U64)) {
+                 ast[i].type == AST_U32 || ast[i].type == AST_U64 || ast[i].type == AST_ALIGN)) {
                 off += ast[i].machine_code_len;
             }
         }
@@ -175,9 +178,11 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
     if (text_start_idx >= 0) {
         for (int i = text_start_idx + 1; i < ast_len; i++) {
             if (ast[i].type == AST_SECTION) break;
+            
             if (ast[i].type == AST_LABEL) {
                 ast[i].label.adress  = ast[i].label.vadress - text_start_pc;
             }
+
         }
     }
      
@@ -302,7 +307,7 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
                 if (sym_count >= MAX_SYMS) break;
     
                 syms[sym_count].st_name  = STRTAB_ADD(ast[i].label.name);
-                syms[sym_count].st_info  = ST_INFO(is_global ? STB_GLOBAL : STB_LOCAL, STT_OBJECT);
+                syms[sym_count].st_info  = ST_INFO(is_global ? STB_GLOBAL : STB_LOCAL, STT_NOTYPE);
                 syms[sym_count].st_shndx = 1; // .data 
                 syms[sym_count].st_value = ast[i].label.adress;
                 sym_count++;
@@ -312,17 +317,22 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
  
         /* .text labels */
         if (text_start_idx >= 0) {
+            
             for (int i = text_start_idx + 1; i < ast_len; i++) {
                 if (ast[i].type == AST_SECTION) break;
                 if (ast[i].type != AST_LABEL) continue;
+
+                
 
                 // Local/Global labels
                 int is_global = ast[i].label.is_global; 
                 if (is_global != want_global) continue;
                 if (sym_count >= MAX_SYMS) break;
-    
+                
+
+        
                 syms[sym_count].st_name  = STRTAB_ADD(ast[i].label.name);
-                syms[sym_count].st_info  = ST_INFO(is_global ? STB_GLOBAL : STB_LOCAL, STT_FUNC);
+                syms[sym_count].st_info  = ST_INFO(is_global ? STB_GLOBAL : STB_LOCAL, STT_NOTYPE);
                 syms[sym_count].st_shndx = 2; // .text 
                 syms[sym_count].st_value = ast[i].label.adress;
                 sym_count++;
@@ -385,7 +395,8 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
                 // mov/lea/... rax, [rel label] | mov/lea/... [rel label], <size> imm
                 if (oper->type == O_MEM && oper->addr.is_rip_rel){
                     /* looking for label name in our symtab (trying to get index of symbol syms)*/
-                    int sym_idx = data_section_sym_idx; /* default: .data section sym */
+
+                    int sym_idx = 0; 
                     const uint8_t *lab = oper->addr.label;
                     if (*lab) {
                         for (int s = 0; s < sym_count; s++) {
@@ -424,6 +435,7 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
                         expr_label_count(&ast[i].ins.operands[1].expr) == 1 &&
                         ast[i].ins.operands[1].expr.count == 1){
 
+                        
                         Expr *imm_expr = &ast[i].ins.operands[1].expr;
                         const uint8_t *lab2 = get_label_from_expr(*imm_expr);
 
@@ -457,6 +469,7 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
                                 relas[rela_count].r_addend = 0;
                                 rela_count++;
     
+                               
                                 memset(text_buf + imm_reloc_off, 0, 4);
                             }
                         }
@@ -495,7 +508,8 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
                     relas[rela_count].r_info   = ((uint64_t)sym_idx << 32) | R_X86_64_PC32; // symbol indx + disp32
                     relas[rela_count].r_addend =  constev -4;
                     rela_count++;
-                    memset(text_buf + reloc_off, 0, 4);
+
+                    //  memset(text_buf + reloc_off, 0, 4);
                     break;
                 }
 
@@ -534,6 +548,7 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
                 
                 // resolving R_X86_64_64
                 else if (oper->type == O_EXPR ) {
+
                     int sym_idx = data_section_sym_idx;
                     uint8_t *lab = NULL;
                     for (int k = 0; k < oper->expr.count; k++) {
@@ -789,8 +804,8 @@ int ELFgenfile(FILE *fl, uint64_t e_entry, uint8_t *text_code, uint64_t text_siz
  
     ELF64_Ehdr ehdr;
     ELF64_Phdr phdr;
-    uint64_t text_offset = 0x78;
-    uint64_t text_vaddr = pie_mode ? text_offset : 0x400078;
+    uint64_t text_offset = 0x1000;
+    uint64_t text_vaddr = pie_mode ? text_offset : 0x401000;
     
     // Init headers
     memset(&ehdr, 0, sizeof(ehdr));
@@ -815,7 +830,7 @@ int ELFgenfile(FILE *fl, uint64_t e_entry, uint8_t *text_code, uint64_t text_siz
     fwrite(&ehdr, sizeof(ehdr), 1, fl);
  
  
-    uint64_t code_off = 0x78;
+    uint64_t code_off = 0x1000;
     uint64_t base = pie_mode ? 0 : 0x400000;
  
  
@@ -830,8 +845,10 @@ int ELFgenfile(FILE *fl, uint64_t e_entry, uint8_t *text_code, uint64_t text_siz
     phdr.p_align  = 0x1000;
     
     fwrite(&phdr, sizeof(phdr), 1, fl);
+    char zero[0x1000 - 120] = {0};
+    fwrite(zero, 1, 0x1000 - 120, fl);
     // .text
     fwrite(text_code, 1, text_size, fl);
-    
-    return 0x78 + text_size;
+
+    return 0x1000 + text_size;
 }

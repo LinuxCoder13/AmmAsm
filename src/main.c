@@ -5,17 +5,18 @@
 
 
 #include "main.h"
-#define VERSION "2.3.0"
+#define VERSION "2.4.0"
 
 void compiler(uint8_t *text, int *textsize, uint64_t *e_entry) {
     if (!text) return;
     int pos = 0;
  
     // of text
-    uint64_t pc = pie_mode ? 0x78 : 0x400078;
+    uint64_t pc = pie_mode ? 0x1000 : 0x401000;
  
     for(int i = 0; i < ast_len; i++){
         if(ast[i].type == AST_INS) parseInst(&ast[i], &pc);
+        else if(ast[i].type == AST_ALIGN) emit_align(&ast[i], &pc);
         else if(ast[i].type == AST_U8 || ast[i].type == AST_U16 || ast[i].type == AST_U32 || ast[i].type == AST_U64 || ast[i].type == AST_BSS_RES) parse_size_directives(&ast[i], &pc);
     }
  
@@ -31,6 +32,7 @@ void compiler(uint8_t *text, int *textsize, uint64_t *e_entry) {
             case AST_U32:
             case AST_U64:
             case AST_BSS_RES:
+            case AST_ALIGN:
                 if (pos >= (1024 * 1024)){
                     fprintf(stderr, "AmmAsm: data size is too big. Max 1MB\n");
                     exit(1);
@@ -71,7 +73,7 @@ void handl_pipeline(int argc, char **argv){
     int flsz = 0;
  
 
-    uint64_t entry_point = (pie_mode) ? 0x78 : 0x400078; 
+    uint64_t entry_point = (pie_mode) ? 0x1000 : 0x401000; 
  
     FILE *input = fopen(prosesedfile, "r");
     LEXER(input);

@@ -143,12 +143,10 @@ uint8_t encode_mov_reg_imm(uint8_t *mash_code, uint8_t reg_idx, uint64_t imm, ui
     uint8_t rex = 0;
     uint8_t opcode = (sz == 8) ? 0xB0 : 0xB8; 
     uint8_t pos = 0;
-    uint8_t rm_idx = reg_idx;
 
-    if(reg_idx >= 8){
-        rex = REX_BASE | REX_B;
-        rm_idx -= 8;
-    }
+
+
+    if(reg_idx >= 8)rex = REX_BASE | REX_B;
 
     switch(sz){
         case 8: if(reg_idx >= 4 && reg_idx <= 7) rex |= REX_BASE; break; // spl, bpl, sil, dil
@@ -158,7 +156,7 @@ uint8_t encode_mov_reg_imm(uint8_t *mash_code, uint8_t reg_idx, uint64_t imm, ui
     }
     
 
-    opcode += rm_idx;
+    opcode += (reg_idx & 7);
 
     if(rex)mash_code[pos++] = rex;
     mash_code[pos++] = opcode;
@@ -181,18 +179,12 @@ uint8_t encode_mov_reg_reg(uint8_t *mash_code, uint8_t dest_idx, uint8_t src_idx
     uint8_t modrm = 0;
     uint8_t pos = 0;
 
-    uint8_t rm = dest_idx;
-    uint8_t reg = src_idx;
-    
-    if(dest_idx >= 8){ 
-        rex |=  REX_BASE | REX_B;
-        rm -= 8;
-    }
 
-    if(src_idx >= 8){ 
-        rex |= REX_BASE | REX_R;
-        reg -= 8;
-    }
+    
+    if(dest_idx >= 8)rex |=  REX_BASE | REX_B;
+    if(src_idx >= 8)rex |= REX_BASE | REX_R;
+
+    
 
     switch (sz){
         case 8: if((dest_idx >= 4 && dest_idx <= 7) || (src_idx >= 4 && src_idx <= 7)) rex |= REX_BASE; break;// spl, bpl, sil, dil
@@ -205,12 +197,12 @@ uint8_t encode_mov_reg_reg(uint8_t *mash_code, uint8_t dest_idx, uint8_t src_idx
     if(rex)mash_code[pos++] = rex;
     mash_code[pos++] = opcode;
     // mod = 0b11 means that this operation take place between 2 regs (no memory used)
-    mash_code[pos++] = emit_modrm(0b11, reg, rm);
+    mash_code[pos++] = emit_modrm(0b11, src_idx, dest_idx);
 
     return pos;
 }
 
-uint8_t encode_two_byte_opcode_reg(uint8_t *mash_code, uint8_t opcode, uint8_t dest, uint8_t src, uint8_t destsz){
+uint8_t encode_two_byte_opcode_reg(uint8_t *mash_code, uint8_t opcode, uint8_t dest, uint8_t src, uint8_t destsz, uint8_t prefix){
     uint8_t legacy_prefix = 0x66;
     uint8_t rex = 0;
     uint8_t modrm = 0;
@@ -219,15 +211,9 @@ uint8_t encode_two_byte_opcode_reg(uint8_t *mash_code, uint8_t opcode, uint8_t d
     uint8_t rm = src;
     uint8_t reg = dest;
     
-    if(dest>= 8){ 
-        rex |=  REX_BASE | REX_B;
-        rm -= 8;
-    }
-
-    if(src >= 8){ 
-        rex |= REX_BASE | REX_R;
-        reg -= 8;
-    }
+    if(dest>= 8)rex |=  REX_BASE | REX_B;
+    if(src >= 8)rex |= REX_BASE | REX_R;
+    
     
     if((src >= 4) && (src <= 7)) rex |= REX_BASE;
 
@@ -241,6 +227,7 @@ uint8_t encode_two_byte_opcode_reg(uint8_t *mash_code, uint8_t opcode, uint8_t d
 
     modrm = emit_modrm(0b11, reg, rm);
 
+    if(prefix) mash_code[pos++] = prefix;
     if(rex) mash_code[pos++] = rex;
     mash_code[pos++] = 0x0F;
     mash_code[pos++] = opcode;
@@ -367,7 +354,7 @@ uint8_t encode_inst_rm_rm(uint8_t *mash_code, uint8_t reg, AddrExpr *expr, uint8
 
 
     if(expr->is_rip_rel && !expr->have_base && expr->have_index){
-        fprintf(stderr, "AmmAsm: RIP-relative addressing cannot use index register");
+        fprintf(stderr, "AmmAsm: RIP-relative addressing cannot use index register\n");
         exit(1);
     }
     
@@ -397,7 +384,7 @@ uint8_t encode_inst_rm_rm(uint8_t *mash_code, uint8_t reg, AddrExpr *expr, uint8
 /* mainly copy paste*/
 // inst reg, <SIZE> r/m
 // 0F B6/B7/BE/BF.......
-uint8_t encode_inst_reg_rm2(uint8_t *machine_code, uint8_t opcode2, uint8_t reg, AddrExpr *expr, uint8_t dst_sz)
+uint8_t encode_inst_reg_rm2(uint8_t *machine_code, uint8_t opcode2, uint8_t reg, AddrExpr *expr, uint8_t dst_sz, uint8_t prefix)
 {
     uint8_t rex = 0;
     uint8_t modrm = 0;
@@ -522,8 +509,9 @@ uint8_t encode_inst_reg_rm2(uint8_t *machine_code, uint8_t opcode2, uint8_t reg,
         exit(1);
     }
 
-    if (rex)
-        machine_code[pos++] = rex | REX_BASE;
+
+    if(prefix) machine_code[pos++] = prefix;
+    if (rex) machine_code[pos++] = rex | REX_BASE;
 
     machine_code[pos++] = 0x0F;
     machine_code[pos++] = opcode2;
@@ -557,10 +545,8 @@ uint8_t encode_add_imm(uint8_t *mash_code, uint8_t reg, uint32_t imm, uint8_t sz
     uint8_t rm = reg;
     int pos = 0;
 
-    if (reg >= 8) {
-        rex |= REX_BASE | REX_B;
-        rm -= 8;
-    }
+    if (reg >= 8) rex |= REX_BASE | REX_B;
+
 
     switch(sz){
         case 8:
@@ -629,15 +615,9 @@ uint8_t encode_add_reg_reg(uint8_t *mash_code, uint8_t dest, uint8_t src, uint8_
     uint8_t rm  = dest;
     uint8_t reg = src;
     
-    if(dest >= 8){
-        rex |= REX_BASE | REX_B;
-        rm -= 8;
-    }
+    if(dest >= 8)rex |= REX_BASE | REX_B;
+    if(src >= 8)rex |= REX_BASE | REX_R;
 
-    if(src >= 8){
-        rex |= REX_BASE | REX_R;
-        reg -= 8;
-    }
 
     switch(sz){
         case 8 : { if((dest >= 4 && dest <= 7) || (src >= 4 && src <= 7)){ rex |= REX_BASE;} break; } // spl, bpl, sil, dil
@@ -662,10 +642,8 @@ uint8_t encode_sub_imm(uint8_t *mash_code, uint8_t reg, uint32_t imm, uint8_t sz
     uint8_t rm = reg;
     int pos = 0;
 
-    if (reg >= 8) {
-        rex |= REX_BASE | REX_B;
-        rm -= 8;
-    }
+    if (reg >= 8) rex |= REX_BASE | REX_B;
+
 
     switch(sz){
         case 8:
@@ -734,15 +712,8 @@ uint8_t encode_sub_reg_reg(uint8_t *mash_code, uint8_t dest, uint8_t src, uint8_
     uint8_t rm  = dest;
     uint8_t reg = src;
     
-    if(dest >= 8){
-        rex |= REX_BASE | REX_B;
-        rm -= 8;
-    }
-
-    if(src >= 8){
-        rex |= REX_BASE | REX_R;
-        reg -= 8;
-    }
+    if(dest >= 8)rex |= REX_BASE | REX_B;
+    if(src >= 8)rex |= REX_BASE | REX_R;
 
     switch(sz){
         case 8 : { if((dest >= 4 && dest <= 7) || (src >= 4 && src <= 7)){ rex |= REX_BASE;} break; } // spl, bpl, sil, dil
@@ -769,10 +740,8 @@ uint8_t encode_imul_reg(uint8_t *mash_code, uint8_t reg, uint8_t sz){
 
     uint8_t rm = reg;
 
-    if(reg >= 8){
-        rex |= REX_BASE | REX_B;
-        rm -= 8;
-    }
+    if(reg >= 8)rex |= REX_BASE | REX_B;
+
     
     // if sz == 64: result of imul is in RDX:RAX
     // if sz == 32: result of imul is in EDX:EAX
@@ -807,16 +776,10 @@ uint8_t encode_imul_reg_reg(uint8_t *mash_code, uint8_t dest, uint8_t src, uint8
     uint8_t rm = dest;
     uint8_t reg = src;
     
-    if(dest >= 8){
-        rex |= REX_BASE | REX_B;
-        rm -= 8;
-    }
+    if(dest >= 8) rex |= REX_BASE | REX_B;
 
-    if(src >= 8){
-        rex |= REX_BASE | REX_R;
-        reg -= 8;
-    }
 
+    if(src >= 8)rex |= REX_BASE | REX_R;
 
     switch(sz){
         case 8:  {fprintf(stderr, "AmmAasm: invalid instruction 'imul r8, r8'\n"); exit(1); } break;
@@ -846,14 +809,10 @@ uint8_t encode_imul_reg_reg_imm(uint8_t *mash_code, uint8_t dest, uint8_t src, u
     uint8_t rm = src;
     uint8_t reg = dest; 
 
-    if (dest >= 8) {
-        rex |= REX_BASE | REX_R;
-        reg -= 8;
-    }
-    if (src >= 8) {
-        rex |= REX_BASE | REX_B;
-        rm -= 8;
-    }
+    if (dest >= 8) rex |= REX_BASE | REX_R;
+
+    if (src >= 8) rex |= REX_BASE | REX_B;
+
 
     switch(sz) {
         case 16:
@@ -913,10 +872,8 @@ uint8_t encode_div_or_idiv_reg(uint8_t* mash_code, uint8_t reg ,uint8_t src, uin
 
     uint8_t rm = src;
 
-    if(src >= 8){
-        rm -= 8;
-        rex |= REX_BASE | REX_B;
-    }
+    if(src >= 8)rex |= REX_BASE | REX_B;
+    
 
     switch(sz){
         case 8 : { if(src >= 4 && src <= 7){ rex |= REX_BASE;} break; } // spl, bpl, sil, dil
@@ -941,10 +898,8 @@ uint8_t encode_cmp_imm(uint8_t *mash_code, uint8_t reg, uint32_t imm, uint8_t sz
     uint8_t rm = reg;
     int pos = 0;
 
-    if (reg >= 8) {
-        rex |= REX_BASE | REX_B;
-        rm -= 8;
-    }
+    if (reg >= 8) rex |= REX_BASE | REX_B;
+
 
     switch(sz){
         case 8:
@@ -1013,15 +968,8 @@ uint8_t encode_cmp_reg_reg(uint8_t *mash_code, uint8_t dest, uint8_t src, uint8_
     uint8_t rm  = dest;
     uint8_t reg = src;
     
-    if(dest >= 8){
-        rex |= REX_BASE | REX_B;
-        rm -= 8;
-    }
-
-    if(src >= 8){
-        rex |= REX_BASE | REX_R;
-        reg -= 8;
-    }
+    if(dest >= 8)rex |= REX_BASE | REX_B;
+    if(src >= 8)rex |= REX_BASE | REX_R;
 
     switch(sz){
         case 8 : { if((dest >= 4 && dest <= 7) || (src >= 4 && src <= 7)){ rex |= REX_BASE;} break; } // spl, bpl, sil, dil
@@ -1047,19 +995,16 @@ uint8_t encode_push_reg(uint8_t *mash_code, uint8_t reg, uint8_t sz){
 
     uint8_t src = reg;
 
-    if(reg >= 8){
-        rex |= REX_BASE | REX_B;
-        src -= 8;
-    }
+    if(reg >= 8)rex |= REX_BASE | REX_B;
 
     switch(sz){
-        case 8: if(reg >= 4 && reg <= 7) rex |= REX_BASE; break;
+        case 8: return 0;
         case 16: mash_code[pos++] = legacy_prefix; break;
-        case 32: fprintf(stderr, "AmmAsm: instruction 'push' not supported 32-bit register in 64-bit mode\n"); exit(1); 
+        case 32: fprintf(stderr, "AmmAsm: instruction 'push' not supported 32-bit register in 64-bit mode\n"); return 0;
         case 64: break; // no need rex.w
     }
 
-    opcode += src;
+    opcode += (src & 7);
 
     if(rex) mash_code[pos++] = rex;
     mash_code[pos++] = opcode;
@@ -1074,10 +1019,8 @@ uint8_t encode_pop_reg(uint8_t *mash_code, uint8_t reg, uint8_t sz){
 
     uint8_t src = reg;
 
-    if(reg >= 8){
-        rex |= REX_BASE | REX_B;
-        src -= 8;
-    }
+    if(reg >= 8)rex |= REX_BASE | REX_B;
+
 
     switch(sz){
         case 8: fprintf(stderr, "AmmAsm: instruction 'pop' not supported 8-bit register\n"); exit(1);
@@ -1086,7 +1029,7 @@ uint8_t encode_pop_reg(uint8_t *mash_code, uint8_t reg, uint8_t sz){
         case 64: break; // no need rex.w
     }
 
-    opcode += src;
+    opcode += (src & 7);
 
     if(rex) mash_code[pos++] = rex;
     mash_code[pos++] = opcode;
@@ -1101,10 +1044,8 @@ uint8_t encode_xor_imm(uint8_t *mash_code, uint8_t reg, uint32_t imm, uint8_t sz
     uint8_t rm = reg;
     int pos = 0;
 
-    if (reg >= 8) {
-        rex |= REX_BASE | REX_B;
-        rm -= 8;
-    }
+    if (reg >= 8) rex |= REX_BASE | REX_B;
+
 
     switch(sz){
         case 8:
@@ -1173,15 +1114,9 @@ uint8_t encode_xor_reg_reg(uint8_t *mash_code, uint8_t dest, uint8_t src, uint8_
     uint8_t rm  = dest;
     uint8_t reg = src;
     
-    if(dest >= 8){
-        rex |= REX_BASE | REX_B;
-        rm -= 8;
-    }
+    if(dest >= 8)rex |= REX_BASE | REX_B;
+    if(src >= 8)rex |= REX_BASE | REX_R;
 
-    if(src >= 8){
-        rex |= REX_BASE | REX_R;
-        reg -= 8;
-    }
 
     switch(sz){
         case 8 : { if((dest >= 4 && dest <= 7) || (src >= 4 && src <= 7)){ rex |= REX_BASE;} break; } // spl, bpl, sil, dil
@@ -1207,10 +1142,7 @@ uint8_t encode_adc_imm(uint8_t *mash_code, uint8_t reg, uint32_t imm, uint8_t sz
     uint8_t rm = reg;
     int pos = 0;
 
-    if (reg >= 8) {
-        rex |= REX_BASE | REX_B;
-        rm -= 8;
-    }
+    if (reg >= 8) rex |= REX_BASE | REX_B;
 
     switch(sz){
         case 8:
@@ -1279,15 +1211,9 @@ uint8_t encode_adc_reg_reg(uint8_t *mash_code, uint8_t dest, uint8_t src, uint8_
     uint8_t rm  = dest;
     uint8_t reg = src;
     
-    if(dest >= 8){
-        rex |= REX_BASE | REX_B;
-        rm -= 8;
-    }
+    if(dest >= 8) rex |= REX_BASE | REX_B;
+    if(src >= 8) rex |= REX_BASE | REX_R;
 
-    if(src >= 8){
-        rex |= REX_BASE | REX_R;
-        reg -= 8;
-    }
 
     switch(sz){
         case 8 : { if((dest >= 4 && dest <= 7) || (src >= 4 && src <= 7)){ rex |= REX_BASE;} break; } // spl, bpl, sil, dil
@@ -1312,10 +1238,8 @@ uint8_t encode_or_imm(uint8_t *mash_code, uint8_t reg, uint32_t imm, uint8_t sz,
     uint8_t rm = reg;
     int pos = 0;
 
-    if (reg >= 8) {
-        rex |= REX_BASE | REX_B;
-        rm -= 8;
-    }
+    if (reg >= 8) rex |= REX_BASE | REX_B;
+
 
     switch(sz){
         case 8:
@@ -1384,15 +1308,9 @@ uint8_t encode_or_reg_reg(uint8_t *mash_code, uint8_t dest, uint8_t src, uint8_t
     uint8_t rm  = dest;
     uint8_t reg = src;
     
-    if(dest >= 8){
-        rex |= REX_BASE | REX_B;
-        rm -= 8;
-    }
+    if(dest >= 8)rex |= REX_BASE | REX_B;
+    if(src >= 8)rex |= REX_BASE | REX_R;
 
-    if(src >= 8){
-        rex |= REX_BASE | REX_R;
-        reg -= 8;
-    }
 
     switch(sz){
         case 8 : { if((dest >= 4 && dest <= 7) || (src >= 4 && src <= 7)){ rex |= REX_BASE;} break; } // spl, bpl, sil, dil
@@ -1417,10 +1335,7 @@ uint8_t encode_sbb_imm(uint8_t *mash_code, uint8_t reg, uint32_t imm, uint8_t sz
     uint8_t rm = reg;
     int pos = 0;
 
-    if (reg >= 8) {
-        rex |= REX_BASE | REX_B;
-        rm -= 8;
-    }
+    if (reg >= 8) rex |= REX_BASE | REX_B;
 
     switch(sz){
         case 8:
@@ -1489,15 +1404,8 @@ uint8_t encode_sbb_reg_reg(uint8_t *mash_code, uint8_t dest, uint8_t src, uint8_
     uint8_t rm  = dest;
     uint8_t reg = src;
     
-    if(dest >= 8){
-        rex |= REX_BASE | REX_B;
-        rm -= 8;
-    }
-
-    if(src >= 8){
-        rex |= REX_BASE | REX_R;
-        reg -= 8;
-    }
+    if(dest >= 8)rex |= REX_BASE | REX_B;
+    if(src >= 8)rex |= REX_BASE | REX_R;
 
     switch(sz){
         case 8 : { if((dest >= 4 && dest <= 7) || (src >= 4 && src <= 7)){ rex |= REX_BASE;} break; } // spl, bpl, sil, dil
@@ -1522,11 +1430,8 @@ uint8_t encode_and_imm(uint8_t *mash_code, uint8_t reg, uint32_t imm, uint8_t sz
     uint8_t rm = reg;
     int pos = 0;
 
-    if (reg >= 8) {
-        rex |= REX_BASE | REX_B;
-        rm -= 8;
-    }
-
+    if (reg >= 8) rex |= REX_BASE | REX_B;
+ 
     switch(sz){
         case 8:
             if (reg >= 4 && reg <= 7) rex |= REX_BASE;
@@ -1594,15 +1499,9 @@ uint8_t encode_and_reg_reg(uint8_t *mash_code, uint8_t dest, uint8_t src, uint8_
     uint8_t rm  = dest;
     uint8_t reg = src;
     
-    if(dest >= 8){
-        rex |= REX_BASE | REX_B;
-        rm -= 8;
-    }
-
-    if(src >= 8){
-        rex |= REX_BASE | REX_R;
-        reg -= 8;
-    }
+    if(dest >= 8)rex |= REX_BASE | REX_B;
+    if(src >= 8)rex |= REX_BASE | REX_R;
+  
 
     switch(sz){
         case 8 : { if((dest >= 4 && dest <= 7) || (src >= 4 && src <= 7)){ rex |= REX_BASE;} break; } // spl, bpl, sil, dil
@@ -1631,15 +1530,9 @@ uint8_t encode_test_reg_reg(uint8_t *mash_code, uint8_t dest_idx, uint8_t src_id
     uint8_t rm = dest_idx;
     uint8_t reg = src_idx;
     
-    if(dest_idx >= 8){ 
-        rex |= REX_BASE | REX_B;
-        rm -= 8;
-    }
+    if(dest_idx >= 8)rex |= REX_BASE | REX_B;
+    if(src_idx >= 8)rex |= REX_BASE | REX_R;
 
-    if(src_idx >= 8){ 
-        rex |= REX_BASE | REX_R;
-        reg -= 8;
-    }
 
     switch (sz){
         case 8: if((dest_idx >= 4 && dest_idx <= 7) || (src_idx >= 4 && src_idx <= 7)) rex |= REX_BASE; break;// spl, bpl, sil, dil
@@ -1663,10 +1556,7 @@ uint8_t encode_group2_reg_imm(uint8_t* mash_code, uint8_t dest, uint8_t opcode, 
     uint8_t pos = 0;
 
     uint8_t rm = dest;
-    if(dest >= 8){
-        rex |= REX_BASE | REX_B;
-        rm -= 8;
-    }
+    if(dest >= 8)rex |= REX_BASE | REX_B;
 
     switch(sz){
         case 8 : { if((dest >= 4 && dest <= 7)){ rex |= REX_BASE;} break; } // spl, bpl, sil, dil
@@ -1692,10 +1582,8 @@ uint8_t encode_group2_reg_cl(uint8_t* mash_code, uint8_t dest, uint8_t opcode, u
     uint8_t pos = 0;
 
     uint8_t rm = dest;
-    if(dest >= 8){
-        rex |= REX_BASE | REX_B;
-        rm -= 8;
-    }
+    if(dest >= 8)rex |= REX_BASE | REX_B;
+
 
     switch(sz){
         case 8 : { if((dest >= 4 && dest <= 7)){ rex |= REX_BASE;} break; } // spl, bpl, sil, dil
@@ -1721,10 +1609,8 @@ uint8_t encode_group3_reg(uint8_t* mash_code, uint8_t dest, uint8_t opcode, uint
     uint8_t pos = 0;
 
     uint8_t rm = dest;
-    if(dest >= 8){
-        rex |= REX_BASE | REX_B;
-        rm -= 8;
-    }
+
+    if(dest >= 8) rex |= REX_BASE | REX_B;
 
     switch(sz){
         case 8 : { if((dest >= 4 && dest <= 7)){ rex |= REX_BASE;} break; } // spl, bpl, sil, dil
@@ -1751,10 +1637,7 @@ uint8_t encode_test_reg_imm(uint8_t *mash_code, uint8_t reg_idx, uint64_t imm, u
 
     uint8_t rm_ = reg_idx;
 
-    if(reg_idx >= 8){
-        rex = REX_BASE | REX_B;
-        rm_ -= 8;
-    }
+    if(reg_idx >= 8)rex = REX_BASE | REX_B;
 
     switch(sz){
         case 8: if(reg_idx >= 4 && reg_idx <= 7) rex |= REX_BASE; break; // spl, bpl, sil, dil

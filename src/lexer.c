@@ -97,6 +97,8 @@ int LEXER(FILE* fl) {
 
                 char num[128] = {0};
                 int i = 0;
+                int is_float = 0;
+                int dots_c = 0;
 
                 while (*buff && (
                     (*buff >= '0' && *buff <= '9') ||
@@ -104,18 +106,38 @@ int LEXER(FILE* fl) {
                     (*buff >= 'A' && *buff <= 'F') ||
                     *buff == 'x' || *buff == 'X' ||
                     *buff == 'o' || *buff == 'O' ||
-                    *buff == 'b' || *buff == 'B'
-                )) {
+                    *buff == 'b' || *buff == 'B')||
+                    *buff == '.') {
 
                     if (i < (int)(sizeof(num) - 1)) {
                         num[i++] = *buff;
                     }
+
+                    if(*buff == '.') {is_float = 1; dots_c++;}
+                    if(dots_c > 1){fprintf(stderr, "AmmAsm:%d: Bradar, what is this? delete this.\n", line); exit(1);}
+
                     buff++;
                 }
+
+                // check syntax
                 
                 num[i] = '\0';
-                
-                add_token(T_INT, num, line);
+
+                if(is_float){
+                    if (i >= 2 &&
+                        (num[1] == 'x' || num[1] == 'X' ||
+                        num[1] == 'b' || num[1] == 'B' ||
+                        num[1] == 'o' || num[1] == 'O')){
+                            fprintf(stderr, "AmmAsm:%d: Bradar, what is this? delete this.\n", line);
+                            exit(1);
+                    }
+                    if(num[i-1] == '.'){
+                        fprintf(stderr, "AmmAsm:%d: Bradar, what is this? delete this.\n", line);
+                        exit(1);
+                    } 
+                }
+
+                add_token(is_float ? T_FLOAT : T_INT, num, line);
                 continue; 
             }
 
@@ -190,6 +212,8 @@ int LEXER(FILE* fl) {
                 else if(strcasecmp(buf, HUMAN_AST[2]) == 0) add_token(T_U32, buf, line);
                 else if(strcasecmp(buf, HUMAN_AST[3]) == 0) add_token(T_U64, buf, line);
                 
+                else if(!strcasecmp(buf, "align")) {add_token(T_ALIGN, buf, line); continue;}
+
                 else {                  
                     add_token(T_LAB, buf, line);
                 }

@@ -7,6 +7,7 @@
 #include "Charset.h"
 #include "parse.h"
 #include <stdio.h>
+#include "debug.h"
 
 #define IS_EXPR_OR_PC(operand) \
     (operand.type == O_PC || operand.type == O_EXPR)

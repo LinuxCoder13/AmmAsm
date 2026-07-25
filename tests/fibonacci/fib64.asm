@@ -53,6 +53,7 @@ strlen:
 .done:
     mov rax, rcx
     ret
+    align 16, 0x90
 
 _start:
 fib:
@@ -124,6 +125,7 @@ fib:
     syscallWrite(1, nl, 1)
 
     jmp .done
+    align 16, 0x90
 
 .toooo_big:
     test r10b, r10b

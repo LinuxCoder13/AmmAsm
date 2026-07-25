@@ -40,4 +40,4 @@ extern void TwoDfree(uint8_t **arr, int count);
 extern uint8_t is_expr_token(TokenType t);
 extern uint8_t find_xmm_index(const char* r) ;
 
-extern int astrcmp(const char* s1, const char* s2);  // !!!!_/-|self-hosted function|-\_!!!!
+extern int astrcmp(const char* s1, const char* s2);  // !!!!_/-|self-hosted SSE2 function|-\_!!!!

@@ -75,7 +75,7 @@ void expand_local_labels(){
 /* post-link resolve O(n^2) */
 // collect labels with sections and find e_entry 
 uint64_t collect_labels_sections() {
-    uint64_t current_pc = pie_mode ? 0x78 : 0x400078; // .text section starts here 
+    uint64_t current_pc = pie_mode ? 0x1000 : 0x401000; // .text section starts here 
     uint8_t e_entry_defined = 0;
     uint64_t e_entry;
     int j = 0;
@@ -123,12 +123,15 @@ uint64_t collect_labels_sections() {
             }
             l++;   
         }
+
+
         else if ((ast[i].type == AST_INS && ast[i].machine_code_len > 0) ||
                  (ast[i].type == AST_U8  && ast[i].machine_code_len > 0) ||
                  (ast[i].type == AST_U16 && ast[i].machine_code_len > 0) ||
                  (ast[i].type == AST_U32 && ast[i].machine_code_len > 0) ||
                  (ast[i].type == AST_U64 && ast[i].machine_code_len > 0) ||
-                 (ast[i].type == AST_BSS_RES && ast[i].machine_code_len > 0)){
+                 (ast[i].type == AST_BSS_RES && ast[i].machine_code_len > 0 ||
+                  ast[i].type == AST_ALIGN && ast[i].machine_code_len > 0)){
 
             if(ast[i].type == AST_BSS_RES && obj_file) goto skip;
             current_pc += ast[i].machine_code_len; 
@@ -137,8 +140,8 @@ uint64_t collect_labels_sections() {
     }
     
     if(!e_entry_defined && !obj_file){
-        printf("AmmAsm: Linker: Entry point '_start' not found. Using %s%s as default\n", (pie_mode) ? "0x78" : "0x400078", (pie_mode) ? "(PIE)" : "");
-        e_entry = pie_mode ? 0x78 : 0x400078;
+        printf("AmmAsm: Linker: Entry point '_start' not found. Using %s%s as default\n", (pie_mode) ? "0x1000" : "0x401000", (pie_mode) ? "(PIE)" : "");
+        e_entry = pie_mode ? 0x1000 : 0x401000;
     }
 
     return e_entry;

@@ -3,6 +3,7 @@
 typedef enum __attribute__((packed)){
     T_INS,
     T_INT,
+    T_FLOAT,
     T_PLUS,
     T_MINUS,
     T_DIV,
@@ -20,6 +21,7 @@ typedef enum __attribute__((packed)){
     T_REG32,
     T_REG64,
     T_XMM,
+    T_ALIGN,
     T_ADDR_EXPR,
     T_STR,
     T_EOL,
@@ -52,6 +54,7 @@ typedef enum __attribute__((packed)){
     AST_U16,
     AST_U32,
     AST_U64,
+    AST_ALIGN,
     AST_EXPR, 
     AST_LABEL,
     AST_COMMA,

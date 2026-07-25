@@ -13,3 +13,4 @@
 
 extern uint8_t parseInst(AST* node, uint64_t *pc);
 extern void parse_size_directives(AST* node, uint64_t *pc);
+extern void emit_align(AST *node, uint64_t *pc);
