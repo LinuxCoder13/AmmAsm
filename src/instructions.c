@@ -5,7 +5,9 @@ const char *CMDS[] = {
     "mov", "cmp", "jmp", "lea", "push", "pop", "syscall", "call", "add", "sub", "imul", "div", "idiv",
     "cqo", "cdq", "cwd", "cdqe", "cwde", "cbw", "xor", "adc", "or", "sbb", "and",
     "rol", "ror", "rcl", "rcr", "shl", "shr", "sar", "sal",
-    "test", "not", "neg", "mul", "inc", "dec", "movzx", "movsx", "bsf", "bsr",
+    "test", "not", "neg", "mul", "inc", "dec", "movzx", "movsx", "bsf", "bsr", "clc", "stc", "cmc",
+    "cld", "std", "cli", "sti", "lahf", "sahf", "pushf", "pushfq", "popf", "popfq", "pushfq", 
+    "iret", "iretq", "cpuid", "hlt", "wait", "fwait", "pause", "ud2",
 
     "je", "jne", "jg", "jl", "jge", "jle", "jz", "ja", "jb", "jnz", "jc", "jae", "jbe",
     "nop", "ret",    
@@ -40,3 +42,4 @@ const char *Sign_extensions[] = { "cqo", "cdq", "cwd", "cdqe", "cwde", "cbw", NU
 
 // sign-extended immediate instructions
 const char* short_imm_instructions[] = { "add", "sub", "cmp", "xor", "adc", "or", "sbb", "and", NULL};
+const char* zero_operand_instructions[] = { "cmc", "clc", "stc", "cld", "std", "cli", "sti", "lahf", "sahf", "pushf", "popf", "popfq", "iret", "iretq", "cpuid", "hlt", "wait", "fwait", "pause", "ud2"};

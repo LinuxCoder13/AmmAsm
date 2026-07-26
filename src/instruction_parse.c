@@ -2021,6 +2021,84 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         *pc += *s;
     }
 
+    else if(is2arrin(zero_operand_instructions, (char*)cmd)){
+        if (strcasecmp(cmd, "clc") == 0) {
+            machine_code[0] = 0xF8;
+            *s = 1;
+        }
+        else if (strcasecmp(cmd, "stc") == 0) {
+            machine_code[0] = 0xF9;
+            *s = 1;
+        }
+        else if (strcasecmp(cmd, "cmc") == 0) {
+            machine_code[0] = 0xF5;
+            *s = 1;
+        }
+        else if (strcasecmp(cmd, "cld") == 0) {
+            machine_code[0] = 0xFC;
+            *s = 1;
+        }
+        else if (strcasecmp(cmd, "std") == 0) {
+            machine_code[0] = 0xFD;
+            *s = 1;
+        }
+        else if (strcasecmp(cmd, "cli") == 0) {
+            machine_code[0] = 0xFA;
+            *s = 1;
+        }
+        else if (strcasecmp(cmd, "sti") == 0) {
+            machine_code[0] = 0xFB;
+            *s = 1;
+        }
+        else if (strcasecmp(cmd, "lahf") == 0) {
+            machine_code[0] = 0x9F;
+            *s = 1;
+        }
+        else if (strcasecmp(cmd, "sahf") == 0) {
+            machine_code[0] = 0x9E;
+            *s = 1;
+        }
+        else if (strcasecmp(cmd, "pushf") == 0 || strcasecmp(cmd, "pushfq") == 0) {
+            machine_code[0] = 0x9C;
+            *s = 1;
+        }
+        else if (strcasecmp(cmd, "popf") == 0 || strcasecmp(cmd, "popfq") == 0) {
+            machine_code[0] = 0x9D;
+            *s = 1;
+        }
+        else if (strcasecmp(cmd, "leave") == 0) {
+            machine_code[0] = 0xC9;
+            *s = 1;
+        }
+        else if (strcasecmp(cmd, "iret") == 0 || strcasecmp(cmd, "iretq") == 0) {
+            machine_code[0] = 0xCF;
+            *s = 1;
+        }
+        else if (strcasecmp(cmd, "cpuid") == 0) {
+            machine_code[0] = 0x0F;
+            machine_code[1] = 0xA2;
+            *s = 2;
+        }
+        else if (strcasecmp(cmd, "hlt") == 0) {
+            machine_code[0] = 0xF4;
+            *s = 1;
+        }
+        else if (strcasecmp(cmd, "wait") == 0 || strcasecmp(cmd, "fwait") == 0) {
+            machine_code[0] = 0x9B;
+            *s = 1;
+        }
+        else if (strcasecmp(cmd, "pause") == 0) {
+            machine_code[0] = 0xF3;
+            machine_code[1] = 0x90;
+            *s = 2;
+        }
+        else if (strcasecmp(cmd, "ud2") == 0) {
+            machine_code[0] = 0x0F;
+            machine_code[1] = 0x0B;
+            *s = 2;
+        }
+        *pc += *s;
+    }
 
 
     if(*s == 0){

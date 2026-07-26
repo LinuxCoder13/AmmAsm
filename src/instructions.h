@@ -12,3 +12,5 @@ extern const char *Sign_extensions[];
 
 // sign-extended immediate instructions
 extern const char* short_imm_instructions[];
+
+extern const char* zero_operand_instructions[];
