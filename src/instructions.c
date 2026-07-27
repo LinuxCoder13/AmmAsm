@@ -41,4 +41,4 @@ const char *Sign_extensions[] = { "cqo", "cdq", "cwd", "cdqe", "cwde", "cbw", NU
 
 // sign-extended immediate instructions
 const char* short_imm_instructions[] = { "add", "sub", "cmp", "xor", "adc", "or", "sbb", "and", NULL};
-const char* zero_operand_instructions[] = { "cmc", "clc", "stc", "cld", "std", "cli", "sti", "lahf", "sahf", "pushf", "popf", "popfq", "iret", "iretq", "cpuid", "hlt", "wait", "fwait", "pause", "ud2", NULL};
+const char* zero_operand_instructions[] = { "cmc", "clc", "stc", "cld", "std", "cli", "sti", "lahf", "sahf", "pushf", "popf", "popfq", "iret", "iretq", "cpuid", "hlt", "wait", "fwait", "pause", "ud2",  NULL};
