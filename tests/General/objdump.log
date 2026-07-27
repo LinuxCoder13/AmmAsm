@@ -1,0 +1,100 @@
+
+a.out:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000401000 <_start>:
+  401000:	48 0f 44 ca          	cmove  %rdx,%rcx
+  401004:	48 0f 45 ca          	cmovne %rdx,%rcx
+  401008:	48 0f 4f ca          	cmovg  %rdx,%rcx
+  40100c:	48 0f 4d ca          	cmovge %rdx,%rcx
+  401010:	0f 94 c0             	sete   %al
+  401013:	0f 95 c3             	setne  %bl
+  401016:	40 0f 9c c6          	setl   %sil
+  40101a:	40 0f 9e c7          	setle  %dil
+  40101e:	45 0f 10 0f          	movups (%r15),%xmm9
+  401022:	45 0f 10 56 20       	movups 0x20(%r14),%xmm10
+  401027:	47 0f 10 5c 65 00    	movups 0x0(%r13,%r12,2),%xmm11
+  40102d:	47 0f 10 64 93 a0    	movups -0x60(%r11,%r10,4),%xmm12
+  401033:	47 0f 10 ac c1 ff 01 	movups 0x1ff(%r9,%r8,8),%xmm13
+  40103a:	00 00 
+  40103c:	44 0f 10 35 bc 0f 00 	movups 0xfbc(%rip),%xmm14        # 402000 <vec1>
+  401043:	00 
+  401044:	44 0f 10 3d c4 0f 00 	movups 0xfc4(%rip),%xmm15        # 402010 <vec2>
+  40104b:	00 
+  40104c:	44 0f 11 0c 24       	movups %xmm9,(%rsp)
+  401051:	44 0f 11 14 44       	movups %xmm10,(%rsp,%rax,2)
+  401056:	47 0f 11 5c 65 00    	movups %xmm11,0x0(%r13,%r12,2)
+  40105c:	47 0f 11 a4 93 80 00 	movups %xmm12,0x80(%r11,%r10,4)
+  401063:	00 00 
+  401065:	47 0f 11 6c c1 80    	movups %xmm13,-0x80(%r9,%r8,8)
+  40106b:	44 0f 11 35 8d 0f 00 	movups %xmm14,0xf8d(%rip)        # 402000 <vec1>
+  401072:	00 
+  401073:	44 0f 11 3d 95 0f 00 	movups %xmm15,0xf95(%rip)        # 402010 <vec2>
+  40107a:	00 
+  40107b:	45 0f 58 0f          	addps  (%r15),%xmm9
+  40107f:	45 0f 58 56 40       	addps  0x40(%r14),%xmm10
+  401084:	47 0f 58 5c 65 00    	addps  0x0(%r13,%r12,2),%xmm11
+  40108a:	47 0f 58 64 93 e0    	addps  -0x20(%r11,%r10,4),%xmm12
+  401090:	44 0f 58 2d 68 0f 00 	addps  0xf68(%rip),%xmm13        # 402000 <vec1>
+  401097:	00 
+  401098:	44 0f 58 35 70 0f 00 	addps  0xf70(%rip),%xmm14        # 402010 <vec2>
+  40109f:	00 
+  4010a0:	45 0f 5c 39          	subps  (%r9),%xmm15
+  4010a4:	45 0f 5c 40 c0       	subps  -0x40(%r8),%xmm8
+  4010a9:	0f 5c 3c 77          	subps  (%rdi,%rsi,2),%xmm7
+  4010ad:	0f 5c b4 c3 00 01 00 	subps  0x100(%rbx,%rax,8),%xmm6
+  4010b4:	00 
+  4010b5:	41 0f 59 2a          	mulps  (%r10),%xmm5
+  4010b9:	41 0f 59 a3 ff 00 00 	mulps  0xff(%r11),%xmm4
+  4010c0:	00 
+  4010c1:	43 0f 59 1c ac       	mulps  (%r12,%r13,4),%xmm3
+  4010c6:	43 0f 59 94 fe 01 ff 	mulps  -0xff(%r14,%r15,8),%xmm2
+  4010cd:	ff ff 
+  4010cf:	0f 59 0d 2a 0f 00 00 	mulps  0xf2a(%rip),%xmm1        # 402000 <vec1>
+  4010d6:	0f 59 05 33 0f 00 00 	mulps  0xf33(%rip),%xmm0        # 402010 <vec2>
+  4010dd:	44 0f 5e 38          	divps  (%rax),%xmm15
+  4010e1:	44 0f 5e 73 60       	divps  0x60(%rbx),%xmm14
+  4010e6:	44 0f 5e 2c 51       	divps  (%rcx,%rdx,2),%xmm13
+  4010eb:	47 0f 5e 64 88 b0    	divps  -0x50(%r8,%r9,4),%xmm12
+  4010f1:	44 0f 5e 1d 07 0f 00 	divps  0xf07(%rip),%xmm11        # 402000 <vec1>
+  4010f8:	00 
+  4010f9:	44 0f 5e 15 0f 0f 00 	divps  0xf0f(%rip),%xmm10        # 402010 <vec2>
+  401100:	00 
+  401101:	45 0f 57 0f          	xorps  (%r15),%xmm9
+  401105:	45 0f 57 46 f0       	xorps  -0x10(%r14),%xmm8
+  40110a:	43 0f 57 7c e5 00    	xorps  0x0(%r13,%r12,8),%xmm7
+  401110:	0f 57 35 e9 0e 00 00 	xorps  0xee9(%rip),%xmm6        # 402000 <vec1>
+  401117:	41 0f 54 2b          	andps  (%r11),%xmm5
+  40111b:	41 0f 54 62 7f       	andps  0x7f(%r10),%xmm4
+  401120:	43 0f 54 1c 41       	andps  (%r9,%r8,2),%xmm3
+  401125:	0f 54 15 e4 0e 00 00 	andps  0xee4(%rip),%xmm2        # 402010 <vec2>
+  40112c:	0f 55 08             	andnps (%rax),%xmm1
+  40112f:	0f 55 43 81          	andnps -0x7f(%rbx),%xmm0
+  401133:	44 0f 55 3c 91       	andnps (%rcx,%rdx,4),%xmm15
+  401138:	44 0f 55 35 c0 0e 00 	andnps 0xec0(%rip),%xmm14        # 402000 <vec1>
+  40113f:	00 
+  401140:	45 0f 56 28          	orps   (%r8),%xmm13
+  401144:	45 0f 56 61 50       	orps   0x50(%r9),%xmm12
+  401149:	47 0f 56 1c da       	orps   (%r10,%r11,8),%xmm11
+  40114e:	44 0f 56 15 ba 0e 00 	orps   0xeba(%rip),%xmm10        # 402010 <vec2>
+  401155:	00 
+  401156:	45 0f 28 0f          	movaps (%r15),%xmm9
+  40115a:	45 0f 28 56 10       	movaps 0x10(%r14),%xmm10
+  40115f:	47 0f 28 5c 65 00    	movaps 0x0(%r13,%r12,2),%xmm11
+  401165:	44 0f 28 25 93 0e 00 	movaps 0xe93(%rip),%xmm12        # 402000 <vec1>
+  40116c:	00 
+  40116d:	45 0f 29 0f          	movaps %xmm9,(%r15)
+  401171:	45 0f 29 56 30       	movaps %xmm10,0x30(%r14)
+  401176:	47 0f 29 5c 65 60    	movaps %xmm11,0x60(%r13,%r12,2)
+  40117c:	44 0f 29 25 8c 0e 00 	movaps %xmm12,0xe8c(%rip)        # 402010 <vec2>
+  401183:	00 
+  401184:	48 0f 44 c1          	cmove  %rcx,%rax
+  401188:	48 0f 45 d3          	cmovne %rbx,%rdx
+  40118c:	48 0f 4f e5          	cmovg  %rbp,%rsp
+  401190:	48 0f 4d f7          	cmovge %rdi,%rsi
+  401194:	44 0f 94 c0          	rex.R sete %al
+  401198:	44 0f 95 c1          	rex.R setne %cl
+  40119c:	44 0f 9c c2          	rex.R setl %dl
+  4011a0:	44 0f 9e c3          	rex.R setle %bl

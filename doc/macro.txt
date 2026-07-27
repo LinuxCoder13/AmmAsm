@@ -1,0 +1,117 @@
+In this fucking manual I will explain how `macro` works in AmmAsm.
+
+First, let's look at how the fucking preprocessor works.
+
+During the first pass, the preprocessor searches for the `macro` keyword.
+When it finds one, it skips comments, parses the fuking macro name, arguments, and body, and validates the syntax.
+
+During the second pass, it scans for macro calls, removes comments, skips macro declarations, parses the given arguments, and calls `ExpandMacroCall()`.
+
+Then it recursively expands nested macros.
+
+Unlike some preprocessors, it doesn't need a fucking DFS graph or any other shit.
+Instead, it keeps a stack of macro indices.
+
+Whenever a macro is expanded, its index is pushed onto the stack.
+Before expanding another fucking macro, the preprocessor checks whether its index is already in the stack.
+
+For example:
+
+    [A() -> B() -> C() -> D() -> A()]
+
+Here `A` appears twice, so the preprocessor reports:
+
+    AmmAsm:?: recursive expansion of macro 'A'
+
+Nested macros are completely valid, but the expansion depth is limited to 64.
+
+---
+
+After finding a macro call, the preprocessor parses the given arguments and calls `SubstituteArgs()`, which replaces the macro parameters with the provided arguments.
+
+Example:
+
+macro foo(std, msg, len) {
+    mov rax, 1
+    mov rdi, std
+    mov rsi, msg
+    mov rdx, len
+}
+
+Calling
+
+    foo(1, msg, 14)
+
+produces
+
+    mov rax, 1
+    mov rdi, 1
+    mov rsi, msg
+    mov rdx, 14
+
+---
+
+Now consider this example:
+
+macro B(x) {
+    mov rax, x
+}
+
+macro A(y) {
+    B(y)
+}
+
+A(123)
+
+After expanding `A`, the result is:
+
+    B(123)
+
+The preprocessor then parses that generated text again, finds another fucking macro call, expands it, and finally produces:
+
+    mov rax, 123
+
+The expansion flow looks like this:
+
+FindCallOfMacro          | Expand A
+    |                    | stack = [A]
+    v                    |
+ExpandMacroCall(A)       |
+    |                    |
+    v                    |
+FindCallOfMacro          | Expand B
+    |                    | stack = [A, B]
+    v                    |
+ExpandMacroCall(B)       |
+    |                    |
+    v                    |
+FindCallOfMacro          | End of B
+                         | stack = [A]
+                         |
+                         | End of A
+                         | stack = []
+
+SubstituteArgs() only replaces macro parameters.
+It does NOT expand fucking nested macros.
+Nested macro expansion is performed later by FindCallOfMacro().
+
+you may ask: Why not DFS?
+
+Fuking Macro expansion is already a call tree.
+The current expansion path is enough to detect recursion.
+Keeping a stack of expanded macros is both simpler and faster.
+
+And you can also write like this
+
+macro foo
+(
+    arg1,
+    arg2
+)
+{
+    ....
+}
+
+and this
+
+See fuking ex. in `tests/brainfuck/bf.asm` and tests/clock/clock.asm

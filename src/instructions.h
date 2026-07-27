@@ -1,0 +1,16 @@
+#pragma once
+
+#ifndef NULL
+#define NULL ((void*)0)
+#endif
+
+extern const char *CMDS[];
+extern const char *JCC[];
+extern const char *HUMAN_AST[];
+extern const char *HUMAN_AST2[]; 
+extern const char *Sign_extensions[];
+
+// sign-extended immediate instructions
+extern const char* short_imm_instructions[];
+
+extern const char* zero_operand_instructions[];
