@@ -52,7 +52,7 @@ int LEXER(FILE* fl) {
     int in_comment = 0;
     uint16_t line = 0;
 
-    while (fgets(lexer.buf, 1024*1024, fl) != NULL) {
+    while (fgets(lexer.buf, 1024, fl) != NULL) {
         char* buff = lexer.buf;
         line++;
         while (*buff) {
@@ -142,9 +142,9 @@ int LEXER(FILE* fl) {
             }
 
             else if (isin(LETEXT, *buff)) { 
-                char buf[1024 * 1024] = {0};
+                char buf[1024] = {0};
                 int i = 0;
-                while (isin(LETEXT, *buff) && i <= 1024 * 1024) {
+                while (isin(LETEXT, *buff) && i <= 1024) {
                     buf[i++] = *buff++;
                 }
                 buf[i] = 0;

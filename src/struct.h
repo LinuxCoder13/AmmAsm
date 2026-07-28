@@ -95,7 +95,7 @@ typedef struct {
 
 typedef struct {   
     const char* filename;  
-    char        buf[1024*1024]; 
+    char        buf[1024]; 
     Token*      toks;
     char labelscope[64]; 
 } Lexer;
