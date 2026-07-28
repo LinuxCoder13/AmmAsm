@@ -14,15 +14,15 @@
 
 ![GitHub last commit](https://img.shields.io/github/last-commit/LinuxCoder13/AmmAsm)
      
-**Author:** Ammar Najafli           
-
 <div align="center">
-<img src="logo/logo.png" width="180">
+<img src="logo/logo.png" width="360">
 
 
-*Assembler that sucks less*
+*AmmAsm - Assembler that sucks less*
 
 </div>
+
+**Author:** Ammar Najafli      
 
 AmmAsm is a handwritten x86-64 assembler designed for simplicity and clarity. It compiles assembly code directly to machine code and produces ELF executables, PIE binaries (Position-Independent Executables), and relocatable object files for Linux x86-64, `primarily tested on Debian GNU/Linux 12 (bookworm) x86-64`.
 
