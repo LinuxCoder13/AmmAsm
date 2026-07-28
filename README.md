@@ -16,7 +16,13 @@
      
 **Author:** Ammar Najafli           
 
-AmmAsm - Assembler that sucks less
+<div align="center">
+<img src="logo/logo.png" width="180">
+
+
+*Assembler that sucks less*
+
+</div>
 
 AmmAsm is a handwritten x86-64 assembler designed for simplicity and clarity. It compiles assembly code directly to machine code and produces ELF executables, PIE binaries (Position-Independent Executables), and relocatable object files for Linux x86-64, `primarily tested on Debian GNU/Linux 12 (bookworm) x86-64`.
 
