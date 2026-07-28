@@ -1948,6 +1948,44 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         }
     }
 
+    else if (!strcasecmp(cmd, "movq")) {
+
+        // xmm, xmm
+        if (a->type == O_XMM && b->type == O_XMM) {
+            node->ins.pc = *pc;
+            *s = encode_two_byte_opcode_reg(machine_code, 0x7E, find_xmm_index(a->reg), find_xmm_index(b->reg), 128, 0xF3);
+            *pc += *s;
+        }
+
+        // xmm, [mem]
+        if (a->type == O_XMM && b->type == O_MEM) {
+            node->ins.pc = *pc;
+            *s = encode_inst_reg_rm2(machine_code, 0x7E, find_xmm_index(a->reg), &b->addr, 128, 0xF3);
+            *pc += *s;
+        }
+
+        // [mem], xmm
+        if (a->type == O_MEM && b->type == O_XMM) {
+            node->ins.pc = *pc;
+            *s = encode_inst_reg_rm2(machine_code, 0xD6, find_xmm_index(b->reg), &a->addr, 128, 0x66);
+            *pc += *s;
+        }
+
+        // xmm, r64
+        if (a->type == O_XMM && b->type == O_REG64) {
+            node->ins.pc = *pc;
+            *s = encode_xmm_or_r64__xmm_or_r64(machine_code, find_xmm_index(a->reg), find_reg64_index(b->reg), 0);
+            *pc += *s;
+        }
+
+        // r64, xmm
+        if (a->type == O_REG64 && b->type == O_XMM) {
+            node->ins.pc = *pc;
+            *s = encode_xmm_or_r64__xmm_or_r64(machine_code, find_reg64_index(a->reg), find_xmm_index(b->reg), 1);
+            *pc += *s;
+        }
+    }
+
     // lea - Load Effective Address
 
     else if(!strcasecmp(cmd, "lea")){

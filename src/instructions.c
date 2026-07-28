@@ -26,7 +26,7 @@ const char *CMDS[] = {
     "movaps", "movups", "xorps", "andps", "andnps", "orps", "addps", "subps", "mulps", "divps",
 
     // SSE2
-    "movdqa", "movdqu", "paddb", "paddw", "paddd", "psubb", "psubw", "psubd",
+    "movq", "movdqa", "movdqu", "paddb", "paddw", "paddd", "psubb", "psubw", "psubd",
     "pand", "pandn", "por", "pxor", "pcmpeqb", "pcmpeqw", "pcmpeqd", "pcmpgtb", "pcmpgtw", "pcmpgtd",
     "punpcklbw", "punpcklwd", "punpckldq", "punpcklqdq", "pmovmskb",
     "punpckhbw", "punpckhwd", "punpckhdq", "punpckhqdq", "packsswb", "packuswb", "packssdw", "pmaxub", "pminub",

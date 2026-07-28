@@ -1700,6 +1700,31 @@ uint8_t encode_xchg_reg_reg(uint8_t *mash_code, uint8_t dest_idx, uint8_t src_id
     return pos;
 }
 
+uint8_t encode_xmm_or_r64__xmm_or_r64(uint8_t* mash_code, uint8_t dest, uint8_t src, uint8_t is_dest_isGPR){
+    /*
+        if is_dest_isGPR == 1:
+            mov r64, xmm
+        else:
+            mov xmm, r64
+    */
+    
+    uint8_t rex = REX_BASE | REX_W;
+    uint8_t opcode = is_dest_isGPR ? 0x7E : 0x6E;
+    uint8_t modrm = 0;
+    int pos = 0;
+
+    if(dest >= 8)rex |= REX_B;
+    if(src >= 8)rex |= REX_R;
+
+    modrm = emit_modrm(0b11, src, dest);
+
+    mash_code[pos++] = 0x66;
+    mash_code[pos++] = rex;
+    mash_code[pos++] = 0x0F;
+    mash_code[pos++] = opcode;
+    mash_code[pos++] = modrm;
+    return pos;
+}
 
 // inc/dec reg8
 uint8_t encode_group4_reg(uint8_t* mash_code, uint8_t dest, uint8_t opcode, uint8_t group_digit, uint8_t sz){
