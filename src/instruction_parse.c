@@ -2100,6 +2100,137 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         *pc += *s;
     }
 
+    else if(!strcasecmp("xchg", cmd)){
+
+        if (a->type == O_REG64 && b->type == O_REG64) {
+        
+            uint8_t rm = find_reg64_index(a->reg);
+            uint8_t reg = find_reg64_index(b->reg);
+
+            node->ins.pc = *pc;
+            *s = encode_xchg_reg_reg(machine_code, rm, reg, 64);
+            *pc += *s;
+            
+        }
+
+        else if (a->type == O_REG32 && b->type == O_REG32) {
+        
+            uint8_t rm = find_reg32_index(a->reg);
+            uint8_t reg = find_reg32_index(b->reg);
+
+            node->ins.pc = *pc;
+            *s = encode_xchg_reg_reg(machine_code, rm, reg, 32);
+            *pc += *s;
+            
+        }
+
+        else if (a->type == O_REG16 && b->type == O_REG16) {
+        
+            uint8_t rm = find_reg16_index(a->reg);
+            uint8_t reg = find_reg16_index(b->reg);
+
+            node->ins.pc = *pc;
+            *s = encode_xchg_reg_reg(machine_code, rm, reg, 16);
+            *pc += *s;
+            
+        }
+
+        else if (a->type == O_REG8 && b->type == O_REG8) {
+        
+            uint8_t rm = find_reg8_index(a->reg);
+            uint8_t reg = find_reg8_index(b->reg);
+
+            node->ins.pc = *pc;
+            *s = encode_xchg_reg_reg(machine_code, rm, reg, 8);
+            *pc += *s;
+            
+        }
+
+        // MOV R64, [ADDR]
+        else if (a->type == O_REG64 && b->type == O_MEM) {
+            uint8_t reg = find_reg64_index(a->reg);
+            AddrExpr *mem = &b->addr;
+
+            node->ins.pc = *pc;
+            *s = encode_inst_rm_rm(machine_code, reg, mem, 64, 0x87, 0, 0);
+            *pc += *s;
+            
+        }
+
+        // MOV R32, [ADDR]
+        else if (a->type == O_REG32 && b->type == O_MEM) {
+            uint8_t reg = find_reg32_index(a->reg);
+            AddrExpr *mem = &b->addr;
+
+            node->ins.pc = *pc;
+            *s = encode_inst_rm_rm(machine_code, reg, mem, 32, 0x87, 0, 0);
+            *pc += *s;
+            
+        }
+
+        // MOV R16, [ADDR]
+        else if (a->type == O_REG16 && b->type == O_MEM) {
+            uint8_t reg = find_reg16_index(a->reg);
+            AddrExpr *mem = &b->addr;
+
+            node->ins.pc = *pc;
+            *s = encode_inst_rm_rm(machine_code, reg, mem, 16, 0x87, 0, 0);
+            *pc += *s;
+            
+        }
+
+        // MOV R8, [ADDR]
+        else if (a->type == O_REG8 && b->type == O_MEM) {
+            uint8_t reg = find_reg8_index(a->reg);
+            AddrExpr *mem = &b->addr;
+
+            node->ins.pc = *pc;
+            *s = encode_inst_rm_rm(machine_code, reg, mem, 8, 0x86, 0, 0);
+            *pc += *s;
+            
+        }
+
+        else if (a->type == O_MEM && b->type == O_REG64) {
+            uint8_t reg = find_reg64_index(b->reg);
+            AddrExpr *mem = &a->addr;
+
+            node->ins.pc = *pc;
+            *s = encode_inst_rm_rm(machine_code, reg, mem, 64, 0x87, 0, 0);
+            *pc += *s;
+            
+        }
+
+        else if (a->type == O_MEM && b->type == O_REG32) {
+            uint8_t reg = find_reg32_index(b->reg);
+            AddrExpr *mem = &a->addr;
+
+            node->ins.pc = *pc;
+            *s = encode_inst_rm_rm(machine_code, reg, mem, 32, 0x87, 0, 0);
+            *pc += *s;
+            
+        }
+
+        else if (a->type == O_MEM && b->type == O_REG16) {
+            uint8_t reg = find_reg16_index(b->reg);
+            AddrExpr *mem = &a->addr;
+
+            node->ins.pc = *pc;
+            *s = encode_inst_rm_rm(machine_code, reg, mem, 16, 0x87, 0, 0);
+            *pc += *s;
+            
+        }
+
+        else if (a->type == O_MEM && b->type == O_REG8) {
+            uint8_t reg = find_reg8_index(b->reg);
+            AddrExpr *mem = &a->addr;
+
+            node->ins.pc = *pc;
+            *s = encode_inst_rm_rm(machine_code, reg, mem, 8, 0x86, 0, 0);
+            *pc += *s;
+            
+        }
+    }
+
 
     if(*s == 0){
         printf("AmmAsm: Debug: !Instruction did\'t compile, operands:\n");

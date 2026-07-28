@@ -24,7 +24,7 @@ AmmAsm is a handwritten x86-64 assembler designed for simplicity and clarity. It
 
 ## What's New in v2.4.x
 
-1) Added new instructions: `SSE2`(43 instructions), `bsf`, `bsr`, `cmc`, `clc`, `stc`, `cld`, `std`, `cli`, `sti`, `lahf`, `sahf`, `pushf`, `popf`, `popfq`, `iret`, `iretq`, `cpuid`, `hlt`, `wait`, `fwait`, `pause`, `ud2`
+1) Added new instructions: `SSE2`(43 instructions), `bsf`, `bsr`, `cmc`, `clc`, `stc`, `cld`, `std`, `cli`, `sti`, `lahf`, `sahf`, `pushf`, `popf`, `popfq`, `iret`, `iretq`, `cpuid`, `hlt`, `wait`, `fwait`, `pause`, `ud2`, `xchg`
 
 2) Added Float number for `SSE1`, IEEE-754
 

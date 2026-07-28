@@ -53,6 +53,7 @@ extern uint8_t encode_group2_reg_cl(uint8_t* mash_code, uint8_t dest, uint8_t op
 extern uint8_t encode_group3_reg(uint8_t* mash_code, uint8_t dest, uint8_t opcode, uint8_t group_digit, uint8_t sz);
 extern uint8_t encode_test_reg_reg(uint8_t *mash_code, uint8_t dest_idx, uint8_t src_idx, uint8_t sz);
 extern uint8_t encode_test_reg_imm(uint8_t *mash_code, uint8_t reg_idx, uint64_t imm, uint8_t sz);
+extern uint8_t encode_xchg_reg_reg(uint8_t *mash_code, uint8_t dest_idx, uint8_t src_idx, uint8_t sz);
 extern uint8_t encode_group4_reg(uint8_t* mash_code, uint8_t dest, uint8_t opcode, uint8_t group_digit, uint8_t sz);
 extern uint8_t encode_group5_reg(uint8_t* mash_code, uint8_t dest, uint8_t opcode, uint8_t group_digit, uint8_t sz);
 extern uint8_t encode_two_byte_opcode_reg(uint8_t *mash_code, uint8_t opcode, uint8_t dest, uint8_t src, uint8_t destsz, uint8_t prefix);

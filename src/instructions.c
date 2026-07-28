@@ -7,7 +7,7 @@ const char *CMDS[] = {
     "rol", "ror", "rcl", "rcr", "shl", "shr", "sar", "sal",
     "test", "not", "neg", "mul", "inc", "dec", "movzx", "movsx", "bsf", "bsr", "clc", "stc", "cmc",
     "cld", "std", "cli", "sti", "lahf", "sahf", "pushf", "pushfq", "popf", "popfq", 
-    "iret", "iretq", "cpuid", "hlt", "wait", "fwait", "pause", "ud2",
+    "iret", "iretq", "cpuid", "hlt", "wait", "fwait", "pause", "ud2", "xchg",
 
     "je", "jne", "jg", "jl", "jge", "jle", "jz", "ja", "jb", "jnz", "jc", "jae", "jbe",
     "nop", "ret",    

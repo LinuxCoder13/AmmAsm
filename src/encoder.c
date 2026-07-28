@@ -1663,6 +1663,44 @@ uint8_t encode_test_reg_imm(uint8_t *mash_code, uint8_t reg_idx, uint64_t imm, u
     return pos; // mashine code size
 }
 
+uint8_t encode_xchg_reg_reg(uint8_t *mash_code, uint8_t dest_idx, uint8_t src_idx, uint8_t sz){
+    uint8_t legacy_prefix = 0x66;
+    uint8_t rex = 0;
+    uint8_t opcode = sz == 8 ? 0x86 : 0x87;
+    uint8_t modrm = 0;
+    int pos = 0;
+
+    if(dest_idx >= 8)rex |=  REX_BASE | REX_B;
+    if(src_idx >= 8)rex |= REX_BASE | REX_R;
+
+    switch (sz){
+        case 8: if((dest_idx >= 4 && dest_idx <= 7) || (src_idx >= 4 && src_idx <= 7)) rex |= REX_BASE; break;// spl, bpl, sil, dil
+        case 16: mash_code[pos++] = legacy_prefix; break;
+        case 32: break;           
+        case 64: rex |= REX_BASE | REX_W; break;            
+    }
+
+    // rax, eax, ax, 
+    if(dest_idx == 0 && sz != 8){
+        uint8_t rex2 = 0;
+        opcode = 0x90; // fun fact: encode `xchg rax, rax` and `nop` are same, but disassemblers such as objdump shows nop
+        opcode += (src_idx & 7);
+
+        if (sz == 64) rex2 |= REX_BASE | REX_W;
+        if (src_idx >= 8) rex2 |= REX_BASE | REX_B;
+
+        if(rex2) mash_code[pos++] = rex2;
+        mash_code[pos++] = opcode;
+        return pos;
+    }
+
+    if(rex)mash_code[pos++] = rex;
+    mash_code[pos++] = opcode;
+    mash_code[pos++] = emit_modrm(0b11, src_idx, dest_idx);
+    return pos;
+}
+
+
 // inc/dec reg8
 uint8_t encode_group4_reg(uint8_t* mash_code, uint8_t dest, uint8_t opcode, uint8_t group_digit, uint8_t sz){
     return encode_group3_reg(mash_code, dest, opcode, group_digit, sz);
