@@ -1,28 +1,19 @@
 # AmmAsm - x86-64 Assembler
+     
+<img align="left" src="logo/logo.png" width="140">
 
-![Version](https://img.shields.io/badge/version-v2.4.1-blue)
-![Platform](https://img.shields.io/badge/platform-Linux_x86--64-success)
-![Language](https://img.shields.io/badge/language-C-00599C)
-![License](https://img.shields.io/badge/license-MIT-green)
-![ELF](https://img.shields.io/badge/output-ELF64-important)
-![Status](https://img.shields.io/badge/status-active-success)
-![Assembler](https://img.shields.io/badge/x86--64-Assembler-red)
-![Objects](https://img.shields.io/badge/ELF-relocatable-blueviolet)
-![Executables](https://img.shields.io/badge/ET_EXEC-supported-success)
-![PIE](https://img.shields.io/badge/PIE-supported-success)
-[![AI](https://img.shields.io/badge/AI--assisted-blueviolet)](#)
+AmmAsm - Assembler that sucks less
 
 ![GitHub last commit](https://img.shields.io/github/last-commit/LinuxCoder13/AmmAsm)
-     
-<div align="center">
-<img src="logo/logo.png" width="360">
+![Version](https://img.shields.io/badge/version-v2.4.1-blue)
+![Platform](https://img.shields.io/badge/platform-Linux_x86--64-success)
 
+![License](https://img.shields.io/badge/license-MIT-green)
+![Status](https://img.shields.io/badge/status-active-success)
+[![AI](https://img.shields.io/badge/AI--assisted-blueviolet)](#)
+<br clear="left"/>
 
-*AmmAsm - Assembler that sucks less*
-
-</div>
-
-**Author:** Ammar Najafli      
+**Author:** Ammar Najafli
 
 AmmAsm is a handwritten x86-64 assembler designed for simplicity and clarity. It compiles assembly code directly to machine code and produces ELF executables, PIE binaries (Position-Independent Executables), and relocatable object files for Linux x86-64, `primarily tested on Debian GNU/Linux 12 (bookworm) x86-64`.
 
@@ -30,7 +21,7 @@ AmmAsm is a handwritten x86-64 assembler designed for simplicity and clarity. It
 
 ## What's New in v2.4.x
 
-1) Added new instructions: `SSE2`(43 instructions), `bsf`, `bsr`, `cmc`, `clc`, `stc`, `cld`, `std`, `cli`, `sti`, `lahf`, `sahf`, `pushf`, `popf`, `popfq`, `iret`, `iretq`, `cpuid`, `hlt`, `wait`, `fwait`, `pause`, `ud2`, `xchg`, `movq`
+1) Added new instructions: `SSE2`(43 instructions), `bsf`, `bsr`, `cmc`, `clc`, `stc`, `cld`, `std`, `cli`, `sti`, `lahf`, `sahf`, `pushf`, `popf`, `popfq`, `iret`, `iretq`, `cpuid`, `hlt`, `wait`, `fwait`, `pause`, `ud2`, `xchg`
 
 2) Added Float number for `SSE1`, IEEE-754
 
