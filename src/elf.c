@@ -384,9 +384,9 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
     if (text_start_idx >= 0) {
         for (int i = text_start_idx + 1; i < ast_len; i++) {
             if (ast[i].type == AST_SECTION) break;
-            if (ast[i].type != AST_INS && (ast[i].type != AST_U64))     continue;
+            if (ast[i].type != AST_INS)     continue;
 
-            if(ast[i].type == AST_INS){   
+            
             for (int op = 0; op < ast[i].ins.oper_count && rela_count < 256; op++) {
                 Operand *oper = &ast[i].ins.operands[op];
                 
@@ -588,13 +588,7 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
                 }
 
             }
-            }
-            else{ // R_X86_64_64 but for dq
-                fprintf(stderr, "AmmAsm:%d: Realocation for 'dq' not supported yet.\n", ast[i].line);
-                exit(1);
-            }
         }
-    
         // We will add more types of realocations in new versions
     }
     free_ast(ast, ast_len);
