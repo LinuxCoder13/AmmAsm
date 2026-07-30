@@ -56,7 +56,7 @@ int LEXER(FILE* fl) {
         char* buff = lexer.buf;
         line++;
         while (*buff) {
-            while (*buff == ' ') buff++;
+            while (*buff == ' ' || *buff == '\t') buff++;
             if (*buff == '\0' || *buff == '\n') break;
             if ((*buff == '/' && *(buff + 1) == '/') || *buff == ';') break; // skip comment till end of line
             if(!in_comment && *buff == '/' && *(buff+1) == '*'){

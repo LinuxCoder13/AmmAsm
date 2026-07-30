@@ -5,7 +5,7 @@
 AmmAsm - Assembler that sucks less
 
 ![GitHub last commit](https://img.shields.io/github/last-commit/LinuxCoder13/AmmAsm)
-![Version](https://img.shields.io/badge/version-v2.4.1-blue)
+![Version](https://img.shields.io/badge/version-v2.4.2-blue)
 ![Platform](https://img.shields.io/badge/platform-Linux_x86--64-success)
 
 ![License](https://img.shields.io/badge/license-MIT-green)

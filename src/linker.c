@@ -219,10 +219,10 @@ void resolve_labels() {
                     fprintf(stderr, "AmmAsm:%d: undefined label '%s' in RIP-relative addressing\n", ast[i].line, mem->label);
                     exit(1);
                 }
-                if (addr_for_disp == (uint64_t)-2) {
-                    fprintf(stderr, "AmmAsm:%d: can't use externed label '%s' in RIP-relative addressing\n", ast[i].line, mem->label);
-                    exit(1);
-                }
+                // if (addr_for_disp == (uint64_t)-2) {
+                //     fprintf(stderr, "AmmAsm:%d: can't use externed label '%s' in RIP-relative addressing\n", ast[i].line, mem->label);
+                //     exit(1);
+                // }
 
                 int32_t disp32 = (int32_t)((int64_t)addr_for_disp - (int64_t)(node->ins.pc + node->machine_code_len)) + mem->disp;
                 uint8_t real_imm_sz = node->ins.operands[1].imm_sz == 8 ? 4 : node->ins.operands[1].imm_sz;
