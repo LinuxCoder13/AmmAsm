@@ -1,0 +1,3 @@
+# Partial Windows support (experimental)
+---
+AmmAsm itself can be compiled with MinGW and run on Windows. Community members have also reported successfully generating ELF64 object files, converting them to PE with the MinGW toolchain, and running the resulting executables, including programs using WinAPI. This workflow is experimental and is not yet officially supported, so I can't supply build for windows but fact is fact.
