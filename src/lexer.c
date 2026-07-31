@@ -206,6 +206,9 @@ int LEXER(FILE* fl) {
                 // XMM
                 else if(is2arrin(Xmmregs, buf)){add_token(T_XMM, buf, line); continue;}
 
+                // YMM
+                else if(is2arrin(Ymmregs, buf)){add_token(T_YMM, buf, line); continue;}
+
                 // directives
                 else if(strcasecmp(buf, HUMAN_AST[0]) == 0) add_token(T_U8, buf, line); 
                 else if(strcasecmp(buf, HUMAN_AST[1]) == 0) add_token(T_U16, buf, line);

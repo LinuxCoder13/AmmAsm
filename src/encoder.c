@@ -1726,6 +1726,48 @@ uint8_t encode_xmm_or_r64__xmm_or_r64(uint8_t* mash_code, uint8_t dest, uint8_t 
     return pos;
 }
 
+uint8_t encode_avx_xmm_xmm_xmm(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, uint8_t src2, uint8_t L, uint8_t pp, uint8_t mmmmm){
+    uint8_t vex = (src2 >= 8) ? 0xC4 : 0xC5;  // yeeees! finally AVX in AmmAsm
+    uint8_t vex1 = 0; 
+    uint8_t vex2 = 0;
+    uint8_t modrm = 0;
+    int pos = 0; 
+
+    // pack you intel, pack your name, pack your cpu, pack your milions, pack your bilions, pack your computers, pack your developers!
+    if(vex == 0xC5){
+        vex1 |= VEX_R(dest >= 8);
+        vex1 |= VEX_VVVV(src1);
+        vex1 |= VEX_L(L); // vector sz (1 == ymm, 0 == xmm)
+        vex1 |= VEX_PP(pp);
+    }
+
+    else{ // C4
+        vex1 |= VEX_R(dest >= 8);
+        vex1 |= VEX_X(1); // not used in this case (for now)
+        vex1 |= VEX_B(src2 >= 8);
+        vex1 |= VEX_MMMMM(mmmmm);
+
+        // vex2 |= VEX_W; // cpu ignored by cpu
+        vex2 |= VEX_VVVV(src1);
+        vex2 |= VEX_L(L); // vector sz (1 == ymm, 0 == xmm)
+        vex2 |= VEX_PP(pp);        
+    }
+
+
+    modrm = emit_modrm(0b11, dest, src2);
+
+    mash_code[pos++] = vex;
+    mash_code[pos++] = vex1;
+    if(vex2) mash_code[pos++] = vex2;
+    mash_code[pos++] = opcode;
+    mash_code[pos++] = modrm;
+    return pos;
+}
+
+uint8_t encode_avx_ymm_ymm_ymm(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, uint8_t src2, uint8_t L, uint8_t pp, uint8_t mmmmm){
+    return encode_avx_xmm_xmm_xmm(mash_code, opcode, dest, src1, src2, L, pp, mmmmm);
+}
+
 // inc/dec reg8
 uint8_t encode_group4_reg(uint8_t* mash_code, uint8_t dest, uint8_t opcode, uint8_t group_digit, uint8_t sz){
     return encode_group3_reg(mash_code, dest, opcode, group_digit, sz);

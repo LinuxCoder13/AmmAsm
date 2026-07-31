@@ -29,7 +29,7 @@ AST* PARSE(){
                     exit(1);
                 }
                 else if(toks[pos].type == T_REG8 || toks[pos].type == T_REG16 ||
-                        toks[pos].type == T_REG32 || toks[pos].type == T_REG64 || toks[pos].type == T_XMM ){
+                        toks[pos].type == T_REG32 || toks[pos].type == T_REG64 || toks[pos].type == T_XMM || toks[pos].type == T_YMM ){
                     int tt = toks[pos].type;
                     strncpy(node.ins.operands[node.ins.oper_count].reg, toks[pos++].value, 8);
 
@@ -39,6 +39,7 @@ AST* PARSE(){
                         case T_REG32: node.ins.operands[node.ins.oper_count++].type = O_REG32; break;
                         case T_REG64: node.ins.operands[node.ins.oper_count++].type = O_REG64; break;
                         case T_XMM: node.ins.operands[node.ins.oper_count++].type = O_XMM;     break;  // yeah, we did it!!!!!!!
+                        case T_YMM: node.ins.operands[node.ins.oper_count++].type = O_YMM;     break;  // yeah, we did it!!!!!!!
                         default:      node.ins.operands[node.ins.oper_count++].type = O_NONE;  break;
                     }
                 } 

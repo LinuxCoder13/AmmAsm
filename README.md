@@ -2,10 +2,10 @@
      
 <img align="left" src="logo/logo.png" width="140">
 
-AmmAsm - Assembler that sucks less
+AmmAsm - Assembler that sucks less.
 
 ![GitHub last commit](https://img.shields.io/github/last-commit/LinuxCoder13/AmmAsm)
-![Version](https://img.shields.io/badge/version-v2.4.2-blue)
+![Version](https://img.shields.io/badge/version-v2.4.3-blue)
 ![Platform](https://img.shields.io/badge/platform-Linux_x86--64-success)
 
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -21,11 +21,13 @@ AmmAsm is a handwritten x86-64 assembler designed for simplicity and clarity. It
 
 ## What's New in v2.4.x
 
-1) Added new instructions: `SSE2`(43 instructions), `bsf`, `bsr`, `cmc`, `clc`, `stc`, `cld`, `std`, `cli`, `sti`, `lahf`, `sahf`, `pushf`, `popf`, `popfq`, `iret`, `iretq`, `cpuid`, `hlt`, `wait`, `fwait`, `pause`, `ud2`, `xchg`, `movq`
+1) Added new instructions: `SSE2`(43 instructions), `AVX1(VEX)`(44 instructions), `bsf`, `bsr`, `cmc`, `clc`, `stc`, `cld`, `std`, `cli`, `sti`, `lahf`, `sahf`, `pushf`, `popf`, `popfq`, `iret`, `iretq`, `cpuid`, `hlt`, `wait`, `fwait`, `pause`, `ud2`, `xchg`, `movq`
 
 2) Added Float number for `SSE1`, IEEE-754
 
 3) `align` symbol: `align <scale>, <8 bit number>: align 16, 0`
+
+4) Added `YMM` registers
 
 ---
 
@@ -92,7 +94,7 @@ This demonstrates interoperability between AmmAsm-generated object files and ord
 
 ## Features
 
-- Basic SSE/SSE2 support
+- Basic SSE/SSE2/AVX1 support
 - Macro system (v2.2.0)
 - Compatible with GNU ld and GCC object-file linking
 - Direct x86-64 encoding - No NASM/GAS dependencies
@@ -322,5 +324,11 @@ ld prog.o -o output && chmod +x output && ./output
 - Limited instruction set - Only a subset of the x86-64 instruction set is currently implemented (look at `./src/instructions.c`)
 - x87 FPU not implemented
 - No `ah, bh, ch, dh` registers (sorry)
+
+---
+
+```
+Intel, what were you smoking when you designed VEX?
+```
 
 ---

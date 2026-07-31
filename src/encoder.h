@@ -16,6 +16,35 @@
 #define REX_X     0b00000010
 #define REX_B     0b00000001
 
+typedef enum  {
+    VEX_PP_NONE = 0,
+    VEX_PP_66   = 1,
+    VEX_PP_F3   = 2,
+    VEX_PP_F2   = 3,
+} VEX_PP;
+
+typedef enum  {
+    VEX_MAP_0F   = 1,
+    VEX_MAP_0F38 = 2,
+    VEX_MAP_0F3A = 3,
+} VEX_MAP;
+
+typedef enum {
+    VEX_XMM = 0,
+    VEX_YMM = 1
+} VEX_VECTOR_SZ;
+
+// yeeeee, here we are
+#define VEX_R(rex_r) ((((rex_r) ^ 1) & 1) << 7)
+#define VEX_X(rex_x) ((((rex_x) ^ 1) & 1) << 6)
+#define VEX_B(rex_b) ((((rex_b) ^ 1) & 1) << 5)
+
+#define VEX_MMMMM(map) (((map) & 0b11111))
+
+#define VEX_VVVV(reg) ((((reg) ^ 0xF) & 0xF) << 3)
+#define VEX_L(mode) ((mode & 1) << 2)
+#define VEX_PP(prefix) (prefix & 0b11)
+
 #define emit_modrm(mod, reg, rm) (((mod & 7) << 6) | ((reg & 7) << 3) | (rm & 7))
 #define emit_sib(scale, idx, base) (((scale & 3) << 6) | ((idx & 7) << 3) | (base & 7))
 
@@ -59,3 +88,5 @@ extern uint8_t encode_group5_reg(uint8_t* mash_code, uint8_t dest, uint8_t opcod
 extern uint8_t encode_two_byte_opcode_reg(uint8_t *mash_code, uint8_t opcode, uint8_t dest, uint8_t src, uint8_t destsz, uint8_t prefix);
 extern uint8_t encode_inst_reg_rm2(uint8_t *machine_code, uint8_t opcode2, uint8_t reg, AddrExpr *expr, uint8_t dst_sz, uint8_t prefix);
 extern uint8_t encode_xmm_or_r64__xmm_or_r64(uint8_t* mash_code, uint8_t dest, uint8_t src, uint8_t is_dest_isGPR);
+extern uint8_t encode_avx_xmm_xmm_xmm(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, uint8_t src2, uint8_t L, uint8_t pp, uint8_t mmmmm);
+extern uint8_t encode_avx_ymm_ymm_ymm(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, uint8_t src2, uint8_t L, uint8_t pp, uint8_t mmmmm);

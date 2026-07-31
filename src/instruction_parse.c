@@ -1986,6 +1986,95 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         }
     }
 
+
+    // AVX1
+    else if(cmd[0] == 'v') {
+        uint8_t opcode = 0;
+        uint8_t vex_pp = VEX_PP_NONE;
+        uint8_t vex_map = VEX_MAP_0F;
+        
+        // (float/double)
+        if(!strcasecmp(cmd, "vaddps"))  { opcode = 0x58; vex_pp = VEX_PP_NONE; }
+        else if(!strcasecmp(cmd, "vaddpd"))  { opcode = 0x58; vex_pp = VEX_PP_66; }
+        else if(!strcasecmp(cmd, "vsubps"))  { opcode = 0x5C; vex_pp = VEX_PP_NONE; }
+        else if(!strcasecmp(cmd, "vsubpd"))  { opcode = 0x5C; vex_pp = VEX_PP_66; }
+        else if(!strcasecmp(cmd, "vmulps"))  { opcode = 0x59; vex_pp = VEX_PP_NONE; }
+        else if(!strcasecmp(cmd, "vmulpd"))  { opcode = 0x59; vex_pp = VEX_PP_66; }
+        else if(!strcasecmp(cmd, "vdivps"))  { opcode = 0x5E; vex_pp = VEX_PP_NONE; }
+        else if(!strcasecmp(cmd, "vdivpd"))  { opcode = 0x5E; vex_pp = VEX_PP_66; }
+        else if(!strcasecmp(cmd, "vmaxps"))  { opcode = 0x5F; vex_pp = VEX_PP_NONE; }
+        else if(!strcasecmp(cmd, "vmaxpd"))  { opcode = 0x5F; vex_pp = VEX_PP_66; }
+        else if(!strcasecmp(cmd, "vminps"))  { opcode = 0x5D; vex_pp = VEX_PP_NONE; }
+        else if(!strcasecmp(cmd, "vminpd"))  { opcode = 0x5D; vex_pp = VEX_PP_66; }
+        else if(!strcasecmp(cmd, "vsqrtps")) { opcode = 0x51; vex_pp = VEX_PP_NONE; }
+        else if(!strcasecmp(cmd, "vsqrtpd")) { opcode = 0x51; vex_pp = VEX_PP_66; }
+        else if(!strcasecmp(cmd, "vandps"))  { opcode = 0x54; vex_pp = VEX_PP_NONE; }
+        else if(!strcasecmp(cmd, "vandpd"))  { opcode = 0x54; vex_pp = VEX_PP_66; }
+        else if(!strcasecmp(cmd, "vorps"))   { opcode = 0x56; vex_pp = VEX_PP_NONE; }
+        else if(!strcasecmp(cmd, "vorpd"))   { opcode = 0x56; vex_pp = VEX_PP_66; }
+        else if(!strcasecmp(cmd, "vxorps"))  { opcode = 0x57; vex_pp = VEX_PP_NONE; }
+        else if(!strcasecmp(cmd, "vxorpd"))  { opcode = 0x57; vex_pp = VEX_PP_66; }
+        else if(!strcasecmp(cmd, "vaddss"))  { opcode = 0x58; vex_pp = VEX_PP_F3; }
+        else if(!strcasecmp(cmd, "vaddsd"))  { opcode = 0x58; vex_pp = VEX_PP_F2; }
+        else if(!strcasecmp(cmd, "vmulss"))  { opcode = 0x59; vex_pp = VEX_PP_F3; }
+        else if(!strcasecmp(cmd, "vmulsd"))  { opcode = 0x59; vex_pp = VEX_PP_F2; }
+        else if(!strcasecmp(cmd, "vpaddb"))  { opcode = 0xFC; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vpaddw"))  { opcode = 0xFD; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vpaddd"))  { opcode = 0xFE; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vpaddq"))  { opcode = 0xD4; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vpand"))   { opcode = 0xDB; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vpor"))    { opcode = 0xEB; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vpxor"))   { opcode = 0xEF; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vpcmpeqd")){ opcode = 0x76; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vpcmpgtd")){ opcode = 0x66; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vmovaps")) { opcode = 0x28; vex_pp = VEX_PP_NONE; }
+        else if(!strcasecmp(cmd, "vmovapd")) { opcode = 0x28; vex_pp = VEX_PP_66; }
+        else if(!strcasecmp(cmd, "vmovups")) { opcode = 0x10; vex_pp = VEX_PP_NONE; }
+        else if(!strcasecmp(cmd, "vmovupd")) { opcode = 0x10; vex_pp = VEX_PP_66; }
+        else if(!strcasecmp(cmd, "vmovdqa")) { opcode = 0x6F; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vmovdqu")) { opcode = 0x6F; vex_pp = VEX_PP_F3; vex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vcvtdq2ps"))  { opcode = 0x5B; vex_pp = VEX_PP_NONE; }
+        else if(!strcasecmp(cmd, "vcvtps2dq"))  { opcode = 0x5B; vex_pp = VEX_PP_66; }
+        else if(!strcasecmp(cmd, "vcvttps2dq")) { opcode = 0x5B; vex_pp = VEX_PP_F3; }
+        else if(!strcasecmp(cmd, "vcvtps2pd"))  { opcode = 0x5A; vex_pp = VEX_PP_NONE; }
+        else if(!strcasecmp(cmd, "vcvtpd2ps"))  { opcode = 0x5A; vex_pp = VEX_PP_66; }
+        
+        if(opcode) {
+            // xmm/ymm, xmm/ymm, xmm/ymm
+            if(a->type == O_XMM && b->type == O_XMM && c->type == O_XMM){
+                node->ins.pc = *pc;
+                *s = encode_avx_xmm_xmm_xmm(machine_code, opcode, 
+                    find_xmm_index(a->reg), find_xmm_index(b->reg), find_xmm_index(c->reg),
+                    VEX_XMM, vex_pp, vex_map);
+                *pc += *s;
+            }
+            else if(a->type == O_YMM && b->type == O_YMM && c->type == O_YMM){
+                node->ins.pc = *pc;
+                *s = encode_avx_ymm_ymm_ymm(machine_code, opcode,
+                    find_xmm_index(a->reg), find_xmm_index(b->reg), find_xmm_index(c->reg),
+                    VEX_YMM, vex_pp, vex_map);
+                *pc += *s;
+            }
+        }
+    }
+
+    // AVX1
+    else if(!strcasecmp(cmd, "vaddps")){
+        // inst xmm, xmm, xmm
+        if(a->type == O_XMM && b->type == O_XMM && c->type == O_XMM){
+            node->ins.pc = *pc;
+            *s = encode_avx_xmm_xmm_xmm(machine_code, 0x58, find_xmm_index(a->reg), find_xmm_index(b->reg), find_xmm_index(c->reg), VEX_XMM, VEX_PP_NONE, VEX_MAP_0F);
+            *pc += *s;
+        }
+        
+        // inst ymm, ymm, ymm
+        else if(a->type == O_YMM && b->type == O_YMM && c->type == O_YMM){
+            node->ins.pc = *pc;
+            *s = encode_avx_ymm_ymm_ymm(machine_code, 0x58, find_xmm_index(a->reg), find_xmm_index(b->reg), find_xmm_index(c->reg), VEX_YMM, VEX_PP_NONE, VEX_MAP_0F);
+            *pc += *s;
+        }
+    }
+
     // lea - Load Effective Address
 
     else if(!strcasecmp(cmd, "lea")){

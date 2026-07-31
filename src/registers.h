@@ -30,3 +30,6 @@ extern const char* regs64GP[];
 
 // XMM0 - XMM16
 extern const char* Xmmregs[];
+
+// YMM0 - YMM16
+extern const char* Ymmregs[];
