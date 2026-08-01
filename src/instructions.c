@@ -42,6 +42,17 @@ const char *CMDS[] = {
     "vmovaps", "vmovapd", "vmovups", "vmovupd", "vmovdqa", "vmovdqu",
     "vcvtdq2ps", "vcvtps2dq", "vcvttps2dq", "vcvtps2pd", "vcvtpd2ps",
 
+    // AVX2
+    "vpsubb", "vpsubw", "vpsubd", "vpandn",
+    "vpcmpeqb", "vpcmpeqw", "vpcmpgtb", "vpcmpgtw",
+    "vpunpcklbw", "vpunpcklwd", "vpunpckldq", "vpunpcklqdq",
+    "vpunpckhbw", "vpunpckhwd", "vpunpckhdq", "vpunpckhqdq",
+    "vpacksswb", "vpackuswb", "vpackssdw",
+    "vpmaxub", "vpminub",
+    "vpmaxsw", "vpminsw",
+    "vpsllw", "vpslld", "vpsllq",
+    "vpsrlw", "vpsrld", "vpsrlq",
+    "vpsraw", "vpsrad",
     NULL
 };
 

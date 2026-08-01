@@ -39,5 +39,6 @@ extern void free_ast(AST *ast, int ast_len);
 extern void TwoDfree(uint8_t **arr, int count);
 extern uint8_t is_expr_token(TokenType t);
 extern uint8_t find_xmm_index(const char* r) ;
+extern void check_cpu();
 
 extern int astrcmp(const char* s1, const char* s2);  // !!!!_/-|self-hosted SSE2 function|-\_!!!!

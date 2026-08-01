@@ -407,6 +407,38 @@ long eval_expr(const uint8_t *str) {
     return parse_expr();
 }
 
+void check_cpu(){
+    int eax = 1, ebx = 0, ecx = 0, edx = 0;
+
+    __asm__ __volatile__(
+        ".intel_syntax noprefix\n"
+        "cpuid\n"
+        ".att_syntax"
+        : "+a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx)
+        :
+        : "cc"
+    );
+
+    if (edx & (1 << 25)) sse_defined = 1;
+    if (edx & (1 << 26)) sse2_defined = 1;
+    if (ecx & (1 << 28)) avx_defined = 1;
+
+
+    eax = 7;
+    ecx = 0;
+
+    __asm__ __volatile__(
+        ".intel_syntax noprefix\n"
+        "cpuid\n"
+        ".att_syntax"
+        : "+a"(eax), "=b"(ebx), "+c"(ecx), "=d"(edx)
+        :
+        : "cc"
+    );
+
+    if(ebx & (1 << 5)) avx2_defined = 1;
+}
+
 
 void *append(int *len, int *cap, void *arr, const void *value, size_t elem_size){
     if (*cap == 0) {

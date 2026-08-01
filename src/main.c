@@ -5,7 +5,7 @@
 
 
 #include "main.h"
-#define VERSION "2.4.3"
+#define VERSION "2.4.4"
 
 void compiler(uint8_t *text, int *textsize, uint64_t *e_entry) {
     if (!text) return;
@@ -13,7 +13,7 @@ void compiler(uint8_t *text, int *textsize, uint64_t *e_entry) {
  
     // of text
     uint64_t pc = pie_mode ? 0x1000 : 0x401000;
- 
+    check_cpu();
     for(int i = 0; i < ast_len; i++){
         if(ast[i].type == AST_INS) parseInst(&ast[i], &pc);
         else if(ast[i].type == AST_ALIGN) emit_align(&ast[i], &pc);
@@ -59,7 +59,6 @@ void compiler(uint8_t *text, int *textsize, uint64_t *e_entry) {
 }
  
 void handl_pipeline(int argc, char **argv){ 
-
     char *prosesedfile = Preprocess(argv[0]);
 
     if(stop_compile){

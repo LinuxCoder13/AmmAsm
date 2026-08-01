@@ -5,3 +5,8 @@ extern uint8_t debug;
 extern uint8_t pie_mode;
 extern uint8_t obj_file;
 extern uint8_t stop_compile;
+
+extern uint8_t sse_defined;
+extern uint8_t sse2_defined; 
+extern uint8_t avx_defined;
+extern uint8_t avx2_defined; 

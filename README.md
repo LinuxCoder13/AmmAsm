@@ -5,7 +5,7 @@
 AmmAsm - Assembler that sucks less.
 
 ![GitHub last commit](https://img.shields.io/github/last-commit/LinuxCoder13/AmmAsm)
-![Version](https://img.shields.io/badge/version-v2.4.3-blue)
+![Version](https://img.shields.io/badge/version-v2.4.4-blue)
 ![Platform](https://img.shields.io/badge/platform-Linux_x86--64-success)
 
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -27,7 +27,9 @@ AmmAsm is a handwritten x86-64 assembler designed for simplicity and clarity. It
 
 3) `align` symbol: `align <scale>, <8 bit number>: align 16, 0`
 
-4) Added `YMM` registers
+4) Added `YMM0-YMM15` registers
+
+6) Hardware check for the presence of SIMD instructions via `cpuid`
 
 ---
 
