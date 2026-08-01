@@ -21,7 +21,7 @@ AmmAsm is a handwritten x86-64 assembler designed for simplicity and clarity. It
 
 ## What's New in v2.4.x
 
-1) Added new instructions: `SSE2`(43 instructions), `AVX1(VEX)`(44 instructions), `bsf`, `bsr`, `cmc`, `clc`, `stc`, `cld`, `std`, `cli`, `sti`, `lahf`, `sahf`, `pushf`, `popf`, `popfq`, `iret`, `iretq`, `cpuid`, `hlt`, `wait`, `fwait`, `pause`, `ud2`, `xchg`, `movq`
+1) Added new instructions: `SSE2`(43 instructions), `AVX1(VEX)`(44 instructions), `AVX2`(31 instructions) `bsf`, `bsr`, `cmc`, `clc`, `stc`, `cld`, `std`, `cli`, `sti`, `lahf`, `sahf`, `pushf`, `popf`, `popfq`, `iret`, `iretq`, `cpuid`, `hlt`, `wait`, `fwait`, `pause`, `ud2`, `xchg`, `movq`
 
 2) Added Float number for `SSE1`, IEEE-754
 
@@ -96,7 +96,7 @@ This demonstrates interoperability between AmmAsm-generated object files and ord
 
 ## Features
 
-- Basic SSE/SSE2/AVX1 support
+- Basic SSE/SSE2/AVX1/AVX2 support
 - Macro system (v2.2.0)
 - Compatible with GNU ld and GCC object-file linking
 - Direct x86-64 encoding - No NASM/GAS dependencies
