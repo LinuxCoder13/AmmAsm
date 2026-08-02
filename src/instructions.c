@@ -30,7 +30,7 @@ const char *CMDS[] = {
     "pand", "pandn", "por", "pxor", "pcmpeqb", "pcmpeqw", "pcmpeqd", "pcmpgtb", "pcmpgtw", "pcmpgtd",
     "punpcklbw", "punpcklwd", "punpckldq", "punpcklqdq", "pmovmskb",
     "punpckhbw", "punpckhwd", "punpckhdq", "punpckhqdq", "packsswb", "packuswb", "packssdw", "pmaxub", "pminub",
-    "pmaxsw", "pminsw", "psllw", "pslld", "psllq", "psrlw", "psrld", "psrlq", "psraw", "psrad",
+    "pmaxsw", "pminsw", "psllw", "pslld", "psllq", "psrlw", "psrld", "psrlq", "psraw", "psrad", "psrldq", "pslldq",
 
     // AVX1
     "vaddps", "vaddpd", "vsubps", "vsubpd", "vmulps", "vmulpd", "vdivps", "vdivpd",
@@ -53,6 +53,10 @@ const char *CMDS[] = {
     "vpsllw", "vpslld", "vpsllq",
     "vpsrlw", "vpsrld", "vpsrlq",
     "vpsraw", "vpsrad",
+
+    // AVX-512
+    "vminsh", "vmaxsh",
+    
     NULL
 };
 

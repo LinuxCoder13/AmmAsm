@@ -62,10 +62,10 @@ typedef struct {
 
 typedef struct AST {
     ASTType type;
-    char cmd[8];  // mostly useing for ins
+    char cmd[16];  // mostly useing for ins
     uint16_t line;
 
-    // sizeof(AST) == 440
+    // sizeof(AST) == 456
     union {     
         struct { Operand  operands[4]; int oper_count; uint64_t pc;} ins; // biggest?
         struct { uint8_t  *data; int data_len; int data_cap; } u8; // 256
@@ -99,3 +99,21 @@ typedef struct {
     Token*      toks;
     char labelscope[64]; 
 } Lexer;
+
+typedef struct Modrm_SIB{
+    uint8_t modrm, sib;
+    uint8_t have_sib;
+    uint8_t disp_sz;
+}Modrm_SIB;
+
+typedef struct VEX{
+    uint8_t is_2byte;
+    uint8_t dest, src1, src2;
+    uint8_t r, x, b;
+    uint8_t mmmmm;
+    uint8_t L;
+    uint8_t PP;
+
+    uint8_t vex1;
+    uint8_t vex2;
+} VEX;

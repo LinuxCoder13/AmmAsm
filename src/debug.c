@@ -28,6 +28,7 @@ void DEBUG_PRINT_TOKENS() {
             case T_REG64: type_str = "T_REG64"; break;
             case T_XMM: type_str = "T_XMM"; break;
             case T_YMM: type_str = "T_YMM"; break;
+            case T_ZMM: type_str = "T_ZMM"; break;
             case T_ALIGN: type_str = "T_ALIGN"; break;
             case T_FLOAT: type_str = "T_FLOAT"; break;
             case T_ADDR_EXPR: type_str = "T_ADDR_EXPR"; break;
@@ -101,6 +102,7 @@ void DEBUG_PRINT_AST() {
                         case O_REG64: otype_str = "REG64"; break;
                         case O_XMM: otype_str = "XMM"; break;
                         case O_YMM: otype_str = "YMM"; break;
+                        case O_ZMM: otype_str = "ZMM"; break;
                         case O_IMM: otype_str = "IMM"; break;
                         case O_MEM: otype_str = "MEM"; break;
                         case O_EXPR: otype_str = "EXPR"; break;
@@ -116,6 +118,7 @@ void DEBUG_PRINT_AST() {
                         case O_REG64:
                         case O_XMM:
                         case O_YMM:
+                        case O_ZMM:
                             printf("'%s'", node->ins.operands[j].reg);
                             break;
                         case O_IMM:

@@ -9,3 +9,4 @@ uint8_t sse_defined = 0;
 uint8_t sse2_defined = 0;
 uint8_t avx_defined = 0;
 uint8_t avx2_defined = 0;
+uint8_t avx512_fp16_defined = 0;

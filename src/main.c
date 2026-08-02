@@ -5,7 +5,7 @@
 
 
 #include "main.h"
-#define VERSION "2.4.4"
+#define VERSION "2.4.5"
 
 void compiler(uint8_t *text, int *textsize, uint64_t *e_entry) {
     if (!text) return;

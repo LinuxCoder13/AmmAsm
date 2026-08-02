@@ -1833,6 +1833,8 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         !strcasecmp(cmd, "pmaxsw")    ||
         !strcasecmp(cmd, "pminsw")    ||
 
+
+        // 0F 71/72/73
         !strcasecmp(cmd, "psllw")     ||
         !strcasecmp(cmd, "pslld")     ||
         !strcasecmp(cmd, "psllq")     ||
@@ -1842,12 +1844,16 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         !strcasecmp(cmd, "psrlq")     ||
 
         !strcasecmp(cmd, "psraw")     ||
-        !strcasecmp(cmd, "psrad")) {
+        !strcasecmp(cmd, "psrad")     ||
+        // only xmm, imm8
+        !strcasecmp(cmd, "psrldq")    ||
+        !strcasecmp(cmd, "pslldq")){
 
         if(!sse2_defined) {fprintf(stderr, "AmmAsm:%d: Warn: program uses SSE2, but current CPU does't support it(might give #UD)\n", node->line);}
 
         uint8_t opcode = 0;
         uint8_t prefix = 0x66;
+        uint8_t group_digit = 0;
 
         if      (!strcasecmp(cmd, "movdqa"))  opcode = 0x6F;
         else if (!strcasecmp(cmd, "movdqu"))  { opcode = 0x6F; prefix = 0xF3; }
@@ -1892,47 +1898,20 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         else if (!strcasecmp(cmd, "pmaxsw"))    opcode = 0xEE;
         else if (!strcasecmp(cmd, "pminsw"))    opcode = 0xEA;
 
-        else if (!strcasecmp(cmd, "psllw"))     opcode = 0xF1;
-        else if (!strcasecmp(cmd, "pslld"))     opcode = 0xF2;
-        else if (!strcasecmp(cmd, "psllq"))     opcode = 0xF3;
+        else if (!strcasecmp(cmd, "psllw"))     {opcode = 0xF1; group_digit = 6;}
+        else if (!strcasecmp(cmd, "pslld"))     {opcode = 0xF2; group_digit = 6;}
+        else if (!strcasecmp(cmd, "psllq"))     {opcode = 0xF3; group_digit = 6;}
 
-        else if (!strcasecmp(cmd, "psrlw"))     opcode = 0xD1;
-        else if (!strcasecmp(cmd, "psrld"))     opcode = 0xD2;
-        else if (!strcasecmp(cmd, "psrlq"))     opcode = 0xD3;
+        else if (!strcasecmp(cmd, "psrlw"))     {opcode = 0xD1; group_digit = 2;}
+        else if (!strcasecmp(cmd, "psrld"))     {opcode = 0xD2; group_digit = 2;}
+        else if (!strcasecmp(cmd, "psrlq"))     {opcode = 0xD3; group_digit = 2;}
+
+        else if (!strcasecmp(cmd, "pslldq")) group_digit = 7;
+        else if (!strcasecmp(cmd, "psrldq")) group_digit = 3;
 
         else if (!strcasecmp(cmd, "pmovmskb"))  opcode = 0xD7;
-        else if (!strcasecmp(cmd, "psraw"))     opcode = 0xE1;
-        else if (!strcasecmp(cmd, "psrad"))     opcode = 0xE2;
-
-
-        // xmm, xmm
-        if (a->type == O_XMM && b->type == O_XMM) {
-
-            node->ins.pc = *pc;
-            *s = encode_two_byte_opcode_reg( machine_code, opcode, find_xmm_index(a->reg), find_xmm_index(b->reg), 128, prefix);
-            *pc += *s;
-        }
-
-        // xmm, [mem]
-        if (a->type == O_XMM && b->type == O_MEM) {
-
-            node->ins.pc = *pc;
-            *s = encode_inst_reg_rm2( machine_code, opcode, find_xmm_index(a->reg), &b->addr, 128, prefix);
-            *pc += *s;
-        }
-
-        // [mem], xmm
-        if (!strcasecmp(cmd, "movdqa") ||
-            !strcasecmp(cmd, "movdqu")) {
-
-            if (a->type == O_MEM && b->type == O_XMM) {
-
-                node->ins.pc = *pc;
-                *s = encode_inst_reg_rm2( machine_code, opcode + 16, find_xmm_index(b->reg), &a->addr, 128, prefix);
-
-                *pc += *s;
-            }
-        }
+        else if (!strcasecmp(cmd, "psraw"))     {opcode = 0xE1; group_digit = 4;}
+        else if (!strcasecmp(cmd, "psrad"))     {opcode = 0xE2; group_digit = 4;}
 
         // pmovmskb r32, xmm
         if (!strcasecmp(cmd, "pmovmskb")) {
@@ -1949,6 +1928,79 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
                 *pc += *s;
             }
         }
+
+        // movdqa / movdqu
+        else if (!strcasecmp(cmd, "movdqa") ||
+                !strcasecmp(cmd, "movdqu")) {
+
+            // xmm, xmm
+            if (a->type == O_XMM && b->type == O_XMM) {
+                node->ins.pc = *pc;
+                *s = encode_two_byte_opcode_reg( machine_code, opcode, find_xmm_index(a->reg), find_xmm_index(b->reg), 128, prefix);
+                *pc += *s;
+            }
+
+            // xmm, [mem]
+            else if (a->type == O_XMM && b->type == O_MEM) {
+                node->ins.pc = *pc;
+                *s = encode_inst_reg_rm2( machine_code, opcode, find_xmm_index(a->reg), &b->addr, 128, prefix);
+                *pc += *s;
+            }
+
+            // [mem], xmm
+            else if (a->type == O_MEM && b->type == O_XMM) {
+                node->ins.pc = *pc;
+                *s = encode_inst_reg_rm2( machine_code, opcode + 0x10, find_xmm_index(b->reg), &a->addr, 128, prefix);
+                *pc += *s;
+            }
+        }
+
+        // xmm, imm8 (group 12)
+        else if((!strcasecmp(cmd, "psrlw") || !strcasecmp(cmd, "psraw") || 
+                 !strcasecmp(cmd, "psllw")) && b->type == O_IMM){
+            
+            // pack you intel, what is this? I done, I switch to ARM!
+            node->ins.pc = *pc;
+            *s = encode_group12_xmm_imm(machine_code, find_xmm_index(a->reg), b->imm, group_digit);
+            *pc += *s;
+        }
+
+        // xmm, imm8 (group 13)
+        else if((!strcasecmp(cmd, "psrld") || !strcasecmp(cmd, "psrad") || 
+                 !strcasecmp(cmd, "pslld")) && b->type == O_IMM){
+            
+            // pack you intel, what is this? I done, I switch to ARM!
+            node->ins.pc = *pc;
+            *s = encode_group13_xmm_imm(machine_code, find_xmm_index(a->reg), b->imm, group_digit);
+            *pc += *s;
+        }
+
+        // xmm, imm8 (group 14)
+        else if((!strcasecmp(cmd, "psrlq") || !strcasecmp(cmd, "psrldq") || 
+                 !strcasecmp(cmd, "psllq") || !strcasecmp(cmd, "pslldq")) && b->type == O_IMM){
+            
+            // pack you intel, what is this? I done, I switch to ARM!
+            node->ins.pc = *pc;
+            *s = encode_group14_xmm_imm(machine_code, find_xmm_index(a->reg), b->imm, group_digit);
+            *pc += *s;
+        }
+
+        // xmm, xmm
+        else if (a->type == O_XMM && b->type == O_XMM) {
+            node->ins.pc = *pc;
+            *s = encode_two_byte_opcode_reg( machine_code, opcode, find_xmm_index(a->reg), find_xmm_index(b->reg), 128, prefix);
+            *pc += *s;
+        }
+
+        // xmm, [mem]
+        else if (a->type == O_XMM && b->type == O_MEM) {
+
+            node->ins.pc = *pc;
+            *s = encode_inst_reg_rm2( machine_code, opcode, find_xmm_index(a->reg), &b->addr, 128, prefix);
+            *pc += *s;
+        }
+
+
     }
 
     else if (!strcasecmp(cmd, "movq")) {
@@ -1997,6 +2049,9 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         uint8_t opcode = 0;
         uint8_t vex_pp = VEX_PP_NONE;
         uint8_t vex_map = VEX_MAP_0F;
+
+        uint8_t evex_pp = EVEX_PP_NONE;
+        uint8_t evex_map = EVEX_MAP_0F;
         
         if(!strcasecmp(cmd, "vaddps"))  { opcode = 0x58; vex_pp = VEX_PP_NONE; }
         else if(!strcasecmp(cmd, "vaddpd"))  { opcode = 0x58; vex_pp = VEX_PP_66; }
@@ -2075,10 +2130,26 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
 
         else if(!strcasecmp(cmd, "vpsraw"))     { opcode = 0xE1; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
         else if(!strcasecmp(cmd, "vpsrad"))     { opcode = 0xE2; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
-                
+
+        // AVX-512
+        else if(!strcasecmp(cmd, "vminsh"))     { opcode = 0x5D; evex_map = EVEX_MAP_UNNAMED5; evex_pp = EVEX_PP_F3;}
+        else if(!strcasecmp(cmd, "vmaxsh"))     { opcode = 0x5F; evex_map = EVEX_MAP_UNNAMED5; evex_pp = EVEX_PP_F3;}    
+        
         if(opcode) {
+
+            if((!strcasecmp(cmd, "vminsh") || !strcasecmp(cmd, "vmaxsh")) &&
+               (a->type == O_XMM && b->type == O_XMM && c->type == O_XMM)){
+                if(!avx512_fp16_defined) {fprintf(stderr, "AmmAsm:%d: Warn: program uses AVX-512_fp16, but current CPU does't support it(might give #UD)\n", node->line);}
+
+                node->ins.pc = *pc;
+                *s = encode_avx512_xmm_xmm_xmm(machine_code, opcode, find_xmm_index(a->reg), 
+                     find_xmm_index(b->reg), find_xmm_index(c->reg),
+                     evex_map, EVEX_XMM, evex_pp, 0);
+                *pc += *s;
+            }
+
             // xmm/ymm, xmm/ymm, xmm/ymm
-            if(a->type == O_XMM && b->type == O_XMM && c->type == O_XMM){
+            else if(a->type == O_XMM && b->type == O_XMM && c->type == O_XMM){
                 node->ins.pc = *pc;
                 *s = encode_avx_xmm_xmm_xmm(machine_code, opcode, 
                     find_xmm_index(a->reg), find_xmm_index(b->reg), find_xmm_index(c->reg),
@@ -2092,6 +2163,26 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
                     VEX_YMM, vex_pp, vex_map);
                 *pc += *s;
             }
+
+            else if(a->type == O_XMM && b->type == O_XMM && c->type == O_MEM){
+                node->ins.pc = *pc;
+                AddrExpr *mem = &c->addr; 
+                *s = encode_avx_xmm_xmm_mem(machine_code, opcode, 
+                    find_xmm_index(a->reg), find_xmm_index(b->reg), mem,
+                    VEX_XMM, vex_pp, vex_map);
+                *pc += *s;
+            }
+
+
+            else if(a->type == O_YMM && b->type == O_YMM && c->type == O_MEM){
+                node->ins.pc = *pc;
+                AddrExpr *mem = &c->addr; 
+                *s = encode_avx_xmm_xmm_mem(machine_code, opcode, 
+                    find_xmm_index(a->reg), find_xmm_index(b->reg), mem,
+                    VEX_YMM, vex_pp, vex_map);
+                *pc += *s;
+            }
+
         }
     }
 
@@ -2294,7 +2385,6 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
             
         }
 
-        // MOV R64, [ADDR]
         else if (a->type == O_REG64 && b->type == O_MEM) {
             uint8_t reg = find_reg64_index(a->reg);
             AddrExpr *mem = &b->addr;
@@ -2305,7 +2395,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
             
         }
 
-        // MOV R32, [ADDR]
+
         else if (a->type == O_REG32 && b->type == O_MEM) {
             uint8_t reg = find_reg32_index(a->reg);
             AddrExpr *mem = &b->addr;
@@ -2316,7 +2406,6 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
             
         }
 
-        // MOV R16, [ADDR]
         else if (a->type == O_REG16 && b->type == O_MEM) {
             uint8_t reg = find_reg16_index(a->reg);
             AddrExpr *mem = &b->addr;
@@ -2327,7 +2416,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
             
         }
 
-        // MOV R8, [ADDR]
+
         else if (a->type == O_REG8 && b->type == O_MEM) {
             uint8_t reg = find_reg8_index(a->reg);
             AddrExpr *mem = &b->addr;
@@ -2398,6 +2487,8 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
                 node->ins.operands[i].type == O_IMM   ? "IMM"   :
                 node->ins.operands[i].type == O_MEM   ? "[MEM]" :
                 node->ins.operands[i].type == O_XMM   ? "XMM"   :
+                node->ins.operands[i].type == O_YMM   ? "YMM"   :
+                node->ins.operands[i].type == O_ZMM   ? "ZMM"   :
                 "?",
                 node->ins.operands[i + 1].type == O_NONE ? "" : ", ");
         }

@@ -110,6 +110,11 @@ AddrExpr parse_addr_expr(const uint8_t* expr, int line) {
         exit(1);
     }
 
+    if (!new.have_base && new.have_index){
+        fprintf(stderr, "AmmAsm:%d: Index-based addressing is not supported\n", line);
+        exit(1);
+    }
+
 
     if (new.have_index && !(is2arrin(regs64, index) || is2arrin(regs64GP, index))) {
         fprintf(stderr, "AmmAsm:%d: invalid index register name '%s'\n", line, index);
@@ -211,8 +216,7 @@ uint8_t encode_two_byte_opcode_reg(uint8_t *mash_code, uint8_t opcode, uint8_t d
     uint8_t rm = src;
     uint8_t reg = dest;
     
-    if(dest>= 8)rex |=  REX_BASE | REX_B;
-    if(src >= 8)rex |= REX_BASE | REX_R;
+
     
     
     if((src >= 4) && (src <= 7)) rex |= REX_BASE;
@@ -237,31 +241,17 @@ uint8_t encode_two_byte_opcode_reg(uint8_t *mash_code, uint8_t opcode, uint8_t d
 }
 
 
-// 2 the most powerfull encoders in AmmAsm!!!!!!!!!!!!!!!!!!
-
-// inst reg, [addr] | inst [addr], reg/imm
-uint8_t encode_inst_rm_rm(uint8_t *mash_code, uint8_t reg, AddrExpr *expr, uint8_t sz,  uint8_t opcode, uint8_t imm_sz, uint64_t imm){
-    uint8_t legacy_prefix = 0x66; // 16 bit
-    uint8_t rex = 0;
+Modrm_SIB gen_modrm_sib(AddrExpr *expr, uint8_t reg){
     uint8_t modrm = 0;
     uint8_t sib = 0;
     uint8_t need_sib = 0; // for now
     uint8_t disp_sz = 0;
     uint8_t mod;
-    int pos = 0;
 
-
-    // sib
+        // sib
     uint8_t base  = expr->base;
     uint8_t index = expr->index; // if index == 0b100 then no index
     uint8_t scale = 0b00; // base value
-
-    switch(sz){
-        case 64: rex |= REX_BASE | REX_W; break;
-        case 32: break;
-        case 16: mash_code[pos++] = legacy_prefix; break;
-        case 8:  if(reg >= 4 && imm_sz == 0) rex |= REX_BASE; break;
-    }
 
     switch(expr->scale){
         case 1: scale = 0b00; break;
@@ -269,27 +259,6 @@ uint8_t encode_inst_rm_rm(uint8_t *mash_code, uint8_t reg, AddrExpr *expr, uint8
         case 4: scale = 0b10; break;
         case 8: scale = 0b11; break;
     }
-    /*  
-    
-    Addresing | mod | r/m| SIB?| disp? |
-    |---------|-----|----|-----|-------|     
- 1. |[reg]    | 00  | reg| n/a | n/a   | v
- 2. |[reg+d8] | 01  | reg| n/a | disp8 | v
- 3. |[reg+d32]| 10  | reg| n/a | disp32| v
- 4. |[rsp]    | 00  | 100| yes | n/a   | v
- 5. |[rsp+d8] | 01  | 100| yes | disp8 | v
- 6. |[rsp+d32]| 10  | 100| yes | disp32| v
- 7. |[rbp]    | 01  | 101| n/a | disp=0| v
- 8. |[b+i*s]  | 00  | 100| yes | n/a   | v
- 9. |[b+i+d*s]|01/10| 100| yes | d8/d32| v
- 10.|[i*s+d32]| 00  | 100|b=101| disp32| v
- 11.|[rip+d32]| 00  | 101| n/a | disp32| v
-            [DONE] :-)
-    */
-
-    if(reg >= 8)   rex |= REX_R;
-    if(base >= 8)  rex |= REX_B;
-    if(index >= 8) rex |= REX_X;
 
     if ((expr->have_base || expr->have_index) && expr->have_disp && expr->disp == 0){
         expr->have_disp = 0;
@@ -297,7 +266,7 @@ uint8_t encode_inst_rm_rm(uint8_t *mash_code, uint8_t reg, AddrExpr *expr, uint8
     if(!expr->have_disp){ mod = 0b00; expr->have_disp = 0;}
     else if(expr->disp >= -128 && expr->disp <= 127){ mod = 0b01; expr->have_disp = 1; disp_sz = 1;} 
     else /* disp fits in int32_t */ {mod = 0b10; expr->have_disp = 1; disp_sz = 4;}
-   
+    
     // 8, 9
     if (expr->have_index && !expr->is_rip_rel) {
         if ((base & 7) == 0b101 && !expr->have_disp) {
@@ -357,14 +326,55 @@ uint8_t encode_inst_rm_rm(uint8_t *mash_code, uint8_t reg, AddrExpr *expr, uint8
         fprintf(stderr, "AmmAsm: RIP-relative addressing cannot use index register\n");
         exit(1);
     }
+
+    return (Modrm_SIB){.modrm = modrm, .sib = sib, .have_sib = need_sib, .disp_sz = disp_sz};
+}
+
+// 2 the most powerfull encoders in AmmAsm!!!!!!!!!!!!!!!!!!
+
+// inst reg, [addr] | inst [addr], reg/imm
+uint8_t encode_inst_rm_rm(uint8_t *mash_code, uint8_t reg, AddrExpr *expr, uint8_t sz,  uint8_t opcode, uint8_t imm_sz, uint64_t imm){
+    uint8_t legacy_prefix = 0x66; // 16 bit
+    uint8_t rex = 0;
+    int pos = 0;
+
+    switch(sz){
+        case 64: rex |= REX_BASE | REX_W; break;
+        case 32: break;
+        case 16: mash_code[pos++] = legacy_prefix; break;
+        case 8:  if(reg >= 4 && imm_sz == 0) rex |= REX_BASE; break;
+    }
+    /*  
+    Addresing | mod | r/m| SIB?| disp? |
+    |---------|-----|----|-----|-------|     
+ 1. |[reg]    | 00  | reg| n/a | n/a   | v
+ 2. |[reg+d8] | 01  | reg| n/a | disp8 | v
+ 3. |[reg+d32]| 10  | reg| n/a | disp32| v
+ 4. |[rsp]    | 00  | 100| yes | n/a   | v
+ 5. |[rsp+d8] | 01  | 100| yes | disp8 | v
+ 6. |[rsp+d32]| 10  | 100| yes | disp32| v
+ 7. |[rbp]    | 01  | 101| n/a | disp=0| v
+ 8. |[b+i*s]  | 00  | 100| yes | n/a   | v
+ 9. |[b+i+d*s]|01/10| 100| yes | d8/d32| v
+ 10.|[i*s+d32]| 00  | 100|b=101| disp32| v
+ 11.|[rip+d32]| 00  | 101| n/a | disp32| v
+            [DONE] :-)
+    */
+
+    if(reg >= 8)   rex |= REX_R;
+    if(expr->base >= 8)  rex |= REX_B;
+    if(expr->index >= 8) rex |= REX_X;
+
+
+    Modrm_SIB out = gen_modrm_sib(expr, reg);
     
     if(rex != 0) mash_code[pos++] = rex | REX_BASE;
     mash_code[pos++] = opcode;
-    mash_code[pos++] = modrm;
-    if(need_sib) mash_code[pos++] = sib;
+    mash_code[pos++] = out.modrm;
+    if(out.have_sib) mash_code[pos++] = out.sib;
     
     if(expr->have_disp && !expr->is_rip_rel){
-        if(disp_sz == 1) mash_code[pos++] = (uint8_t)expr->disp;
+        if(out.disp_sz == 1) mash_code[pos++] = (uint8_t)expr->disp;
         else {*(uint32_t*)(mash_code + pos) = expr->disp; pos+=4; }
     }
     
@@ -384,146 +394,36 @@ uint8_t encode_inst_rm_rm(uint8_t *mash_code, uint8_t reg, AddrExpr *expr, uint8
 /* mainly copy paste*/
 // inst reg, <SIZE> r/m
 // 0F B6/B7/BE/BF.......
-uint8_t encode_inst_reg_rm2(uint8_t *machine_code, uint8_t opcode2, uint8_t reg, AddrExpr *expr, uint8_t dst_sz, uint8_t prefix)
+uint8_t encode_inst_reg_rm2( uint8_t *machine_code, uint8_t opcode2, uint8_t reg, AddrExpr *expr, uint8_t dst_sz, uint8_t prefix)
 {
     uint8_t rex = 0;
-    uint8_t modrm = 0;
-    uint8_t sib = 0;
-    uint8_t need_sib = 0;
-    uint8_t disp_sz = 0;
-    uint8_t mod;
     int pos = 0;
-
-    uint8_t base  = expr->base;
-    uint8_t index = expr->index;
-    uint8_t scale = 0;
 
     switch (dst_sz) {
         case 64: rex |= REX_W; break;
         case 32: break;
         case 16: machine_code[pos++] = 0x66; break;
-        case 8: break;
+        case 8:  break;
     }
 
-    switch (expr->scale) {
-        case 1: scale = 0b00; break;
-        case 2: scale = 0b01; break;
-        case 4: scale = 0b10; break;
-        case 8: scale = 0b11; break;
-    }
+    if (reg >= 8)         rex |= REX_R;
+    if (expr->base >= 8)  rex |= REX_B;
+    if (expr->index >= 8) rex |= REX_X;
 
-    if (reg >= 8)   rex |= REX_R;
-    if (base >= 8)  rex |= REX_B;
-    if (index >= 8) rex |= REX_X;
+    Modrm_SIB out = gen_modrm_sib(expr, reg);
 
-    if ((expr->have_base || expr->have_index) &&
-        expr->have_disp &&
-        expr->disp == 0)
-    {
-        expr->have_disp = 0;
-    }
-
-    if (!expr->have_disp) {
-        mod = 0b00;
-        expr->have_disp = 0;
-    }
-    else if (expr->disp >= -128 && expr->disp <= 127) {
-        mod = 0b01;
-        expr->have_disp = 1;
-        disp_sz = 1;
-    }
-    else {
-        mod = 0b10;
-        expr->have_disp = 1;
-        disp_sz = 4;
-    }
-
-    // 8,9
-    if (expr->have_index && !expr->is_rip_rel) {
-
-        if ((base & 7) == 0b101 && !expr->have_disp) {
-            mod = 0b01;
-            expr->disp = 0;
-            expr->have_disp = 1;
-            disp_sz = 1;
-        }
-
-        modrm = emit_modrm(mod, reg, 0b100);
-        sib   = emit_sib(scale, index, base);
-        need_sib = 1;
-    }
-
-    // 4,5,6
-    else if ((base & 7) == 0b100) {
-
-        modrm = emit_modrm(mod, reg, 0b100);
-        sib   = emit_sib(0b00, 0b100, base);
-        need_sib = 1;
-    }
-
-    // 7
-    else if ((base & 7) == 0b101) {
-
-        if (!expr->have_disp) {
-            mod = 0b01;
-            expr->disp = 0;
-            expr->have_disp = 1;
-            disp_sz = 1;
-        }
-
-        modrm = emit_modrm(mod, reg, base);
-    }
-
-    // 1,2,3
-    else if (expr->have_base && !expr->have_index) {
-
-        modrm = emit_modrm(mod, reg, base);
-        need_sib = 0;
-    }
-
-    // 10
-    else if (!expr->is_rip_rel &&
-             !expr->have_base &&
-             expr->have_disp)
-    {
-        modrm = emit_modrm(0b00, reg, 0b100);
-        sib   = emit_sib(scale, index, 0b101);
-        need_sib = 1;
-        expr->have_disp = 1;
-        disp_sz = 4;
-    }
-
-    // 11
-    else if (expr->is_rip_rel && !expr->have_base) {
-
-        modrm = emit_modrm(0b00, reg, 0b101);
-        need_sib = 0;
-    }
-
-    if (expr->is_rip_rel &&
-        !expr->have_base &&
-        expr->have_index)
-    {
-        fprintf(stderr,
-                "AmmAsm: RIP-relative addressing cannot use index register\n");
-        exit(1);
-    }
-
-
-    if(prefix) machine_code[pos++] = prefix;
+    if (prefix)machine_code[pos++] = prefix;
     if (rex) machine_code[pos++] = rex | REX_BASE;
 
     machine_code[pos++] = 0x0F;
     machine_code[pos++] = opcode2;
-    machine_code[pos++] = modrm;
+    machine_code[pos++] = out.modrm;
 
-    if (need_sib)
-        machine_code[pos++] = sib;
-
+    if (out.have_sib) machine_code[pos++] = out.sib;
     if (expr->have_disp && !expr->is_rip_rel) {
-        if (disp_sz == 1) {
+        if (out.disp_sz == 1)
             machine_code[pos++] = (uint8_t)expr->disp;
-        } else {
+        else {
             *(uint32_t *)(machine_code + pos) = expr->disp;
             pos += 4;
         }
@@ -1726,39 +1626,53 @@ uint8_t encode_xmm_or_r64__xmm_or_r64(uint8_t* mash_code, uint8_t dest, uint8_t 
     return pos;
 }
 
+void emit_vex(VEX *vex){
+
+    uint8_t vex1 = 0;
+    uint8_t vex2 = 0;
+
+    // pack you intel, pack your name, pack your cpu, pack your milions, pack your bilions, pack your computers, pack your developers!
+    if(!vex->is_2byte){ // C5
+        vex1 |= VEX_R(vex->dest >= 8);
+        vex1 |= VEX_VVVV(vex->src1);
+        vex1 |= VEX_L(vex->L); // vector sz (1 == ymm, 0 == xmm)
+        vex1 |= VEX_PP(vex->PP);
+    }
+
+    else{ // C4
+        vex1 |= VEX_R(vex->dest >= 8);
+        vex1 |= VEX_X(vex->x);
+        vex1 |= VEX_B(vex->src2 >= 8);
+        vex1 |= VEX_MMMMM(vex->mmmmm);
+
+        // vex2 |= VEX_W; // cpu ignored by cpu
+        vex2 |= VEX_VVVV(vex->src1);
+        vex2 |= VEX_L(vex->L); // vector sz (1 == ymm, 0 == xmm)
+        vex2 |= VEX_PP(vex->PP);        
+    }
+
+    vex->vex1 = vex1;
+    if(vex->is_2byte) vex->vex2 = vex2;
+}
+
 uint8_t encode_avx_xmm_xmm_xmm(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, uint8_t src2, uint8_t L, uint8_t pp, uint8_t mmmmm){
-    uint8_t vex = (src2 >= 8) ? 0xC4 : 0xC5;  // yeeees! finally AVX in AmmAsm
+    uint8_t is_2byte = (src2 >= 8);
     uint8_t vex1 = 0; 
     uint8_t vex2 = 0;
     uint8_t modrm = 0;
     int pos = 0; 
 
-    // pack you intel, pack your name, pack your cpu, pack your milions, pack your bilions, pack your computers, pack your developers!
-    if(vex == 0xC5){
-        vex1 |= VEX_R(dest >= 8);
-        vex1 |= VEX_VVVV(src1);
-        vex1 |= VEX_L(L); // vector sz (1 == ymm, 0 == xmm)
-        vex1 |= VEX_PP(pp);
-    }
+    VEX vex = { .is_2byte = is_2byte, .dest = dest, .src1 = src1, .src2 = src2, 
+                .r = (dest >= 8), .x = 1, .b = (src2 >= 8), 
+                .mmmmm = mmmmm, .L = L, .PP = pp };
 
-    else{ // C4
-        vex1 |= VEX_R(dest >= 8);
-        vex1 |= VEX_X(1); // not used in this case (for now)
-        vex1 |= VEX_B(src2 >= 8);
-        vex1 |= VEX_MMMMM(mmmmm);
-
-        // vex2 |= VEX_W; // cpu ignored by cpu
-        vex2 |= VEX_VVVV(src1);
-        vex2 |= VEX_L(L); // vector sz (1 == ymm, 0 == xmm)
-        vex2 |= VEX_PP(pp);        
-    }
-
+    emit_vex(&vex);
 
     modrm = emit_modrm(0b11, dest, src2);
 
-    mash_code[pos++] = vex;
-    mash_code[pos++] = vex1;
-    if(vex2) mash_code[pos++] = vex2;
+    mash_code[pos++] = 0xC5 - is_2byte;
+    mash_code[pos++] = vex.vex1;
+    if(vex.vex2) mash_code[pos++] = vex.vex2;
     mash_code[pos++] = opcode;
     mash_code[pos++] = modrm;
     return pos;
@@ -1768,6 +1682,43 @@ uint8_t encode_avx_ymm_ymm_ymm(uint8_t* mash_code, uint8_t opcode, uint8_t dest,
     return encode_avx_xmm_xmm_xmm(mash_code, opcode, dest, src1, src2, L, pp, mmmmm);
 }
 
+uint8_t encode_avx_xmm_xmm_mem(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, AddrExpr *expr, uint8_t L, uint8_t pp, uint8_t mmmmm){
+    uint8_t is_2byte = (expr->base >= 8);
+    uint8_t vex1 = 0; 
+    uint8_t vex2 = 0;
+    uint8_t modrm = 0;
+    int pos = 0;
+
+    
+    VEX vex = { .is_2byte = is_2byte, .dest = dest, .src1 = src1, .src2 = expr->base, 
+                .r = (dest >= 8), .x = expr->index, .b = (expr->base >= 8), 
+                .mmmmm = mmmmm, .L = L, .PP = pp };
+
+    Modrm_SIB out = gen_modrm_sib(expr, dest);
+    emit_vex(&vex);
+
+    mash_code[pos++] = 0xC5 - is_2byte;
+    mash_code[pos++] = vex.vex1;
+    if(vex.vex2) mash_code[pos++] = vex.vex2;
+    mash_code[pos++] = opcode;
+    mash_code[pos++] = out.modrm;
+    if(out.have_sib) mash_code[pos++] = out.sib;
+
+    
+    if(expr->have_disp && !expr->is_rip_rel){
+        if(out.disp_sz == 1) mash_code[pos++] = (uint8_t)expr->disp;
+        else {*(uint32_t*)(mash_code + pos) = expr->disp; pos+=4; }
+    }
+    
+    if(expr->is_rip_rel){*(uint32_t*)(mash_code + pos) = 0x0; pos+=4; expr->disp_offset = pos-4;} // placeholder
+    
+    return pos;
+}
+
+uint8_t encode_avx_ymm_ymm_mem(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, AddrExpr *expr, uint8_t L, uint8_t pp, uint8_t mmmmm){
+    return encode_avx_xmm_xmm_mem(mash_code,opcode, dest, src1, expr, L,  pp, mmmmm);
+}
+
 // inc/dec reg8
 uint8_t encode_group4_reg(uint8_t* mash_code, uint8_t dest, uint8_t opcode, uint8_t group_digit, uint8_t sz){
     return encode_group3_reg(mash_code, dest, opcode, group_digit, sz);
@@ -1775,4 +1726,115 @@ uint8_t encode_group4_reg(uint8_t* mash_code, uint8_t dest, uint8_t opcode, uint
 
 uint8_t encode_group5_reg(uint8_t* mash_code, uint8_t dest, uint8_t opcode, uint8_t group_digit, uint8_t sz){
     return encode_group3_reg(mash_code, dest, opcode, group_digit, sz);
+}
+
+
+uint8_t encode_group12_xmm_imm(uint8_t* mash_code, uint8_t dest, uint8_t imm, uint8_t digit_group){
+    uint16_t prefix = 0x0F66; // little endian
+    uint8_t rex = 0;
+    uint8_t opcode = 0x71;
+    uint8_t modrm = 0;
+    int pos = 0;
+
+    if(dest >= 8)rex = REX_BASE | REX_B;
+
+    modrm = emit_modrm(0b11, digit_group, dest);
+
+    if(rex) mash_code[pos++] = rex;
+    *(uint16_t*)(mash_code + pos) = prefix; pos+=2;
+    mash_code[pos++] = opcode;
+    mash_code[pos++] = modrm;
+    mash_code[pos++] = imm;
+    return pos;
+}
+
+
+uint8_t encode_group13_xmm_imm(uint8_t* mash_code, uint8_t dest, uint8_t imm, uint8_t digit_group){
+    uint16_t prefix = 0x0F66; // little endian
+    uint8_t rex = 0;
+    uint8_t opcode = 0x72;
+    uint8_t modrm = 0;
+    int pos = 0;
+
+    if(dest >= 8)rex = REX_BASE | REX_B;
+
+    modrm = emit_modrm(0b11, digit_group, dest);
+
+    if(rex) mash_code[pos++] = rex;
+    *(uint16_t*)(mash_code + pos) = prefix; pos+=2;
+    mash_code[pos++] = opcode;
+    mash_code[pos++] = modrm;
+    mash_code[pos++] = imm;
+    return pos;
+}
+
+// psrlq, psrldq, psllq, pslldq
+uint8_t encode_group14_xmm_imm(uint8_t* mash_code, uint8_t dest, uint8_t imm, uint8_t digit_group){
+    uint16_t prefix = 0x0F66; // little endian
+    uint8_t rex = 0;
+    uint8_t opcode = 0x73;
+    uint8_t modrm = 0;
+    int pos = 0;
+
+    if(dest >= 8)rex = REX_BASE | REX_B;
+
+    modrm = emit_modrm(0b11, digit_group, dest);
+
+    if(rex) mash_code[pos++] = rex;
+    *(uint16_t*)(mash_code + pos) = prefix; pos+=2;
+    mash_code[pos++] = opcode;
+    mash_code[pos++] = modrm;
+    mash_code[pos++] = imm;
+    return pos;
+}
+
+uint8_t encode_avx512_xmm_xmm_xmm(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, uint8_t src2, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W){
+    uint8_t prefix = 0x62; // AmmAsm is imortal
+    uint8_t P0 = 0;
+    uint8_t P1 = 0;
+    uint8_t P2 = 0;
+    uint8_t modrm = 0;
+    int pos = 0;
+
+// 1111 0010 - aasm
+// 1111 0101- nasm v3.1
+    P0 |= EVEX_R((dest >= 8));
+    P0 |= EVEX_B((src2 >> 3) & 1);
+    P0 |= EVEX_X((src2 >> 4) & 1);
+    P0 |= EVEX_ER(dest >= 16);
+    // ZERO
+    P0 |= EVEX_MMM(mmm);
+    
+    
+    P1 |= EVEX_W(W);
+    P1 |= EVEX_VVVV(src1);
+    P1 |= EVEX_INITP1_ONE;
+    P1 |= EVEX_PP(PP);
+
+    P2 |= EVEX_Z(0); // ! hard-coded for now
+    
+    P2 |= EVEX_LL(LL);
+    P2 |= EVEX_BRODCAST(0); // // ! hard-coded for now
+    P2 |= EVEX_EV(!(src1 >= 16)); 
+    P2 |= EVEX_A(0); // ! hard-coded for now
+
+    modrm = emit_modrm(0b11, dest, src2);
+
+    mash_code[pos++] = prefix;
+    mash_code[pos++] = P0;
+    mash_code[pos++] = P1;
+    mash_code[pos++] = P2;
+    mash_code[pos++] = opcode;
+    mash_code[pos++] = modrm;
+    
+    return pos;
+
+}
+
+uint8_t encode_avx512_ymm_ymm_ymm(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, uint8_t src2, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W){
+    return encode_avx512_xmm_xmm_xmm(mash_code, opcode, dest, src1, src2, mmm, LL, PP, W);
+}
+
+uint8_t encode_avx512_zmm_zmm_zmm(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, uint8_t src2, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W){
+    return encode_avx512_xmm_xmm_xmm(mash_code, opcode, dest, src1, src2, mmm, LL, PP, W);
 }

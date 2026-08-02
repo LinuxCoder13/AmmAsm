@@ -22,6 +22,7 @@ typedef enum __attribute__((packed)){
     T_REG64,
     T_XMM,
     T_YMM,
+    T_ZMM,
     T_ALIGN,
     T_ADDR_EXPR,
     T_STR,
@@ -77,6 +78,7 @@ typedef enum __attribute__((packed)){
     O_REG64,
     O_XMM,
     O_YMM,
+    O_ZMM,
     O_EXPR, // imm, lab, pc, char
     O_PC,
     O_CHAR, 
