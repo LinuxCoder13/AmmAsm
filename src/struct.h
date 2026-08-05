@@ -33,6 +33,9 @@ typedef struct {
 
 typedef struct {
     OperandType type;
+    uint8_t mask_reg; // AVX-512 (k0-k7)
+    uint8_t z_reg;    // AVX-512 {z}
+    uint8_t brotcast; // AVX-512 {b}
 
     union {
         uint8_t reg[8];
@@ -43,7 +46,7 @@ typedef struct {
     };
 
     // 1, 2, 4, 8. 0 - not defined
-    uint8_t imm_sz; // `inst [addr], db/w/d/q imm` 
+    uint8_t imm_sz;
 
 } Operand;
 

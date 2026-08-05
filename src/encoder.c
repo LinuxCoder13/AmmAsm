@@ -116,12 +116,12 @@ AddrExpr parse_addr_expr(const uint8_t* expr, int line) {
     }
 
 
-    if (new.have_index && !(is2arrin(regs64, index) || is2arrin(regs64GP, index))) {
+    if (new.have_index && !(is2arrin(regs64, 8, index) || is2arrin(regs64GP, 8, index))) {
         fprintf(stderr, "AmmAsm:%d: invalid index register name '%s'\n", line, index);
         exit(1);
     }
     
-    if (new.have_base && !(is2arrin(regs64, base) || is2arrin(regs64GP, base))) {
+    if (new.have_base && !(is2arrin(regs64, 8, base) || is2arrin(regs64GP, 8, base))) {
         strncpy(new.label, base, sizeof new.label);
         new.label[sizeof(new.label) - 1] = '\0';
         new.is_rip_rel = 1;
@@ -241,7 +241,7 @@ uint8_t encode_two_byte_opcode_reg(uint8_t *mash_code, uint8_t opcode, uint8_t d
 }
 
 
-Modrm_SIB gen_modrm_sib(AddrExpr *expr, uint8_t reg){
+Modrm_SIB gen_modrm_sib_ex(AddrExpr *expr, uint8_t reg, uint8_t is_evex){
     uint8_t modrm = 0;
     uint8_t sib = 0;
     uint8_t need_sib = 0; // for now
@@ -260,13 +260,36 @@ Modrm_SIB gen_modrm_sib(AddrExpr *expr, uint8_t reg){
         case 8: scale = 0b11; break;
     }
 
-    if ((expr->have_base || expr->have_index) && expr->have_disp && expr->disp == 0){
-        expr->have_disp = 0;
+    if ((expr->have_base || expr->have_index) && expr->have_disp && expr->disp == 0) expr->have_disp = 0;
+    if (!expr->have_disp) {  mod = 0b00; expr->have_disp = 0;}
+    else {
+        int disp = expr->disp;
+        if (is_evex > 1) {
+            if ((disp % is_evex) == 0) { // can use short form?
+                int cd8 = disp / is_evex;
+
+                if (cd8 >= -128 && cd8 <= 127) {
+                    expr->disp = cd8;     
+                    mod = 0b01;
+                    disp_sz = 1;
+                }
+                else {
+                    mod = 0b10;
+                    disp_sz = 4;
+                }
+            }
+            else { 
+                mod = 0b10;
+                disp_sz = 4;
+            }
+        }
+        else {
+            if (disp >= -128 && disp <= 127) { mod = 0b01; disp_sz = 1;} // disp8
+            else {mod = 0b10; disp_sz = 4;} // disp32
+        }
+
+        expr->have_disp = 1;
     }
-    if(!expr->have_disp){ mod = 0b00; expr->have_disp = 0;}
-    else if(expr->disp >= -128 && expr->disp <= 127){ mod = 0b01; expr->have_disp = 1; disp_sz = 1;} 
-    else /* disp fits in int32_t */ {mod = 0b10; expr->have_disp = 1; disp_sz = 4;}
-    
     // 8, 9
     if (expr->have_index && !expr->is_rip_rel) {
         if ((base & 7) == 0b101 && !expr->have_disp) {
@@ -328,6 +351,10 @@ Modrm_SIB gen_modrm_sib(AddrExpr *expr, uint8_t reg){
     }
 
     return (Modrm_SIB){.modrm = modrm, .sib = sib, .have_sib = need_sib, .disp_sz = disp_sz};
+}
+
+Modrm_SIB gen_modrm_sib(AddrExpr *expr, uint8_t reg){
+    return gen_modrm_sib_ex(expr, reg, 0);
 }
 
 // 2 the most powerfull encoders in AmmAsm!!!!!!!!!!!!!!!!!!
@@ -1630,7 +1657,7 @@ void emit_vex(VEX *vex){
 
     uint8_t vex1 = 0;
     uint8_t vex2 = 0;
-
+    
     // pack you intel, pack your name, pack your cpu, pack your milions, pack your bilions, pack your computers, pack your developers!
     if(!vex->is_2byte){ // C5
         vex1 |= VEX_R(vex->dest >= 8);
@@ -1656,7 +1683,7 @@ void emit_vex(VEX *vex){
 }
 
 uint8_t encode_avx_xmm_xmm_xmm(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, uint8_t src2, uint8_t L, uint8_t pp, uint8_t mmmmm){
-    uint8_t is_2byte = (src2 >= 8);
+    uint8_t is_2byte = !(mmmmm == VEX_MAP_0F && dest < 8 && src2 < 8);
     uint8_t vex1 = 0; 
     uint8_t vex2 = 0;
     uint8_t modrm = 0;
@@ -1672,7 +1699,7 @@ uint8_t encode_avx_xmm_xmm_xmm(uint8_t* mash_code, uint8_t opcode, uint8_t dest,
 
     mash_code[pos++] = 0xC5 - is_2byte;
     mash_code[pos++] = vex.vex1;
-    if(vex.vex2) mash_code[pos++] = vex.vex2;
+    if (is_2byte) mash_code[pos++] = vex.vex2;
     mash_code[pos++] = opcode;
     mash_code[pos++] = modrm;
     return pos;
@@ -1788,7 +1815,7 @@ uint8_t encode_group14_xmm_imm(uint8_t* mash_code, uint8_t dest, uint8_t imm, ui
     return pos;
 }
 
-uint8_t encode_avx512_xmm_xmm_xmm(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, uint8_t src2, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W){
+uint8_t encode_avx512_xmm_xmm_xmm(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, uint8_t src2, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W, uint8_t aaa, uint8_t z){
     uint8_t prefix = 0x62; // AmmAsm is imortal
     uint8_t P0 = 0;
     uint8_t P1 = 0;
@@ -1796,11 +1823,63 @@ uint8_t encode_avx512_xmm_xmm_xmm(uint8_t* mash_code, uint8_t opcode, uint8_t de
     uint8_t modrm = 0;
     int pos = 0;
 
-// 1111 0010 - aasm
-// 1111 0101- nasm v3.1
-    P0 |= EVEX_R((dest >= 8));
+    printf(";%d;", dest);
+    P0 |= EVEX_R((dest >= 8 && dest <= 16));
     P0 |= EVEX_B((src2 >> 3) & 1);
     P0 |= EVEX_X((src2 >> 4) & 1);
+    P0 |= EVEX_ER(dest >= 16);
+    // ZERO
+    P0 |= EVEX_MMM(mmm);
+    
+    P1 |= EVEX_W(W);
+    P1 |= EVEX_VVVV(src1);
+    P1 |= EVEX_INITP1_ONE;
+    P1 |= EVEX_PP(PP);
+
+    P2 |= EVEX_Z(z); // ! hard-coded for now
+    
+    P2 |= EVEX_LL(LL);
+    P2 |= EVEX_BRODCAST(0); // // ! hard-coded for now
+    P2 |= EVEX_EV(!(src1 >= 16)); 
+    P2 |= EVEX_A(aaa); // ! hard-coded for now
+
+    modrm = emit_modrm(0b11, dest, src2);
+
+    mash_code[pos++] = prefix;
+    mash_code[pos++] = P0;
+    mash_code[pos++] = P1;
+    mash_code[pos++] = P2;
+    mash_code[pos++] = opcode;
+    mash_code[pos++] = modrm;
+
+    
+    
+    return pos;
+
+}
+
+uint8_t encode_avx512_ymm_ymm_ymm(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, uint8_t src2, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W, uint8_t aaa, uint8_t z){
+    return encode_avx512_xmm_xmm_xmm(mash_code, opcode, dest, src1, src2, mmm, LL, PP, W, aaa, z);
+}
+
+uint8_t encode_avx512_zmm_zmm_zmm(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, uint8_t src2, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W, uint8_t aaa, uint8_t z){
+    return encode_avx512_xmm_xmm_xmm(mash_code, opcode, dest, src1, src2, mmm, LL, PP, W, aaa, z);
+}
+
+uint8_t encode_avx512_xmm_xmm_rm(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, AddrExpr *src2, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W, uint8_t aaa, uint8_t z, uint8_t TypleType, uint8_t B){
+    uint8_t prefix = 0x62; // AmmAsm is imortal
+    uint8_t P0 = 0;
+    uint8_t P1 = 0;
+    uint8_t P2 = 0;
+    int pos = 0;
+    
+
+    Modrm_SIB out = gen_modrm_sib_ex(src2, dest, TypleType);
+// 1111 0010 - aasm
+// 1111 0101- nasm v3.1
+    P0 |= EVEX_R((dest >= 8 && dest <= 16));
+    P0 |= EVEX_B((src2->base >> 3) & 1);
+    P0 |= EVEX_X((src2->index >> 4) & 1);
     P0 |= EVEX_ER(dest >= 16);
     // ZERO
     P0 |= EVEX_MMM(mmm);
@@ -1811,30 +1890,36 @@ uint8_t encode_avx512_xmm_xmm_xmm(uint8_t* mash_code, uint8_t opcode, uint8_t de
     P1 |= EVEX_INITP1_ONE;
     P1 |= EVEX_PP(PP);
 
-    P2 |= EVEX_Z(0); // ! hard-coded for now
+    P2 |= EVEX_Z(z);
     
     P2 |= EVEX_LL(LL);
-    P2 |= EVEX_BRODCAST(0); // // ! hard-coded for now
+    P2 |= EVEX_BRODCAST(B);
     P2 |= EVEX_EV(!(src1 >= 16)); 
-    P2 |= EVEX_A(0); // ! hard-coded for now
+    P2 |= EVEX_A(aaa);
 
-    modrm = emit_modrm(0b11, dest, src2);
 
     mash_code[pos++] = prefix;
     mash_code[pos++] = P0;
     mash_code[pos++] = P1;
     mash_code[pos++] = P2;
     mash_code[pos++] = opcode;
-    mash_code[pos++] = modrm;
+    mash_code[pos++] = out.modrm;
+    if(out.have_sib) mash_code[pos++] = out.sib;
+    
+    if(src2->have_disp && !src2->is_rip_rel){
+        if(out.disp_sz == 1) mash_code[pos++] = (uint8_t)src2->disp;
+        else {*(uint32_t*)(mash_code + pos) = src2->disp; pos+=4; }
+    }
+    
+    if(src2->is_rip_rel){*(uint32_t*)(mash_code + pos) = 0x0; pos+=4; src2->disp_offset = pos-4;} // placeholder
     
     return pos;
-
 }
 
-uint8_t encode_avx512_ymm_ymm_ymm(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, uint8_t src2, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W){
-    return encode_avx512_xmm_xmm_xmm(mash_code, opcode, dest, src1, src2, mmm, LL, PP, W);
+uint8_t encode_avx512_ymm_ymm_rm(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, AddrExpr *src2, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W, uint8_t aaa, uint8_t z, uint8_t TypleType, uint8_t B){
+    return encode_avx512_xmm_xmm_rm(mash_code,  opcode, dest,  src1, src2, mmm,  LL,  PP,  W,  aaa,  z,  TypleType, B);
 }
 
-uint8_t encode_avx512_zmm_zmm_zmm(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, uint8_t src2, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W){
-    return encode_avx512_xmm_xmm_xmm(mash_code, opcode, dest, src1, src2, mmm, LL, PP, W);
+uint8_t encode_avx512_zmm_zmm_rm(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, AddrExpr *src2, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W, uint8_t aaa, uint8_t z, uint8_t TypleType, uint8_t B){
+    return encode_avx512_xmm_xmm_rm(mash_code,  opcode, dest,  src1, src2, mmm,  LL,  PP,  W,  aaa,  z,  TypleType, B);
 }

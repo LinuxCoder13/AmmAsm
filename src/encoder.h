@@ -164,6 +164,10 @@ extern uint8_t encode_xmm_or_r64__xmm_or_r64(uint8_t* mash_code, uint8_t dest, u
 extern uint8_t encode_avx_xmm_xmm_xmm(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, uint8_t src2, uint8_t L, uint8_t pp, uint8_t mmmmm);
 extern uint8_t encode_avx_ymm_ymm_ymm(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, uint8_t src2, uint8_t L, uint8_t pp, uint8_t mmmmm);
 extern uint8_t encode_avx_xmm_xmm_mem(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, AddrExpr *expr, uint8_t L, uint8_t pp, uint8_t mmmmm);
-extern uint8_t encode_avx512_xmm_xmm_xmm(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, uint8_t src2, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W);
-extern uint8_t encode_avx512_ymm_ymm_ymm(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, uint8_t src2, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W);
-extern uint8_t encode_avx512_zmm_zmm_zmm(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, uint8_t src2, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W);
+extern uint8_t encode_avx_ymm_ymm_mem(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, AddrExpr *expr, uint8_t L, uint8_t pp, uint8_t mmmmm);
+extern uint8_t encode_avx512_xmm_xmm_xmm(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, uint8_t src2, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W, uint8_t aaa, uint8_t z);
+extern uint8_t encode_avx512_ymm_ymm_ymm(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, uint8_t src2, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W, uint8_t aaa, uint8_t z);
+extern uint8_t encode_avx512_zmm_zmm_zmm(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, uint8_t src2, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W, uint8_t aaa, uint8_t z);
+extern uint8_t encode_avx512_xmm_xmm_rm(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, AddrExpr *src2, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W, uint8_t aaa, uint8_t z, uint8_t TypleType, uint8_t B);
+extern uint8_t encode_avx512_ymm_ymm_rm(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, AddrExpr *src2, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W, uint8_t aaa, uint8_t z, uint8_t TypleType, uint8_t B);
+extern uint8_t encode_avx512_zmm_zmm_rm(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, AddrExpr *src2, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W, uint8_t aaa, uint8_t z, uint8_t TypleType, uint8_t B);

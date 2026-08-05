@@ -11,3 +11,5 @@ extern uint8_t sse2_defined;
 extern uint8_t avx_defined;
 extern uint8_t avx2_defined; 
 extern uint8_t avx512_fp16_defined;
+extern uint8_t avx512f_defined;
+extern uint8_t avx512vl_defined;

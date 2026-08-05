@@ -49,6 +49,8 @@ void DEBUG_PRINT_TOKENS() {
             case T_COMMA: type_str = "T_COMMA"; break;
             case T_LPRANT: type_str = "T_LPRANT"; break;
             case T_RPRANT: type_str = "T_RPRANT"; break;
+            case T_OSHPPRANT: type_str = "T_OSHPPRANT"; break;
+            case T_CSHPPRANT: type_str = "T_CSHPPRANT"; break;
             case T_RESB: type_str = "T_RESB"; break;
             case T_RESW: type_str = "T_RESW"; break;
             case T_RESD: type_str = "T_RESD"; break;

@@ -15,6 +15,8 @@ typedef enum __attribute__((packed)){
     T_OR,
     T_RPRANT,
     T_LPRANT,
+    T_OSHPPRANT,
+    T_CSHPPRANT,
     T_LAB,
     T_REG8,
     T_REG16,

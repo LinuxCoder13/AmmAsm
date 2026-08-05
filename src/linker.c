@@ -161,7 +161,7 @@ void resolve_labels() {
 
             uint8_t real_imm_sz = node->ins.operands[1].imm_sz == 8 ? 4 : node->ins.operands[1].imm_sz;
 
-            if (is2arrin(short_imm_instructions, node->cmd) && IS_EXPR_OR_PC(b)) {
+            if (is2arrin(short_imm_instructions,short_imm_instructions_COUNT, node->cmd) && IS_EXPR_OR_PC(b)) {
                 int immsz = 0;
 
                 if (a.type == O_MEM) {
@@ -188,7 +188,7 @@ void resolve_labels() {
         // JMP/CALL/JCC label (REL32)
         if ((strcasecmp(node->cmd, "jmp")  == 0 || 
                   strcasecmp(node->cmd, "call") == 0 ||
-                  is2arrin(JCC, node->cmd)) &&
+                  is2arrin(JCC, JCC_COUNT, node->cmd)) &&
                   IS_EXPR_OR_PC(node->ins.operands[0])) {
             
             uint64_t addr = resolve_expr(node->ins.operands[0].expr, node->ins.pc, node->line);

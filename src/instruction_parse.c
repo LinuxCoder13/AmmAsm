@@ -1417,7 +1417,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
     // jb	CF == 1
     // jbe	CF == 1
 
-    else if (is2arrin(JCC, node->cmd)) {
+    else if (is2arrin(JCC, JCC_COUNT, node->cmd)) {
 
         int pos = 0;
         uint8_t opcode2 = 0;
@@ -2041,149 +2041,286 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         }
     }
 
-
-    // AVX1 / AVX2
+    // весь ад сдесь
+    // AVX1 / AVX2 / AVX-512
     else if(cmd[0] == 'v') {
         if(!avx2_defined) {fprintf(stderr, "AmmAsm:%d: Warn: program uses AVX2, but current CPU does't support it(might give #UD)\n", node->line);}
         if(!avx_defined) {fprintf(stderr, "AmmAsm:%d: Warn: program uses AVX, but current CPU does't support it(might give #UD)\n", node->line);}
         uint8_t opcode = 0;
         uint8_t vex_pp = VEX_PP_NONE;
         uint8_t vex_map = VEX_MAP_0F;
+        uint8_t only_can_be_evex = 0;
 
         uint8_t evex_pp = EVEX_PP_NONE;
         uint8_t evex_map = EVEX_MAP_0F;
         
-        if(!strcasecmp(cmd, "vaddps"))  { opcode = 0x58; vex_pp = VEX_PP_NONE; }
-        else if(!strcasecmp(cmd, "vaddpd"))  { opcode = 0x58; vex_pp = VEX_PP_66; }
-        else if(!strcasecmp(cmd, "vsubps"))  { opcode = 0x5C; vex_pp = VEX_PP_NONE; }
-        else if(!strcasecmp(cmd, "vsubpd"))  { opcode = 0x5C; vex_pp = VEX_PP_66; }
-        else if(!strcasecmp(cmd, "vmulps"))  { opcode = 0x59; vex_pp = VEX_PP_NONE; }
-        else if(!strcasecmp(cmd, "vmulpd"))  { opcode = 0x59; vex_pp = VEX_PP_66; }
-        else if(!strcasecmp(cmd, "vdivps"))  { opcode = 0x5E; vex_pp = VEX_PP_NONE; }
-        else if(!strcasecmp(cmd, "vdivpd"))  { opcode = 0x5E; vex_pp = VEX_PP_66; }
-        else if(!strcasecmp(cmd, "vmaxps"))  { opcode = 0x5F; vex_pp = VEX_PP_NONE; }
-        else if(!strcasecmp(cmd, "vmaxpd"))  { opcode = 0x5F; vex_pp = VEX_PP_66; }
-        else if(!strcasecmp(cmd, "vminps"))  { opcode = 0x5D; vex_pp = VEX_PP_NONE; }
-        else if(!strcasecmp(cmd, "vminpd"))  { opcode = 0x5D; vex_pp = VEX_PP_66; }
-        else if(!strcasecmp(cmd, "vsqrtps")) { opcode = 0x51; vex_pp = VEX_PP_NONE; }
-        else if(!strcasecmp(cmd, "vsqrtpd")) { opcode = 0x51; vex_pp = VEX_PP_66; }
-        else if(!strcasecmp(cmd, "vandps"))  { opcode = 0x54; vex_pp = VEX_PP_NONE; }
-        else if(!strcasecmp(cmd, "vandpd"))  { opcode = 0x54; vex_pp = VEX_PP_66; }
-        else if(!strcasecmp(cmd, "vorps"))   { opcode = 0x56; vex_pp = VEX_PP_NONE; }
-        else if(!strcasecmp(cmd, "vorpd"))   { opcode = 0x56; vex_pp = VEX_PP_66; }
-        else if(!strcasecmp(cmd, "vxorps"))  { opcode = 0x57; vex_pp = VEX_PP_NONE; }
-        else if(!strcasecmp(cmd, "vxorpd"))  { opcode = 0x57; vex_pp = VEX_PP_66; }
-        else if(!strcasecmp(cmd, "vaddss"))  { opcode = 0x58; vex_pp = VEX_PP_F3; }
-        else if(!strcasecmp(cmd, "vaddsd"))  { opcode = 0x58; vex_pp = VEX_PP_F2; }
-        else if(!strcasecmp(cmd, "vmulss"))  { opcode = 0x59; vex_pp = VEX_PP_F3; }
-        else if(!strcasecmp(cmd, "vmulsd"))  { opcode = 0x59; vex_pp = VEX_PP_F2; }
-        else if(!strcasecmp(cmd, "vpaddb"))  { opcode = 0xFC; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
-        else if(!strcasecmp(cmd, "vpaddw"))  { opcode = 0xFD; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
-        else if(!strcasecmp(cmd, "vpaddd"))  { opcode = 0xFE; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
-        else if(!strcasecmp(cmd, "vpaddq"))  { opcode = 0xD4; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
-        else if(!strcasecmp(cmd, "vpand"))   { opcode = 0xDB; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
-        else if(!strcasecmp(cmd, "vpor"))    { opcode = 0xEB; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
-        else if(!strcasecmp(cmd, "vpxor"))   { opcode = 0xEF; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
-        else if(!strcasecmp(cmd, "vpcmpeqd")){ opcode = 0x76; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
-        else if(!strcasecmp(cmd, "vpcmpgtd")){ opcode = 0x66; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
-        else if(!strcasecmp(cmd, "vmovaps")) { opcode = 0x28; vex_pp = VEX_PP_NONE; }
-        else if(!strcasecmp(cmd, "vmovapd")) { opcode = 0x28; vex_pp = VEX_PP_66; }
-        else if(!strcasecmp(cmd, "vmovups")) { opcode = 0x10; vex_pp = VEX_PP_NONE; }
-        else if(!strcasecmp(cmd, "vmovupd")) { opcode = 0x10; vex_pp = VEX_PP_66; }
-        else if(!strcasecmp(cmd, "vmovdqa")) { opcode = 0x6F; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
-        else if(!strcasecmp(cmd, "vmovdqu")) { opcode = 0x6F; vex_pp = VEX_PP_F3; vex_map = VEX_MAP_0F; }
-        else if(!strcasecmp(cmd, "vcvtdq2ps"))  { opcode = 0x5B; vex_pp = VEX_PP_NONE; }
-        else if(!strcasecmp(cmd, "vcvtps2dq"))  { opcode = 0x5B; vex_pp = VEX_PP_66; }
-        else if(!strcasecmp(cmd, "vcvttps2dq")) { opcode = 0x5B; vex_pp = VEX_PP_F3; }
-        else if(!strcasecmp(cmd, "vcvtps2pd"))  { opcode = 0x5A; vex_pp = VEX_PP_NONE; }
-        else if(!strcasecmp(cmd, "vcvtpd2ps"))  { opcode = 0x5A; vex_pp = VEX_PP_66; }
+        uint8_t evex_aaa = a->mask_reg;
+        uint8_t evex_z   = a->z_reg;
+
+        uint8_t broatcast = c->brotcast;
+
+        uint8_t need_evex = 0;
+
+        uint8_t operands = 3;
+
         
-        // AVX2 integer arithmetic
-        else if(!strcasecmp(cmd, "vpsubb"))   { opcode = 0xF8; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
-        else if(!strcasecmp(cmd, "vpsubw"))   { opcode = 0xF9; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
-        else if(!strcasecmp(cmd, "vpsubd"))   { opcode = 0xFA; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
 
-        else if(!strcasecmp(cmd, "vpunpcklbw")) { opcode = 0x60; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
-        else if(!strcasecmp(cmd, "vpunpcklwd")) { opcode = 0x61; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
-        else if(!strcasecmp(cmd, "vpunpckldq")) { opcode = 0x62; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
+        if(!strcasecmp(cmd, "vaddps"))  { opcode = 0x58; vex_pp = evex_pp = VEX_PP_NONE; }
+        else if(!strcasecmp(cmd, "vaddpd"))  { opcode = 0x58; vex_pp = evex_pp = VEX_PP_66; }
+        else if(!strcasecmp(cmd, "vsubps"))  { opcode = 0x5C; vex_pp = evex_pp = VEX_PP_NONE; }
+        else if(!strcasecmp(cmd, "vsubpd"))  { opcode = 0x5C; vex_pp = evex_pp = VEX_PP_66; }
+        else if(!strcasecmp(cmd, "vmulps"))  { opcode = 0x59; vex_pp = evex_pp = VEX_PP_NONE; }
+        else if(!strcasecmp(cmd, "vmulpd"))  { opcode = 0x59; vex_pp = evex_pp = VEX_PP_66; }
+        else if(!strcasecmp(cmd, "vdivps"))  { opcode = 0x5E; vex_pp = evex_pp = VEX_PP_NONE; }
+        else if(!strcasecmp(cmd, "vdivpd"))  { opcode = 0x5E; vex_pp = evex_pp = VEX_PP_66; }
+        else if(!strcasecmp(cmd, "vmaxps"))  { opcode = 0x5F; vex_pp = evex_pp = VEX_PP_NONE; }
+        else if(!strcasecmp(cmd, "vmaxpd"))  { opcode = 0x5F; vex_pp = evex_pp = VEX_PP_66; }
+        else if(!strcasecmp(cmd, "vminps"))  { opcode = 0x5D; vex_pp = evex_pp = VEX_PP_NONE; }
+        else if(!strcasecmp(cmd, "vminpd"))  { opcode = 0x5D; vex_pp = evex_pp = VEX_PP_66; }
+        else if(!strcasecmp(cmd, "vsqrtps")) { opcode = 0x51; vex_pp = evex_pp = VEX_PP_NONE; operands = 2; }
+        else if(!strcasecmp(cmd, "vsqrtpd")) { opcode = 0x51; vex_pp = evex_pp = VEX_PP_66;   operands = 2; }
 
-        else if(!strcasecmp(cmd, "vpunpckhbw")) { opcode = 0x68; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
-        else if(!strcasecmp(cmd, "vpunpckhwd")) { opcode = 0x69; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
-        else if(!strcasecmp(cmd, "vpunpckhdq")) { opcode = 0x6A; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vandps"))  { opcode = 0x54; vex_pp = evex_pp = VEX_PP_NONE; }
+        else if(!strcasecmp(cmd, "vandpd"))  { opcode = 0x54; vex_pp = evex_pp = VEX_PP_66; }
+        else if(!strcasecmp(cmd, "vorps"))   { opcode = 0x56; vex_pp = evex_pp = VEX_PP_NONE; }
+        else if(!strcasecmp(cmd, "vorpd"))   { opcode = 0x56; vex_pp = evex_pp = VEX_PP_66; }
+        else if(!strcasecmp(cmd, "vxorps"))  { opcode = 0x57; vex_pp = evex_pp = VEX_PP_NONE; }
+        else if(!strcasecmp(cmd, "vxorpd"))  { opcode = 0x57; vex_pp = evex_pp = VEX_PP_66; }
 
-        else if(!strcasecmp(cmd, "vpacksswb"))  { opcode = 0x63; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
-        else if(!strcasecmp(cmd, "vpackuswb"))  { opcode = 0x67; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
-        else if(!strcasecmp(cmd, "vpackssdw"))  { opcode = 0x6B; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vaddss"))  { opcode = 0x58; vex_pp = evex_pp = VEX_PP_F3; }
+        else if(!strcasecmp(cmd, "vaddsd"))  { opcode = 0x58; vex_pp = evex_pp = VEX_PP_F2; }
+        else if(!strcasecmp(cmd, "vmulss"))  { opcode = 0x59; vex_pp = evex_pp = VEX_PP_F3; }
+        else if(!strcasecmp(cmd, "vmulsd"))  { opcode = 0x59; vex_pp = evex_pp = VEX_PP_F2; }
 
-        else if(!strcasecmp(cmd, "vpmaxub"))    { opcode = 0xDE; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
-        else if(!strcasecmp(cmd, "vpminub"))    { opcode = 0xDA; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
-        else if(!strcasecmp(cmd, "vpmaxsw"))    { opcode = 0xEE; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
-        else if(!strcasecmp(cmd, "vpminsw"))    { opcode = 0xEA; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vpaddb"))  { opcode = 0xFC; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vpaddw"))  { opcode = 0xFD; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vpaddd"))  { opcode = 0xFE; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vpaddq"))  { opcode = 0xD4; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; }
 
-        else if(!strcasecmp(cmd, "vpsllw"))     { opcode = 0xF1; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
-        else if(!strcasecmp(cmd, "vpslld"))     { opcode = 0xF2; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
-        else if(!strcasecmp(cmd, "vpsllq"))     { opcode = 0xF3; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vpand"))   { opcode = 0xDB; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vpor"))    { opcode = 0xEB; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vpxor"))   { opcode = 0xEF; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; }
 
-        else if(!strcasecmp(cmd, "vpsrlw"))     { opcode = 0xD1; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
-        else if(!strcasecmp(cmd, "vpsrld"))     { opcode = 0xD2; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
-        else if(!strcasecmp(cmd, "vpsrlq"))     { opcode = 0xD3; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vpcmpeqd")){ opcode = 0x76; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vpcmpgtd")){ opcode = 0x66; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; }
 
-        else if(!strcasecmp(cmd, "vpsraw"))     { opcode = 0xE1; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
-        else if(!strcasecmp(cmd, "vpsrad"))     { opcode = 0xE2; vex_pp = VEX_PP_66; vex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vmovaps")) { opcode = 0x28; vex_pp = evex_pp = VEX_PP_NONE; }
+        else if(!strcasecmp(cmd, "vmovapd")) { opcode = 0x28; vex_pp = evex_pp = VEX_PP_66; }
+        else if(!strcasecmp(cmd, "vmovups")) { opcode = 0x10; vex_pp = evex_pp = VEX_PP_NONE; }
+        else if(!strcasecmp(cmd, "vmovupd")) { opcode = 0x10; vex_pp = evex_pp = VEX_PP_66; }
+
+        else if(!strcasecmp(cmd, "vmovdqa")) { opcode = 0x6F; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vmovdqu")) { opcode = 0x6F; vex_pp = evex_pp = VEX_PP_F3; vex_map = evex_map = VEX_MAP_0F; }
+
+        else if(!strcasecmp(cmd, "vcvtdq2ps"))  { opcode = 0x5B; vex_pp = evex_pp = VEX_PP_NONE; }
+        else if(!strcasecmp(cmd, "vcvtps2dq"))  { opcode = 0x5B; vex_pp = evex_pp = VEX_PP_66; }
+        else if(!strcasecmp(cmd, "vcvttps2dq")) { opcode = 0x5B; vex_pp = evex_pp = VEX_PP_F3; }
+        else if(!strcasecmp(cmd, "vcvtps2pd"))  { opcode = 0x5A; vex_pp = evex_pp = VEX_PP_NONE; }
+        else if(!strcasecmp(cmd, "vcvtpd2ps"))  { opcode = 0x5A; vex_pp = evex_pp = VEX_PP_66; }
+
+        else if(!strcasecmp(cmd, "vpsubb"))   { opcode = 0xF8; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vpsubw"))   { opcode = 0xF9; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vpsubd"))   { opcode = 0xFA; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; }
+
+        else if(!strcasecmp(cmd, "vpunpcklbw")) { opcode = 0x60; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vpunpcklwd")) { opcode = 0x61; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vpunpckldq")) { opcode = 0x62; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; }
+
+        else if(!strcasecmp(cmd, "vpunpckhbw")) { opcode = 0x68; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vpunpckhwd")) { opcode = 0x69; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vpunpckhdq")) { opcode = 0x6A; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; }
+
+        else if(!strcasecmp(cmd, "vpacksswb")) { opcode = 0x63; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vpackuswb")) { opcode = 0x67; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vpackssdw")) { opcode = 0x6B; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; }
+
+        else if(!strcasecmp(cmd, "vpmaxub")) { opcode = 0xDE; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vpminub")) { opcode = 0xDA; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vpmaxsw")) { opcode = 0xEE; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vpminsw")) { opcode = 0xEA; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; }
+
+        else if(!strcasecmp(cmd, "vpsllw")) { opcode = 0xF1; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vpslld")) { opcode = 0xF2; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vpsllq")) { opcode = 0xF3; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; }
+
+        else if(!strcasecmp(cmd, "vpsrlw")) { opcode = 0xD1; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vpsrld")) { opcode = 0xD2; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vpsrlq")) { opcode = 0xD3; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; }
+
+        else if(!strcasecmp(cmd, "vpsraw")) { opcode = 0xE1; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; }
+        else if(!strcasecmp(cmd, "vpsrad")) { opcode = 0xE2; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; }
 
         // AVX-512
-        else if(!strcasecmp(cmd, "vminsh"))     { opcode = 0x5D; evex_map = EVEX_MAP_UNNAMED5; evex_pp = EVEX_PP_F3;}
-        else if(!strcasecmp(cmd, "vmaxsh"))     { opcode = 0x5F; evex_map = EVEX_MAP_UNNAMED5; evex_pp = EVEX_PP_F3;}    
+        else if(!strcasecmp(cmd, "vminsh"))     { opcode = 0x5D; evex_map = EVEX_MAP_UNNAMED5; evex_pp = EVEX_PP_F3; evex_aaa = a->mask_reg; evex_z = a->z_reg; only_can_be_evex = 1; need_evex = 1;}
+        else if(!strcasecmp(cmd, "vmaxsh"))     { opcode = 0x5F; evex_map = EVEX_MAP_UNNAMED5; evex_pp = EVEX_PP_F3; evex_aaa = a->mask_reg; evex_z = a->z_reg; only_can_be_evex = 1; need_evex = 1;}    
         
-        if(opcode) {
+        // ============
+        uint8_t ra = (a->type == O_XMM || a->type == O_YMM || a->type == O_ZMM) ? find_xmm_index(a->reg) : 0;
+        uint8_t rb = (b->type == O_XMM || b->type == O_YMM || b->type == O_ZMM) ? find_xmm_index(b->reg) : 0;
+        uint8_t rc = (c->type == O_XMM || c->type == O_YMM || c->type == O_ZMM) ? find_xmm_index(c->reg) : 0;
 
-            if((!strcasecmp(cmd, "vminsh") || !strcasecmp(cmd, "vmaxsh")) &&
-               (a->type == O_XMM && b->type == O_XMM && c->type == O_XMM)){
-                if(!avx512_fp16_defined) {fprintf(stderr, "AmmAsm:%d: Warn: program uses AVX-512_fp16, but current CPU does't support it(might give #UD)\n", node->line);}
+        need_evex = need_evex ? need_evex :
+            is_avx512( inst_uses_zmm(a->reg, b->reg, c->reg), broatcast, a->mask_reg, vector_reg_bigger_than_15(ra, rb, operands == 2 ? 0 : rc));
+        // ============
 
+
+        // Fuck you intel...
+        if(only_can_be_evex){
+            if(!avx512_fp16_defined) {fprintf(stderr, "AmmAsm:%d: Warn: program uses AVX-512_fp16, but current CPU does't support it(might give #UD)\n", node->line);}
+                
+            if((!strcasecmp(cmd, "vminsh") || !strcasecmp(cmd, "vmaxsh")) && a->type != O_XMM){fprintf(stderr, "AmmAsm:%d: '%s' supports only xmm registers\n", node->line, node->cmd); exit(1);}
+
+
+
+            if((a->type == O_XMM && b->type == O_XMM && c->type == O_XMM)){
                 node->ins.pc = *pc;
                 *s = encode_avx512_xmm_xmm_xmm(machine_code, opcode, find_xmm_index(a->reg), 
-                     find_xmm_index(b->reg), find_xmm_index(c->reg),
-                     evex_map, EVEX_XMM, evex_pp, 0);
-                *pc += *s;
-            }
-
-            // xmm/ymm, xmm/ymm, xmm/ymm
-            else if(a->type == O_XMM && b->type == O_XMM && c->type == O_XMM){
-                node->ins.pc = *pc;
-                *s = encode_avx_xmm_xmm_xmm(machine_code, opcode, 
-                    find_xmm_index(a->reg), find_xmm_index(b->reg), find_xmm_index(c->reg),
-                    VEX_XMM, vex_pp, vex_map);
-                *pc += *s;
-            }
-            else if(a->type == O_YMM && b->type == O_YMM && c->type == O_YMM){
-                node->ins.pc = *pc;
-                *s = encode_avx_ymm_ymm_ymm(machine_code, opcode,
-                    find_xmm_index(a->reg), find_xmm_index(b->reg), find_xmm_index(c->reg),
-                    VEX_YMM, vex_pp, vex_map);
+                    find_xmm_index(b->reg), find_xmm_index(c->reg),
+                    evex_map, EVEX_XMM, evex_pp, 0, evex_aaa, evex_z);
                 *pc += *s;
             }
 
             else if(a->type == O_XMM && b->type == O_XMM && c->type == O_MEM){
                 node->ins.pc = *pc;
-                AddrExpr *mem = &c->addr; 
+
+                *s = encode_avx512_xmm_xmm_rm( machine_code, opcode, find_xmm_index(a->reg), find_xmm_index(b->reg),
+                    &c->addr, evex_map, EVEX_XMM,
+                    evex_pp, 0, evex_aaa, evex_z, 16, broatcast);
+
+                *pc += *s;
+            }
+        }
+
+        if(need_evex){
+            if(!avx512f_defined) {fprintf(stderr, "AmmAsm:%d: Warn: program uses general AVX-512, but current CPU does't support it(might give #UD)\n", node->line);}
+
+            // xmm/ymm/zmm, xmm/ymm/zmm, xmm/ymm/zmm
+            if(a->type == O_XMM && b->type == O_XMM && (operands == 2 || c->type == O_XMM)){
+                if(!avx512vl_defined) {fprintf(stderr, "AmmAsm:%d: Warn: program uses AVX-512_vl, but current CPU does't support it(might give #UD)\n", node->line);}
+                node->ins.pc = *pc;
+                *s = encode_avx512_xmm_xmm_xmm(machine_code, opcode, 
+                    find_xmm_index(a->reg), 
+                    (operands == 2) ?  0 : find_xmm_index(b->reg), 
+                    (operands == 2) ?  find_xmm_index(b->reg) : find_xmm_index(c->reg),
+                    evex_map, EVEX_XMM, evex_pp, 0, evex_aaa, evex_z);
+                *pc += *s;
+            }
+
+            else if(a->type == O_XMM && ((operands == 2 && b->type == O_MEM) || (operands == 3 && b->type == O_XMM && c->type == O_MEM))){
+                node->ins.pc = *pc;
+                AddrExpr *mem = (operands == 2) ? &b->addr : &c->addr; 
+
+                *s = encode_avx512_xmm_xmm_rm( machine_code, opcode, 
+                    find_xmm_index(a->reg), 
+                    (operands == 2) ? 0 : find_xmm_index(b->reg), 
+                    mem,
+                    evex_map, EVEX_XMM,
+                    evex_pp, 0, evex_aaa, evex_z, 16, broatcast);
+                *pc += *s;
+            }
+
+            else if(a->type == O_YMM && b->type == O_YMM && (operands == 2 || c->type == O_YMM)){
+                if(!avx512vl_defined) {fprintf(stderr, "AmmAsm:%d: Warn: program uses AVX-512_vl, but current CPU does't support it(might give #UD)\n", node->line);}
+                node->ins.pc = *pc;
+                *s = encode_avx512_ymm_ymm_ymm(machine_code, opcode, 
+                    find_xmm_index(a->reg), 
+                    (operands == 2) ?  0 : find_xmm_index(b->reg), 
+                    (operands == 2) ?  find_xmm_index(b->reg) : find_xmm_index(c->reg),
+                    evex_map, EVEX_YMM, evex_pp, 0, evex_aaa, evex_z);
+                *pc += *s;
+            }
+
+            else if(a->type == O_YMM && ((operands == 2 && b->type == O_MEM) || (operands == 3 && b->type == O_YMM && c->type == O_MEM))){
+                node->ins.pc = *pc;
+                AddrExpr *mem = (operands == 2) ? &b->addr : &c->addr; 
+                *s = encode_avx512_ymm_ymm_rm( machine_code, opcode, 
+                    find_xmm_index(a->reg), 
+                    (operands == 2) ? 0 : find_xmm_index(b->reg), 
+                    mem,
+                    evex_map, EVEX_YMM,
+                    evex_pp, 0, evex_aaa, evex_z, 16, broatcast);
+                *pc += *s;
+            }        
+
+            else if((a->type == O_ZMM && b->type == O_ZMM && (operands == 2 || c->type == O_ZMM))){
+                node->ins.pc = *pc;
+                *s = encode_avx512_zmm_zmm_zmm(machine_code, opcode, 
+                    find_xmm_index(a->reg), 
+                    (operands == 2) ?  0 : find_xmm_index(b->reg), 
+                    (operands == 2) ?  find_xmm_index(b->reg) : find_xmm_index(c->reg),
+                    evex_map, EVEX_ZMM, evex_pp, 0, evex_aaa, evex_z);
+                *pc += *s;
+            } 
+
+            else if(a->type == O_ZMM && ((operands == 2 && b->type == O_MEM) || (operands == 3 && b->type == O_ZMM && c->type == O_MEM))){
+                node->ins.pc = *pc;
+                AddrExpr *mem = (operands == 2) ? &b->addr : &c->addr; 
+
+                *s = encode_avx512_zmm_zmm_rm( machine_code, opcode, 
+                    find_xmm_index(a->reg), 
+                    (operands == 2) ? 0 : find_xmm_index(b->reg), 
+                    mem,
+                    evex_map, EVEX_ZMM,
+                    evex_pp, 0, evex_aaa, evex_z, 16, broatcast);
+                *pc += *s;
+            }
+
+        }
+
+        // pack you intel, go hell
+        else{ // AVX
+            // xmm/ymm, xmm/ymm, xmm/ymm
+            if(((a->type == O_XMM && find_xmm_index(a->reg) >= 16)) || ((b->type == O_XMM && find_xmm_index(b->reg) >= 16)) || ((c->type == O_XMM && find_xmm_index(c->reg) >= 16))) {fprintf(stderr, "AmmAsm:%d: AVX/AVX2 can use only xmm0-xmm15 registers\n", node->line);exit(1);}
+            if(((a->type == O_YMM && find_xmm_index(a->reg) >= 16)) || ((b->type == O_YMM && find_xmm_index(b->reg) >= 16)) || ((c->type == O_YMM && find_xmm_index(c->reg) >= 16))) {fprintf(stderr, "AmmAsm:%d: AVX/AVX2 can use only ymm0-ymm15 registers\n", node->line);exit(1);}
+            
+            if(a->type == O_XMM && b->type == O_XMM && (operands == 2 || c->type == O_XMM)){
+                node->ins.pc = *pc;
+                *s = encode_avx_xmm_xmm_xmm(machine_code, opcode, 
+                    find_xmm_index(a->reg), 
+                    (operands == 2) ?  0 : find_xmm_index(b->reg), 
+                    (operands == 2) ?  find_xmm_index(b->reg) : find_xmm_index(c->reg),
+                    VEX_XMM, vex_pp, vex_map);
+                *pc += *s;
+            }
+
+            else if(a->type == O_XMM && ((operands == 2 && b->type == O_MEM) || (operands == 3 && b->type == O_XMM && c->type == O_MEM))){
+                node->ins.pc = *pc;
+                AddrExpr *mem = (operands == 2) ? &b->addr : &c->addr; 
                 *s = encode_avx_xmm_xmm_mem(machine_code, opcode, 
-                    find_xmm_index(a->reg), find_xmm_index(b->reg), mem,
+                    find_xmm_index(a->reg), 
+                    (operands == 2) ? 0 : find_xmm_index(b->reg), 
+                    mem,
                     VEX_XMM, vex_pp, vex_map);
                 *pc += *s;
             }
 
 
-            else if(a->type == O_YMM && b->type == O_YMM && c->type == O_MEM){
+        
+            // Thanks, Intel...
+
+            if(a->type == O_YMM && b->type == O_YMM && (operands == 2 || c->type == O_YMM)){
                 node->ins.pc = *pc;
-                AddrExpr *mem = &c->addr; 
-                *s = encode_avx_xmm_xmm_mem(machine_code, opcode, 
-                    find_xmm_index(a->reg), find_xmm_index(b->reg), mem,
+                *s = encode_avx_ymm_ymm_ymm(machine_code, opcode, 
+                    find_xmm_index(a->reg), 
+                    (operands == 2) ?  0 : find_xmm_index(b->reg), 
+                    (operands == 2) ?  find_xmm_index(b->reg) : find_xmm_index(c->reg),
                     VEX_YMM, vex_pp, vex_map);
                 *pc += *s;
             }
 
+
+            else if(a->type == O_YMM && ((operands == 2 && b->type == O_MEM) || (operands == 3 && b->type == O_YMM && c->type == O_MEM))){
+                node->ins.pc = *pc;
+                AddrExpr *mem = (operands == 2) ? &b->addr : &c->addr; 
+                *s = encode_avx_ymm_ymm_mem(machine_code, opcode, 
+                    find_xmm_index(a->reg), 
+                    (operands == 2) ? 0 : find_xmm_index(b->reg), 
+                    mem,
+                    VEX_YMM, vex_pp, vex_map);
+                *pc += *s;
+            }
         }
+        
     }
 
 
@@ -2227,7 +2364,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         *pc += 1;
     }
 
-    else if (is2arrin(Sign_extensions, (char*)cmd)) {
+    else if (is2arrin(Sign_extensions, Sign_extensions_COUNT, (char*)cmd)) {
         if (strcasecmp(cmd, "cqo") == 0) {
             machine_code[0] = 0x48;
             machine_code[1] = 0x99;
@@ -2260,7 +2397,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         *pc += *s;
     }
 
-    else if(is2arrin(zero_operand_instructions, (char*)cmd)){
+    else if(is2arrin(zero_operand_instructions, zero_operand_instructions_COUNT, (char*)cmd)){
         if (strcasecmp(cmd, "clc") == 0) {
             machine_code[0] = 0xF8;
             *s = 1;

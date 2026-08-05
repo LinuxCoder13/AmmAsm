@@ -8,12 +8,25 @@ int isin(const char *str, char c){
     return 0;
 }
 
-int is2arrin(const char *str[], char *str2){ 
-    for(int i=0; str[i] != NULL; ++i) 
-        if(strcasecmp(str[i], str2) == 0) 
-            return 1; 
-    return 0;
-    
+int is2arrin(const char *str[], int n, char *str2){ 
+    int left = 0;
+    int right = n - 1;
+    // bsearch
+    while (left <= right) {
+        int mid = left + (right - left) / 2;
+
+        int cmp = strcmp(str2, str[mid]);
+
+        if (cmp == 0)
+            return 1;
+
+        if (cmp < 0)
+            right = mid - 1;
+        else
+            left = mid + 1;
+    }
+
+    return 0; 
 }
 
 int expr_is_const(Expr *e) {
@@ -402,6 +415,25 @@ long parse_expr() {
     return left;
 }
 
+uint8_t inst_uses_zmm(uint8_t* a, uint8_t* b, uint8_t* c){
+    if(((a[0] == 'z') || (a[0] == 'Z')) || 
+       ((b[0] == 'z') || (b[0] == 'Z')) || 
+       ((c[0] == 'z') || (c[0] == 'Z'))) return 1;
+    
+    return 0;
+}
+
+uint8_t vector_reg_bigger_than_15(int a, int b, int c){
+    if(a >= 16 || b >= 16 || c >= 16) return 1;
+    return 0;
+}
+
+// intel pack you
+uint8_t is_avx512(uint8_t uses_zmm, uint8_t has_b, uint8_t has_maskreg, uint8_t b_t_16){
+    if(uses_zmm || has_b | has_maskreg || b_t_16) return 1;
+    return 0;
+}
+
 long eval_expr(const uint8_t *str) {
     p = str;
     return parse_expr();
@@ -437,6 +469,8 @@ void check_cpu(){
     );
 
     if(ebx & (1 << 5)) avx2_defined = 1;
+    if (ebx & (1 << 16)) avx512f_defined  = 1; 
+    if (ebx & (1u << 31)) avx512vl_defined = 1;
 
 
     eax = 7;

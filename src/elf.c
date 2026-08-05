@@ -480,7 +480,7 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
                 // jmp label
                 if ((strcasecmp(ast[i].cmd, "jmp")  == 0 || 
                     strcasecmp(ast[i].cmd, "call") == 0 ||
-                    is2arrin(JCC, ast[i].cmd)) &&
+                    is2arrin(JCC, JCC_COUNT, ast[i].cmd)) &&
                     ast[i].ins.operands[0].type == O_EXPR){
 
                     /* looking for label name in our symtab (trying to get index of symbol syms)*/

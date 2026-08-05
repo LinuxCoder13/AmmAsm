@@ -92,6 +92,8 @@ int LEXER(FILE* fl) {
             else if (*buff == '('){ buff++; add_token(T_LPRANT,   "(",  line); continue;}
             else if (*buff == ')'){ buff++; add_token(T_RPRANT,   ")",  line); continue;}
 
+            else if (*buff == '{'){ buff++; add_token(T_OSHPPRANT,   "{",  line); continue;}
+            else if (*buff == '}'){ buff++; add_token(T_CSHPPRANT,   "}",  line); continue;}
 
             else if (*buff >= '0' && *buff <= '9') {
 
@@ -192,25 +194,25 @@ int LEXER(FILE* fl) {
                     add_token(T_LAB, buf, line);
                     continue;
                 }
-                else if (is2arrin(CMDS, buf)){
+                else if (is2arrin(CMDS, CMDS_COUNT, buf)){
                     add_token(T_INS, buf, line);
                     continue;
                 }
 
                 // registers (GPR)
-                else if(is2arrin(regs8, buf)  || is2arrin(regs8GP, buf))  {add_token(T_REG8, buf, line);  continue;}
-                else if(is2arrin(regs16, buf) || is2arrin(regs16GP, buf)) {add_token(T_REG16, buf, line); continue;}
-                else if(is2arrin(regs32, buf) || is2arrin(regs32GP, buf)) {add_token(T_REG32, buf, line); continue;}
-                else if(is2arrin(regs64, buf) || is2arrin(regs64GP, buf)) {add_token(T_REG64, buf, line); continue;} 
+                else if(is2arrin(regs8,  8, buf)  || is2arrin(regs8GP, 8, buf))  {add_token(T_REG8, buf, line);  continue;}
+                else if(is2arrin(regs16, 8, buf) || is2arrin(regs16GP, 8, buf)) {add_token(T_REG16, buf, line); continue;}
+                else if(is2arrin(regs32, 8, buf) || is2arrin(regs32GP, 8, buf)) {add_token(T_REG32, buf, line); continue;}
+                else if(is2arrin(regs64, 8, buf) || is2arrin(regs64GP, 8, buf)) {add_token(T_REG64, buf, line); continue;} 
 
                 // XMM
-                else if(is2arrin(Xmmregs, buf)){add_token(T_XMM, buf, line); continue;}
+                else if(is2arrin(Xmmregs, 32, buf)){add_token(T_XMM, buf, line); continue;}
 
                 // YMM
-                else if(is2arrin(Ymmregs, buf)){add_token(T_YMM, buf, line); continue;}
+                else if(is2arrin(Ymmregs, 32, buf)){add_token(T_YMM, buf, line); continue;}
 
                 // ZMM
-                else if(is2arrin(Zmmregs, buf)){add_token(T_ZMM, buf, line); continue;}
+                else if(is2arrin(Zmmregs, 32, buf)){add_token(T_ZMM, buf, line); continue;}
 
                 // directives
                 else if(strcasecmp(buf, HUMAN_AST[0]) == 0) add_token(T_U8, buf, line); 

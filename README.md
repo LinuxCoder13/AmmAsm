@@ -5,7 +5,7 @@
 AmmAsm - Assembler that sucks less.
 
 ![GitHub last commit](https://img.shields.io/github/last-commit/LinuxCoder13/AmmAsm)
-![Version](https://img.shields.io/badge/version-v2.4.5-blue)
+![Version](https://img.shields.io/badge/version-v2.4.6-blue)
 ![Platform](https://img.shields.io/badge/platform-Linux_x86--64-success)
 
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -21,7 +21,7 @@ AmmAsm is a handwritten x86-64 assembler designed for simplicity and clarity. It
 
 ## What's New in v2.4.x
 
-1) Added new instructions: `SSE2`(45 instructions), `AVX1(VEX)`(44 instructions), `AVX2`(31 instructions), `AVX-512 FP16`(2 instructions), `bsf`, `bsr`, `cmc`, `clc`, `stc`, `cld`, `std`, `cli`, `sti`, `lahf`, `sahf`, `pushf`, `popf`, `popfq`, `iret`, `iretq`, `cpuid`, `hlt`, `wait`, `fwait`, `pause`, `ud2`, `xchg`, `movq`
+1) Added new instructions: `SSE2`(45 instructions), `AVX/AVX2/AVX512`(77 instructions), `AVX-512 FP16`(2 instructions), `bsf`, `bsr`, `cmc`, `clc`, `stc`, `cld`, `std`, `cli`, `sti`, `lahf`, `sahf`, `pushf`, `popf`, `popfq`, `iret`, `iretq`, `cpuid`, `hlt`, `wait`, `fwait`, `pause`, `ud2`, `xchg`, `movq`
 
 2) Added Float number for `SSE1`, IEEE-754
 
@@ -31,11 +31,49 @@ AmmAsm is a handwritten x86-64 assembler designed for simplicity and clarity. It
  
 5) Added `YMM0-YMM31` registers
 
-6) Added `ZMM0-ZMM31` registers (reserved for future AVX-512 support)
+6) Added `ZMM0-ZMM31` registers (Fully supported via EVEX prefix engine)
 
 7) Hardware check for the presence of SIMD instructions via `cpuid`
 
+8) Full VEX/EVEX support (mask registers k0-k7, z, broatcast, ect.)
+
 ---
+
+## Advanced AVX-512 Support (EVEX Prefix)
+
+AmmAsm includes a fully handwritten, high-performance **EVEX prefix encoder** with zero external dependencies. It supports the core features of the modern Intel/AMD AVX-512 architecture.
+
+### Key AVX-512 Features
+
+* **32 Vector Registers:** Full access to `ZMM0-ZMM31` (as well as `XMM16-XMM31` and `YMM16-YMM31`).
+* **Predicate Masking:** Dedicated hardware masking with `{k1}-{k7}` register selection.
+* **Zeroing Masking:** Optional conditional zeroing via the `{z}` modifier.
+* **Embedded Broadcast:** Built-in `{b}` flag support for memory operands (e.g., `DWORD BCST`).
+* **Compressed Displacement:** Automatic scale matching (disp8 times N) based on data type, broadcast state, and vector size.
+
+### Syntax Example
+
+Unlike standard assemblers, AmmAsm uses an explicit, clean, and bulletproof Key-Value syntax for memory operands to make handwritten assembly robust and easy to parse:
+
+```asm
+_start:
+    ; 512-bit vector add with masking {k1}, zeroing {z}, SIB-addressing, 
+    ; and embedded 1-to-16 DWORD broadcast {b} enabled!
+    vaddps zmm20{k1}{z}, zmm10, [b=rbp, i=rcx, s=1, d=64]{b}
+```
+
+also check tests/General/
+
+### Verification (objdump)
+
+Code generated directly by AmmAsm and disassembled using standard Linux `objdump -d -Mintel`:
+
+```asm
+0000000000000000 <_start>:
+   0: 62 61 2c d9 58 64 0d    vaddps zmm28{k1}{z},zmm10,DWORD BCST [rbp+rcx*1+0x10]
+   7: 04 
+```
+
 
 ## Object File Support (ELF64 Relocatable)
 
@@ -100,7 +138,7 @@ This demonstrates interoperability between AmmAsm-generated object files and ord
 
 ## Features
 
-- Basic SSE/SSE2/AVX1/AVX2/AVX-512 support
+- Basic SSE/SSE2/AVX1/AVX2/AVX-512 support(VEX/EVEX fullsuport)
 - Macro system (v2.2.0)
 - Compatible with GNU ld and GCC object-file linking
 - Direct x86-64 encoding - No NASM/GAS dependencies
@@ -111,7 +149,7 @@ This demonstrates interoperability between AmmAsm-generated object files and ord
 - Inline literals - Embed strings and data directly in .text
 - Control flow - jmp, call, conditional jumps with relative addressing
 - Two-pass linker - Built-in symbol resolution and relocation
-- Numeric literals - 0xDEADBEEF, 0b1010, 0o777, decimal, negative
+- Numeric literals - 0xDEADBEEF, 0b1010, 0o777, decimal, negative, float (beta)
 - **ELF output - Generates valid Linux x86-64 ET_EXEC, PIE and OBJ(v2.0.0) binary**
 
 ---
@@ -217,29 +255,6 @@ Orchestrates all passes and writes the final binary buffer.
 
 ---
 
-## Syntax Reference
-
-### Registers
-
-```asm
-mov rax, 42        ; 64-bit
-mov eax, 42        ; 32-bit
-mov ax,  42        ; 16-bit
-mov al,  42        ; 8-bit
-mov r8,  r15      ; Extended regs r8-r15
-```
-
-### Numeric Literals
-
-```asm
-mov rax, 42            ; Decimal
-mov rax, 0xff          ; Hexadecimal
-mov rax, 0b1010        ; Binary
-mov rax, 0o777         ; Octal
-mov rax, -10           ; Negative
-mov al,  'A'           ; Character literal
-```
-
 ### Memory Addressing
 
 Unlike NASM, AmmAsm uses an explicit key-value format inside [...]:
@@ -262,48 +277,6 @@ mov rax, [b=msg]                       ; load from msg
 mov rax, [b=msg, d=4]                  ; msg + 4
 ```
 
-### Data Directives
-
-```asm
-msg:    db  "Hello, World!", 0x0A, 0
-bytes:  db  0x01, 0x02, 0x03, 'A', 'B'
-words:  dw 100, 200, 300, 0x1234
-dwords: dd 0xDEADBEEF, 1000000
-qwords: dq 0x123456789ABCDEF0, 0
-```
-
-### Comparison
-```asm
-cmp rax, 42        ; rax vs immediate (64-bit)
-cmp eax, ebx       ; register vs register (32-bit)
-cmp al,  'A'       ; 8-bit with char literal
-```
-
-### Conditional Jumps
-```asm
-cmp rax, 0
-je  done            ; jump if equal
-jne loop            ; jump if not equal
-jl  less            ; jump if less (signed)
-jg  greater         ; jump if greater (signed)
-jb  below           ; jump if below (unsigned)
-ja  above           ; jump if above (unsigned)
-```
-
-### Unconditional Control Flow
-```asm
-jmp  label         ; relative jump  (E9 rel32)
-jmp  rax           ; indirect jump  (FF /4)
-call func          ; relative call  (E8 rel32)
-call rbx           ; indirect call  (FF /2)
-```
-
-### Load Label Address
-```asm
-mov rax, msg      ; load virtual address of 'msg' into rax(Does not work in PIE)
-```
-
----
 
 ## Building & Usage
 

@@ -19,6 +19,7 @@ AST* PARSE(){
         if (tok->type == T_INS) {
             node.type = AST_INS;
             node.ins.oper_count = 0;
+            int pos2 = 0;
             strncpy(node.cmd, toks[pos].value, sizeof node.cmd);
             pos++;
 
@@ -28,12 +29,54 @@ AST* PARSE(){
                     fprintf(stderr, "AmmAsm:%d: too many operands\n", node.line);
                     exit(1);
                 }
+
+                // avx512 mask register
+                if     (toks[pos].type == T_OSHPPRANT && 
+                       (toks[pos+1].value[0] == 'k' || toks[pos+1].value[0] == 'K') && 
+                        toks[pos+2].type == T_CSHPPRANT){
+                    if(!is2arrin(AVX512, AVX512_COUNT, node.cmd)) {fprintf(stderr, "AmmAsm:%d: mask register only can be used in AVX-512 instruction\n", node.line);exit(1);}
+                    if(node.ins.oper_count != 1) {fprintf(stderr, "AmmAsm:%d: mask register only can be used in first operand\n", node.line);exit(1);}
+
+                    pos++;
+                    int m_inx = (int)eval_expr(toks[pos].value+1);
+                    if(m_inx > 7 || m_inx < 0){ fprintf(stderr, "AmmAsm:%d: invalide mask register, only k0-k7\n", node.line);exit(1);}
+                    node.ins.operands[0].mask_reg = m_inx;
+                    pos+=2;
+                }
+
+                // avx512 {z}
+                else if     (toks[pos].type == T_OSHPPRANT && 
+                       (toks[pos+1].value[0] == 'z' || toks[pos+1].value[0] == 'Z') && 
+                        toks[pos+2].type == T_CSHPPRANT){
+                    if(!is2arrin(AVX512, AVX512_COUNT, node.cmd)) {fprintf(stderr, "AmmAsm:%d: {z} only can be used in AVX-512 instruction\n", node.line);exit(1);}
+                    if(node.ins.oper_count != 1) {fprintf(stderr, "AmmAsm:%d: mask register only can be used in first operand\n", node.line);exit(1);}
+                    if(!node.ins.operands[0].mask_reg) {fprintf(stderr, "AmmAsm:%d: {z} requires mask register k1-k7\n", node.line); exit(1);}
+
+                    pos++;
+                    node.ins.operands[0].z_reg = 1;
+                    pos+=2;
+                }
+
+                // avx512 broatcast
+                else if     (toks[pos].type == T_OSHPPRANT && 
+                       (toks[pos+1].value[0] == 'b' || toks[pos+1].value[0] == 'B') && 
+                        toks[pos+2].type == T_CSHPPRANT){
+                    if(!is2arrin(AVX512, AVX512_COUNT, node.cmd)) {fprintf(stderr, "AmmAsm:%d: broadcast only can be used in AVX-512 instruction\n", node.line);exit(1);}
+                    if(node.ins.oper_count != 2 && node.ins.oper_count != 3) {fprintf(stderr, "AmmAsm:%d: broadcast only can be used either second or third operand(MEM)\n", node.line);exit(1);}
+                    if(!node.ins.operands[2].type == O_MEM) {fprintf(stderr, "AmmAsm:%d: broadcast requires [mem] operand\n", node.line); exit(1);}
+                    if(is2arrin(AVX512_that_not_suppots_broatcast, AVX512_that_not_suppots_broatcast_COUNT, node.cmd)){{fprintf(stderr, "AmmAsm:%d: '%s' doesn't support broatcast\n", node.line, node.cmd); exit(1);}}
+                            
+                    pos++;
+                    node.ins.operands[2].brotcast = 1;
+                    pos+=2;
+                }
+
                 else if(toks[pos].type == T_REG8 || toks[pos].type == T_REG16 ||
                         toks[pos].type == T_REG32 || toks[pos].type == T_REG64 || 
                         toks[pos].type == T_XMM || toks[pos].type == T_YMM  || toks[pos].type == T_ZMM){
                     int tt = toks[pos].type;
-                    strncpy(node.ins.operands[node.ins.oper_count].reg, toks[pos++].value, 8);
-
+                    strncpy(node.ins.operands[node.ins.oper_count].reg, toks[pos++].value, sizeof node.ins.operands[node.ins.oper_count].reg);
+                    node.ins.operands[node.ins.oper_count].reg[sizeof(node.ins.operands[node.ins.oper_count].reg) - 1] = '\0';
                     switch (tt) {
                         case T_REG8:  node.ins.operands[node.ins.oper_count++].type = O_REG8;  break;
                         case T_REG16: node.ins.operands[node.ins.oper_count++].type = O_REG16; break;
@@ -45,7 +88,7 @@ AST* PARSE(){
                         default:      node.ins.operands[node.ins.oper_count++].type = O_NONE;  break;
                     }
                 } 
-                // only for `inst [addr], imm`
+
                 else if(toks[pos].type == T_BYTE || toks[pos].type == T_WORD ||
                         toks[pos].type == T_DWORD|| toks[pos].type == T_QWORD ){
                     
@@ -63,8 +106,7 @@ AST* PARSE(){
                     node.ins.operands[node.ins.oper_count].addr = parse_addr_expr(toks[pos].value, node.line);
                     pos++;
                     node.ins.operands[node.ins.oper_count++].type = O_MEM;
-                    continue;
-                    ((void(*)())0)(); // sacred artifact
+                    // ((void(*)())0)(); // sacred artifact
                 }
 
                 // constexpr
@@ -72,7 +114,6 @@ AST* PARSE(){
                     node.ins.operands[node.ins.oper_count].c = toks[pos].value[0]; // okay?
                     node.ins.operands[node.ins.oper_count++].type = O_CHAR;
                     pos++;
-                    continue;
                 }
 
                 // constexpr
@@ -90,7 +131,6 @@ AST* PARSE(){
                     }
                     
                     node.ins.operands[node.ins.oper_count++].type = O_IMM;
-                    continue;
                 }
                 
                 // expr
@@ -151,6 +191,8 @@ AST* PARSE(){
                     fprintf(stderr, "AmmAsm:%d: Unexpected token \"%s\"\n", node.line, toks[pos].value);
                     exit(1); 
                 }
+
+                pos2++;
             }
 
 

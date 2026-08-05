@@ -16,7 +16,7 @@ extern long parse_term();
 extern long parse_expr();
 extern long eval_expr(const uint8_t *str);
 extern int isin(const char *str, char c);
-extern int is2arrin(const char *str[], char *str2);
+extern int is2arrin(const char *str[], int n, char *str2);
 extern int expr_is_const(Expr *e);
 extern uint64_t eval_const_expr(Expr *e);
 extern int expr_label_count(Expr *e);
@@ -40,5 +40,8 @@ extern void TwoDfree(uint8_t **arr, int count);
 extern uint8_t is_expr_token(TokenType t);
 extern uint8_t find_xmm_index(const char* r) ;
 extern void check_cpu();
+extern uint8_t inst_uses_zmm(uint8_t* a, uint8_t* b, uint8_t* c);
+extern uint8_t vector_reg_bigger_than_15(int a, int b, int c);
+extern uint8_t is_avx512(uint8_t uses_zmm, uint8_t has_b, uint8_t has_maskreg, uint8_t _t_16);
 
 extern int astrcmp(const char* s1, const char* s2);  // !!!!_/-|self-hosted SSE2 function|-\_!!!!
