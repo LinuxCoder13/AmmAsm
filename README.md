@@ -70,8 +70,8 @@ Code generated directly by AmmAsm and disassembled using standard Linux `objdump
 
 ```asm
 0000000000000000 <_start>:
-   0: 62 61 2c d9 58 64 0d    vaddps zmm28{k1}{z},zmm10,DWORD BCST [rbp+rcx*1+0x10]
-   7: 04 
+   0:	62 e1 2c d9 58 64 0d 	vaddps zmm20{k1}{z},zmm10,DWORD BCST [rbp+rcx*1+0x10]
+   7:	04 
 ```
 
 
