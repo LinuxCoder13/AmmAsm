@@ -80,6 +80,7 @@ void handl_pipeline(int argc, char **argv){
  
     fclose(input);
     remove(prosesedfile);
+    free(prosesedfile);
     
     PARSE();
     
@@ -144,7 +145,7 @@ int main(int argc, char **argv){
         fprintf(stderr, "AmmAsm: can't combinate pie and obj file mode\n");
         return 1;
     }
- 
+
     char* fake_argv[] = { (char*)input, (char*)out};
     handl_pipeline(2, fake_argv);
  

@@ -560,9 +560,8 @@ void free_ast(AST *ast, int ast_len) {
                 if (op->type == O_EXPR)
                     free_expr(&op->expr);
             }
+            free(ast[i].machine_code);
             break;
-
-
 
         case AST_GLOBAL:
             TwoDfree(ast[i].global.labels, ast[i].global.labels_len);
@@ -592,6 +591,7 @@ void free_ast(AST *ast, int ast_len) {
             }
             free(ast[i].u64.entries);
             break;
+
 
         default:
             break;

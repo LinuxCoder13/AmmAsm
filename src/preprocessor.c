@@ -514,7 +514,7 @@ char* Preprocess(const uint8_t* flname){
     int stack_len = 0;
 
     FindCallOfMacro(buff, macros, macros_len, &line, stack, &stack_len, out);
-
+    free(buff);
     fclose(out);
     fclose(fl);
     return outname;
