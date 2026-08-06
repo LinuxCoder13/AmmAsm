@@ -15,13 +15,13 @@ AmmAsm - Assembler that sucks less.
 
 **Author:** Ammar Najafli
 
-AmmAsm is a handwritten x86-64 assembler designed for simplicity and clarity. It compiles assembly code directly to machine code and produces ELF executables, PIE binaries (Position-Independent Executables), and relocatable object files for Linux x86-64. Successfully tested on Deban12, Kyronix, Windows(experimental).
+AmmAsm is a handwritten x86-64 assembler designed for simplicity and clarity, educational and experimental purpuse. It compiles assembly code directly to machine code and produces ELF executables, PIE binaries (Position-Independent Executables), and relocatable object files for Linux x86-64. Successfully tested on Deban12, Kyronix, Windows(experimental).
 
 ---
 
 ## What's New in v2.4.x
 
-1) Added new instructions: `SSE2`(45 instructions), `AVX/AVX2/AVX512`(77 instructions), `AVX-512 FP16`(2 instructions), `bsf`, `bsr`, `cmc`, `clc`, `stc`, `cld`, `std`, `cli`, `sti`, `lahf`, `sahf`, `pushf`, `popf`, `popfq`, `iret`, `iretq`, `cpuid`, `hlt`, `wait`, `fwait`, `pause`, `ud2`, `xchg`, `movq`
+1) Added new instructions: `SSE2`(45 instructions), `AVX/AVX2/AVX512`(~77 instructions), `AVX-512 FP16`(2 instructions), `bsf`, `bsr`, `cmc`, `clc`, `stc`, `cld`, `std`, `cli`, `sti`, `lahf`, `sahf`, `pushf`, `popf`, `popfq`, `iret`, `iretq`, `cpuid`, `hlt`, `wait`, `fwait`, `pause`, `ud2`, `xchg`, `movq`
 
 2) Added Float number for `SSE1`, IEEE-754
 
