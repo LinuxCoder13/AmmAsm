@@ -290,6 +290,7 @@ Modrm_SIB gen_modrm_sib_ex(AddrExpr *expr, uint8_t reg, uint8_t is_evex){
 
         expr->have_disp = 1;
     }
+
     // 8, 9
     if (expr->have_index && !expr->is_rip_rel) {
         if ((base & 7) == 0b101 && !expr->have_disp) {
@@ -1823,7 +1824,6 @@ uint8_t encode_avx512_xmm_xmm_xmm(uint8_t* mash_code, uint8_t opcode, uint8_t de
     uint8_t modrm = 0;
     int pos = 0;
 
-    printf(";%d;", dest);
     P0 |= EVEX_R((dest >= 8 && dest <= 16));
     P0 |= EVEX_B((src2 >> 3) & 1);
     P0 |= EVEX_X((src2 >> 4) & 1);
@@ -1866,24 +1866,44 @@ uint8_t encode_avx512_zmm_zmm_zmm(uint8_t* mash_code, uint8_t opcode, uint8_t de
     return encode_avx512_xmm_xmm_xmm(mash_code, opcode, dest, src1, src2, mmm, LL, PP, W, aaa, z);
 }
 
-uint8_t encode_avx512_xmm_xmm_rm(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, AddrExpr *src2, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W, uint8_t aaa, uint8_t z, uint8_t TypleType, uint8_t B){
-    uint8_t prefix = 0x62; // AmmAsm is imortal
-    uint8_t P0 = 0;
-    uint8_t P1 = 0;
-    uint8_t P2 = 0;
+uint8_t encode_avx512_xmm_xmm_rm(uint8_t* mash_code, uint8_t opcode, 
+    uint8_t dest, uint8_t src1, AddrExpr *src2, 
+    uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W,
+    uint8_t aaa, uint8_t z, uint8_t TypleType, uint8_t B)
+{
+    uint8_t prefix = 0x62;
+    uint8_t P0 = 0, P1 = 0, P2 = 0;
     int pos = 0;
     
+    // FFUUUUCK YOU INTEL... FUUUCK
+    int disp_scale = 1; 
+    switch (TypleType) {
+        case TUPLE_FULL:
+            if (LL == EVEX_XMM)      disp_scale = 16;
+            else if (LL == EVEX_YMM) disp_scale = 32;
+            else                     disp_scale = 64;  
+            break;
+        case TUPLE_HALF:
+            if (LL == EVEX_XMM)      disp_scale = 8;
+            else if (LL == EVEX_YMM) disp_scale = 16;
+            else                     disp_scale = 32;
+            break;
+        case TUPLE_T1:   
+            disp_scale = (W == 1) ? 8 : 4;  
+            break;
+        default:
+            disp_scale = 1;
+            break;
+    }
 
-    Modrm_SIB out = gen_modrm_sib_ex(src2, dest, TypleType);
-// 1111 0010 - aasm
-// 1111 0101- nasm v3.1
-    P0 |= EVEX_R((dest >= 8 && dest <= 16));
+    Modrm_SIB out = gen_modrm_sib_ex(src2, dest, disp_scale);
+
+
+    P0 |= EVEX_R((dest >> 3) & 1);
     P0 |= EVEX_B((src2->base >> 3) & 1);
     P0 |= EVEX_X((src2->index >> 4) & 1);
-    P0 |= EVEX_ER(dest >= 16);
-    // ZERO
+    P0 |= EVEX_ER((dest >> 4) & 1);
     P0 |= EVEX_MMM(mmm);
-    
     
     P1 |= EVEX_W(W);
     P1 |= EVEX_VVVV(src1);
@@ -1891,12 +1911,10 @@ uint8_t encode_avx512_xmm_xmm_rm(uint8_t* mash_code, uint8_t opcode, uint8_t des
     P1 |= EVEX_PP(PP);
 
     P2 |= EVEX_Z(z);
-    
     P2 |= EVEX_LL(LL);
     P2 |= EVEX_BRODCAST(B);
     P2 |= EVEX_EV(!(src1 >= 16)); 
     P2 |= EVEX_A(aaa);
-
 
     mash_code[pos++] = prefix;
     mash_code[pos++] = P0;
@@ -1904,14 +1922,22 @@ uint8_t encode_avx512_xmm_xmm_rm(uint8_t* mash_code, uint8_t opcode, uint8_t des
     mash_code[pos++] = P2;
     mash_code[pos++] = opcode;
     mash_code[pos++] = out.modrm;
-    if(out.have_sib) mash_code[pos++] = out.sib;
+    if (out.have_sib) mash_code[pos++] = out.sib;
     
-    if(src2->have_disp && !src2->is_rip_rel){
-        if(out.disp_sz == 1) mash_code[pos++] = (uint8_t)src2->disp;
-        else {*(uint32_t*)(mash_code + pos) = src2->disp; pos+=4; }
+    if (src2->have_disp && !src2->is_rip_rel) {
+        if (out.disp_sz == 1)
+            mash_code[pos++] = (uint8_t)src2->disp; 
+        else {
+            *(uint32_t*)(mash_code + pos) = src2->disp;
+            pos += 4;
+        }
     }
     
-    if(src2->is_rip_rel){*(uint32_t*)(mash_code + pos) = 0x0; pos+=4; src2->disp_offset = pos-4;} // placeholder
+    if (src2->is_rip_rel) {
+        *(uint32_t*)(mash_code + pos) = 0x0;
+        pos += 4;
+        src2->disp_offset = pos - 4;
+    }
     
     return pos;
 }

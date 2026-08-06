@@ -71,6 +71,11 @@ enum {
     EVEX_K7,
 };
 
+enum {
+    TUPLE_FULL = 0,   // Full Vector (N = 16/32/64 for XMM/YMM/ZMM)
+    TUPLE_HALF = 1,   // Half Vector (N = 8/16/32)
+    TUPLE_T1   = 2    // Tuple1 Scalar (N = 1)
+};
 
 enum {
     EVEX_W0 = 0,
