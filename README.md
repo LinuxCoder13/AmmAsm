@@ -128,15 +128,6 @@ gcc hello.o -o hello
 ./hello
 ```
 
-### Bootstrap Example
-
-The repository contains `bootstrap/astrcmp/strcmp.asm` writen by SSE2, which is assembled into `strcmp.o` and linked together with C code during the build process.
-
-This demonstrates interoperability between AmmAsm-generated object files and ordinary C programs.
-
-
----
-
 
 ## Features
 
