@@ -1,1 +1,0 @@
-# This folder contains all obj file(compiled by AmmAsm) that must linked with Aasm.c code

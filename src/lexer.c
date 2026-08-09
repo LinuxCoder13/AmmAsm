@@ -144,13 +144,15 @@ int LEXER(FILE* fl) {
             }
 
             else if (isin(LETEXT, *buff)) { 
-                char buf[1024] = {0};
+                char buf[1024] = {0} ;
                 int i = 0;
-                while (isin(LETEXT, *buff) && i <= 1024) {
-                    buf[i++] = *buff++;
-                }
-                buf[i] = 0;
+                char buf2[1024] = {0} ;
                 
+                while (isin(LETEXT, *buff) && i <= 1024) buf[i++] = *buff++; buf[i] = 0;
+
+                strncpy(buf2, buf, i);
+                str_tolower(buf);
+
                 while (*buff == ' ' || *buff == '\t') buff++;
 
                 if(strcasecmp(buf, "global") == 0){
@@ -164,10 +166,10 @@ int LEXER(FILE* fl) {
                     continue;
                 }
 
-                else if(strcasecmp(buf, HUMAN_AST2[0]) == 0) { add_token(T_BYTE, "byte", line);   continue;}
-                else if(strcasecmp(buf, HUMAN_AST2[1]) == 0) { add_token(T_WORD, "word", line);   continue;}
-                else if(strcasecmp(buf, HUMAN_AST2[2]) == 0) { add_token(T_DWORD, "dword", line); continue;}
-                else if(strcasecmp(buf, HUMAN_AST2[3]) == 0) { add_token(T_QWORD, "qword", line); continue;}
+                else if(strcasecmp(buf, "byte") == 0) { add_token(T_BYTE, "byte", line);   continue;}
+                else if(strcasecmp(buf, "word") == 0) { add_token(T_WORD, "word", line);   continue;}
+                else if(strcasecmp(buf, "dword") == 0) { add_token(T_DWORD, "dword", line); continue;}
+                else if(strcasecmp(buf, "qword") == 0) { add_token(T_QWORD, "qword", line); continue;}
 
                 else if(strcasecmp(buf, "resb") == 0) { add_token(T_RESB, "resb", line);   continue;}
                 else if(strcasecmp(buf, "resw") == 0) { add_token(T_RESW, "resw", line);   continue;}
@@ -191,7 +193,7 @@ int LEXER(FILE* fl) {
 
                 else if (*buff == ':') {
                     buff++;
-                    add_token(T_LAB, buf, line);
+                    add_token(T_LAB, buf2, line);
                     continue;
                 }
                 else if (is2arrin(CMDS, CMDS_COUNT, buf)){
@@ -200,7 +202,7 @@ int LEXER(FILE* fl) {
                 }
 
                 // registers (GPR)
-                else if(is2arrin(regs8,  8, buf)  || is2arrin(regs8GP, 8, buf))  {add_token(T_REG8, buf, line);  continue;}
+                else if(is2arrin(regs8,  8, buf)  || is2arrin(regs8GP, 8, buf)) {add_token(T_REG8, buf, line);  continue;}
                 else if(is2arrin(regs16, 8, buf) || is2arrin(regs16GP, 8, buf)) {add_token(T_REG16, buf, line); continue;}
                 else if(is2arrin(regs32, 8, buf) || is2arrin(regs32GP, 8, buf)) {add_token(T_REG32, buf, line); continue;}
                 else if(is2arrin(regs64, 8, buf) || is2arrin(regs64GP, 8, buf)) {add_token(T_REG64, buf, line); continue;} 
@@ -215,16 +217,14 @@ int LEXER(FILE* fl) {
                 else if(is2arrin(Zmmregs, 32, buf)){add_token(T_ZMM, buf, line); continue;}
 
                 // directives
-                else if(strcasecmp(buf, HUMAN_AST[0]) == 0) add_token(T_U8, buf, line); 
-                else if(strcasecmp(buf, HUMAN_AST[1]) == 0) add_token(T_U16, buf, line);
-                else if(strcasecmp(buf, HUMAN_AST[2]) == 0) add_token(T_U32, buf, line);
-                else if(strcasecmp(buf, HUMAN_AST[3]) == 0) add_token(T_U64, buf, line);
+                else if(strcasecmp(buf, "db") == 0){ add_token(T_U8, buf, line);} 
+                else if(strcasecmp(buf, "dw") == 0){add_token(T_U16, buf, line);}
+                else if(strcasecmp(buf, "dd") == 0){add_token(T_U32, buf, line);}
+                else if(strcasecmp(buf, "dq") == 0){add_token(T_U64, buf, line);}
                 
-                else if(!strcasecmp(buf, "align")) {add_token(T_ALIGN, buf, line); continue;}
+                else if(!strcasecmp(buf, "align")) { add_token(T_ALIGN, buf, line); continue;}
 
-                else {                  
-                    add_token(T_LAB, buf, line);
-                }
+                else {add_token(T_LAB, buf2, line);}
                 continue;
             }
 
@@ -323,7 +323,7 @@ int LEXER(FILE* fl) {
                     }
                 }
                 clean_expr[k] = '\0';
-                
+                str_tolower(clean_expr);
                 add_token(T_ADDR_EXPR, clean_expr, line);
                 continue;
             }

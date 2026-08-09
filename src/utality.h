@@ -11,6 +11,7 @@
 
 extern volatile const char *p;
 
+extern void str_tolower(char *s);
 extern long parse_number();
 extern long parse_term();
 extern long parse_expr();
@@ -43,5 +44,23 @@ extern void check_cpu();
 extern uint8_t inst_uses_zmm(uint8_t* a, uint8_t* b, uint8_t* c);
 extern uint8_t vector_reg_bigger_than_15(int a, int b, int c);
 extern uint8_t is_avx512(uint8_t uses_zmm, uint8_t has_b, uint8_t has_maskreg, uint8_t _t_16);
+extern int reg_index(Operand *op);
+extern int operand_bits(Operand *op);
 
-extern int astrcmp(const char* s1, const char* s2);  // !!!!_/-|self-hosted SSE2 function|-\_!!!!
+#ifndef find_ins_idx
+#define find_ins_idx(cmd, table_size, table) ({        \
+    int left = 0, right = (table_size) - 1;            \
+    int result = -1;                                   \
+    while (left <= right) {                            \
+        int mid = left + (right - left) / 2;           \
+        int cmp = strcmp((cmd), (table)[mid].name);    \
+        if (cmp == 0) {                                \
+            result = mid;                              \
+            break;                                    \
+        }                                              \
+        if (cmp < 0) right = mid - 1;                  \
+        else left = mid + 1;                           \
+    }                                                  \
+    result;                                            \
+})     
+#endif

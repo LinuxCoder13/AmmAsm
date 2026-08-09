@@ -85,7 +85,7 @@ uint64_t collect_labels_sections() {
         if (ast[i].type == AST_LABEL) {
 
             for (int k = 0; k < i; k++) {
-                if (ast[k].type == AST_LABEL && !astrcmp(ast[k].label.name, ast[i].label.name)) {
+                if (ast[k].type == AST_LABEL && !strcmp(ast[k].label.name, ast[i].label.name)) {
                     fprintf(stderr, "AmmAsm:%d: label `%s` already defined\n", ast[i].line, ast[i].label.name);
                     exit(1);
                 }
@@ -100,7 +100,7 @@ uint64_t collect_labels_sections() {
 
             j++;
 
-            if(!astrcmp(ast[i].label.name, "_start")){
+            if(!strcmp(ast[i].label.name, "_start")){
                 e_entry_defined = 1;
                 e_entry = current_pc;
             }
@@ -109,7 +109,7 @@ uint64_t collect_labels_sections() {
         else if (ast[i].type == AST_SECTION) {
 
             for (int k = 0; k < i; k++) {
-                if (ast[k].type == AST_SECTION && !astrcmp(ast[k].section.secname, ast[i].section.secname)) {
+                if (ast[k].type == AST_SECTION && !strcmp(ast[k].section.secname, ast[i].section.secname)) {
                     fprintf(stderr, "AmmAsm:%d: section `%s` already defined\n", ast[i].line, ast[i].section.secname);
                     exit(1);
                 }
@@ -186,8 +186,8 @@ void resolve_labels() {
         }
          
         // JMP/CALL/JCC label (REL32)
-        if ((strcasecmp(node->cmd, "jmp")  == 0 || 
-                  strcasecmp(node->cmd, "call") == 0 ||
+        if ((strcmp(node->cmd, "jmp")  == 0 || 
+                  strcmp(node->cmd, "call") == 0 ||
                   is2arrin(JCC, JCC_COUNT, node->cmd)) &&
                   IS_EXPR_OR_PC(node->ins.operands[0])) {
             
@@ -270,7 +270,7 @@ void resolve_labels() {
             for(int j = 0; j < ast_len; j++){
                 if(ast[j].type != AST_LABEL) continue;
                 for(int l=0; l<node->externs.labels_len; l++){
-                    if(!astrcmp(ast[j].label.name, node->externs.labels[l])){ 
+                    if(!strcmp(ast[j].label.name, node->externs.labels[l])){ 
                         printf("AmmAsm:%d: label `%s' extern vs global\n", ast[j].line, ast[j].label.name);
                         exit(1); 
                     }

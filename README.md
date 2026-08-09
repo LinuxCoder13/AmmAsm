@@ -5,7 +5,7 @@
 AmmAsm - Assembler that sucks less.
 
 ![GitHub last commit](https://img.shields.io/github/last-commit/LinuxCoder13/AmmAsm)
-![Version](https://img.shields.io/badge/version-v2.4.6-blue)
+![Version](https://img.shields.io/badge/version-v2.4.7-blue)
 ![Platform](https://img.shields.io/badge/platform-Linux_x86--64-success)
 
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -36,6 +36,8 @@ AmmAsm is a handwritten x86-64 assembler designed for simplicity and clarity, ed
 7) Hardware check for the presence of SIMD instructions via `cpuid`
 
 8) Full VEX/EVEX support (mask registers k0-k7, z, broatcast, ect.)
+
+9) Backend refactoring
 
 ---
 

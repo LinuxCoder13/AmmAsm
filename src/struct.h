@@ -120,3 +120,58 @@ typedef struct VEX{
     uint8_t vex1;
     uint8_t vex2;
 } VEX;
+
+typedef struct {
+    const char *name;
+    uint8_t opcode;
+    uint8_t vex_pp;
+    uint8_t vex_map;
+    uint8_t evex_pp;
+    uint8_t evex_map;
+    uint8_t operands;
+    uint8_t W;
+    uint8_t tuple;
+    uint8_t only_evex;
+} AvxInsn;
+
+typedef struct {
+    const char *name;
+    uint8_t opcode;
+} CmovccInsn;
+
+typedef struct {
+    const char *name;
+    uint8_t opcode;
+} SetccInsn;
+
+typedef struct {
+    const char *name;
+    uint8_t opcode;
+} SseInsn;
+
+
+typedef struct {
+    const char *name;
+
+    uint8_t op_reg_reg;
+    uint8_t op_reg8_reg8;
+
+    uint8_t op_reg_mem;
+    uint8_t op_reg8_mem;
+
+    uint8_t op_mem_reg;
+    uint8_t op_mem_reg8;
+
+    uint8_t group;
+} Group1Insn;
+
+typedef struct {
+    const char *name;
+    uint8_t group;
+} Group2Insn;
+
+typedef struct {
+    const char *name;
+    uint8_t group;
+} Group3Insn;
+

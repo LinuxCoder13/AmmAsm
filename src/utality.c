@@ -2,6 +2,12 @@
 
 volatile const char *p;
 
+void str_tolower(char *s) {
+    while (*s) {
+        if (*s >= 'A' && *s <= 'Z') *s += 32;
+        s++;
+    }
+}
 int isin(const char *str, char c){ 
     for(int i = 0; str[i] != '\0'; i++)
         if(str[i] == c) return 1;
@@ -27,7 +33,7 @@ int is2arrin(const char *str[], int n, char *str2){
     }
 
     return 0; 
-}
+}                                            
 
 int expr_is_const(Expr *e) {
     int has_pc = 0;
@@ -98,7 +104,7 @@ int get_unsigned_imm_size_(uint64_t imm) {
 int get_lab_indx(const uint8_t* lab){
     for(int i = 0; i < ast_len; i++){
         if(ast[i].type != AST_LABEL) continue;
-        if(!astrcmp(lab, ast[i].label.name)) return i;
+        if(!strcmp(lab, ast[i].label.name)) return i;
     }
     return -1;
 }
@@ -115,7 +121,7 @@ const char* get_label_from_expr(Expr expr){
 
 uint64_t find_lab_addr(const uint8_t* name){
     for (int j = 0; j < ast_len; j++) {
-        if (ast[j].type == AST_LABEL && !astrcmp(ast[j].label.name, name)) {
+        if (ast[j].type == AST_LABEL && !strcmp(ast[j].label.name, name)) {
             return ast[j].label.vadress;
         }
     }
@@ -128,7 +134,7 @@ uint8_t externed_label(const uint8_t* name){
     for(int i = 0; i < ast_len; i++){
         if(ast[i].type != AST_EXTERN) continue;
         for(int j = 0; j < ast[i].externs.labels_len; j++){
-            if(astrcmp(ast[i].externs.labels[j], name) == 0){
+            if(strcmp(ast[i].externs.labels[j], name) == 0){
                 return 1;
             }
         }
@@ -138,7 +144,7 @@ uint8_t externed_label(const uint8_t* name){
 
 uint64_t find_sec_addr(const uint8_t* name){
     for (int j = 0; j < ast_len; j++) {
-        if (ast[j].type == AST_SECTION && astrcmp(ast[j].section.secname, name) == 0) {
+        if (ast[j].type == AST_SECTION && strcmp(ast[j].section.secname, name) == 0) {
             return ast[j].section.vadress;
         }
     }
@@ -294,6 +300,33 @@ uint8_t find_xmm_index(const char* r) {
     return eval_expr(p);
 }
 
+int reg_index(Operand *op)
+{
+    switch (op->type) {
+        case O_REG64: return find_reg64_index(op->reg);
+        case O_REG32: return find_reg32_index(op->reg);
+        case O_REG16: return find_reg16_index(op->reg);
+        case O_REG8:  return find_reg8_index(op->reg);
+        case O_XMM: return find_xmm_index(op->reg);
+        case O_YMM: return find_xmm_index(op->reg);
+        case O_ZMM: return find_xmm_index(op->reg);
+    }
+    return 0;
+}
+
+int operand_bits(Operand *op)
+{
+    switch (op->type) {
+        case O_REG64: return 64;
+        case O_REG32: return 32;
+        case O_REG16: return 16;
+        case O_REG8:  return 8;
+        case O_XMM: return 128;
+        case O_YMM: return 256;
+        case O_ZMM: return 512;
+    }
+    return 0;
+}
 
 // calc
 long parse_number() {
@@ -535,10 +568,13 @@ uint8_t** TwoDappend(int *len, int *cap, uint8_t **arr, const uint8_t* value) {
 
 void free_expr(Expr *expr)
 {
-    for (int i = 0; i < expr->count; i++)
+    for (int i = 0; i < expr->count; i++){
         free(expr->tokens[i].value);
+        expr->tokens[i].value = NULL;
+    }   
 
     free(expr->tokens);
+    expr->tokens = NULL;
 
     expr->tokens = NULL;
     expr->count = 0;
@@ -561,6 +597,7 @@ void free_ast(AST *ast, int ast_len) {
                     free_expr(&op->expr);
             }
             free(ast[i].machine_code);
+            ast[i].machine_code = NULL;
             break;
 
         case AST_GLOBAL:

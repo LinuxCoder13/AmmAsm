@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -e
-gcc -std=gnu99 -Oz \
+gcc -std=gnu99 \
     -ffunction-sections \
     -fdata-sections \
     -fomit-frame-pointer \
     -fno-ident \
-    src/*.c bootstrap/*.o -o aasm
+    src/*.c -o aasm

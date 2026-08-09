@@ -301,15 +301,15 @@ const int Sign_extensions_COUNT = sizeof(Sign_extensions) / sizeof(Sign_extensio
 
 // sign-extended immediate instructions
 const char *short_imm_instructions[] = {
-    "adc", "add", "and", "cmp", "or", "sbb", "sub", "xor", NULL
+    "adc", "add", "and", "cmp", "or", "sbb", "sub", "test", "xor", NULL
 };
 
 const int short_imm_instructions_COUNT = sizeof(short_imm_instructions) / sizeof(short_imm_instructions[0]) -1;
 
 const char *zero_operand_instructions[] = {
     "clc", "cld", "cli", "cmc", "cpuid", "fwait", "hlt", "iret", "iretq",
-    "lahf", "pause", "popf", "popfq", "pushf", "sahf", "stc", "std", "sti",
-    "ud2", "wait", NULL
+    "lahf", "nop", "pause", "popf", "popfq", "pushf", "ret", "sahf", "stc",
+    "std", "sti", "syscall", "ud2", "wait", NULL
 };
 
 const int zero_operand_instructions_COUNT = sizeof(zero_operand_instructions) / sizeof(zero_operand_instructions[0]) -1;

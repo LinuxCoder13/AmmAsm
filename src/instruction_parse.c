@@ -74,7 +74,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
     }
 
 
-    if (strcasecmp(cmd, "mov") == 0) {
+    if (strcmp(cmd, "mov") == 0) {
     
         // ========================================================================
         // 1. MOV REG, IMM (reg <- imm)
@@ -299,446 +299,223 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
     }
 
     // Group 1 instructions: add, or, adc, sbb, and, sub, xor, cmp
-    else if (strcasecmp(node->cmd, "add") == 0 ||
-            strcasecmp(node->cmd, "or")  == 0 ||
-            strcasecmp(node->cmd, "adc") == 0 ||
-            strcasecmp(node->cmd, "sbb") == 0 ||
-            strcasecmp(node->cmd, "and") == 0 ||
-            strcasecmp(node->cmd, "sub") == 0 ||
-            strcasecmp(node->cmd, "xor") == 0 ||
-            strcasecmp(node->cmd, "cmp") == 0){
+    else if (strcmp(node->cmd, "adc") == 0 ||
+            strcmp(node->cmd, "add") == 0 ||
+            strcmp(node->cmd, "and") == 0 ||
+            strcmp(node->cmd, "cmp") == 0 ||
+            strcmp(node->cmd, "or")  == 0 ||
+            strcmp(node->cmd, "sbb") == 0 ||
+            strcmp(node->cmd, "sub") == 0 ||
+            strcmp(node->cmd, "xor") == 0) {
 
-        // pointers to functions(becouse they have same struct of arguments)
-        uint8_t (*encode_imm)    (uint8_t*, uint8_t, uint32_t, uint8_t, int) = NULL; // encode_add/sub/or...._imm
-        uint8_t (*encode_reg_reg)(uint8_t*, uint8_t, uint8_t, uint8_t)      = NULL; // encode_add/sub/or...._reg_reg
-        uint8_t op_rm_std, op_rm_8;      // reg,[mem]
-        uint8_t op_mem_std, op_mem_8;    // [mem],reg
-        uint8_t group_digit; // /0 - /7                 
+                    
+        static const Group1Insn group1_table[] = {
+            {"adc", 0x13, 0x12, 0x13, 0x12, 0x11, 0x10, 2},
+            {"add", 0x03, 0x02, 0x03, 0x02, 0x01, 0x00, 0},
+            {"and", 0x23, 0x22, 0x23, 0x22, 0x21, 0x20, 4},
+            {"cmp", 0x3B, 0x3A, 0x3B, 0x3A, 0x39, 0x38, 7},
+            {"or",  0x0B, 0x0A, 0x0B, 0x0A, 0x09, 0x08, 1},
+            {"sbb", 0x1B, 0x1A, 0x1B, 0x1A, 0x19, 0x18, 3},
+            {"sub", 0x2B, 0x2A, 0x2B, 0x2A, 0x29, 0x28, 5},
+            {"xor", 0x33, 0x32, 0x33, 0x32, 0x31, 0x30, 6},
+        };            
 
-        // gather informmation about current instruction
-        if (strcasecmp(node->cmd, "add") == 0) {
-            encode_imm     = encode_add_imm;
-            encode_reg_reg = encode_add_reg_reg;
-            op_rm_std = 0x03; op_rm_8 = 0x02;
-            op_mem_std = 0x01; op_mem_8 = 0x00;
-            group_digit = 0;
-        } 
-        else if (strcasecmp(node->cmd, "or") == 0) {
-            encode_imm     = encode_or_imm;
-            encode_reg_reg = encode_or_reg_reg;
-            op_rm_std = 0x0B; op_rm_8 = 0x0A;
-            op_mem_std = 0x09; op_mem_8 = 0x08;
-            group_digit = 1;
-        } 
-        else if (strcasecmp(node->cmd, "adc") == 0) {
-            encode_imm     = encode_adc_imm;
-            encode_reg_reg = encode_adc_reg_reg;
-            op_rm_std = 0x13; op_rm_8 = 0x12;
-            op_mem_std = 0x11; op_mem_8 = 0x10;
-            group_digit = 2;
-        } 
-        else if (strcasecmp(node->cmd, "sbb") == 0) {
-            encode_imm     = encode_sbb_imm;
-            encode_reg_reg = encode_sbb_reg_reg;
-            op_rm_std = 0x1B; op_rm_8 = 0x1A;
-            op_mem_std = 0x19; op_mem_8 = 0x18;
-            group_digit = 3;
-        }
-        else if (strcasecmp(node->cmd, "and") == 0) {
-            encode_imm     = encode_and_imm;
-            encode_reg_reg = encode_and_reg_reg;
-            op_rm_std = 0x23; op_rm_8 = 0x22;
-            op_mem_std = 0x21; op_mem_8 = 0x20;
-            group_digit = 4;
-        }
-        else if (strcasecmp(node->cmd, "sub") == 0) {
-            encode_imm     = encode_sub_imm;
-            encode_reg_reg = encode_sub_reg_reg;
-            op_rm_std = 0x2B; op_rm_8 = 0x2A;
-            op_mem_std = 0x29; op_mem_8 = 0x28;
-            group_digit = 5;
-        } 
-        else if (strcasecmp(node->cmd, "xor") == 0) {
-            encode_imm     = encode_xor_imm;
-            encode_reg_reg = encode_xor_reg_reg;
-            op_rm_std = 0x33; op_rm_8 = 0x32;
-            op_mem_std = 0x31; op_mem_8 = 0x30;
-            group_digit = 6;
-        } 
-        else if (strcasecmp(node->cmd, "cmp") == 0) {
-            encode_imm     = encode_cmp_imm;
-            encode_reg_reg = encode_cmp_reg_reg;
-            op_rm_std = 0x3B; op_rm_8 = 0x3A;
-            op_mem_std = 0x39; op_mem_8 = 0x38;
-            group_digit = 7;
-        }
+        const Group1Insn *insn = &group1_table[find_ins_idx(cmd, sizeof(group1_table) / sizeof(group1_table[0]), group1_table)];
 
-        // 1. reg, imm
-        if (a->type == O_REG64 && IS_EXPR_OR_IMM_OR_PC(*b)) {
-            uint8_t reg = find_reg64_index(a->reg);
+        if ((a->type == O_REG64 || a->type == O_REG32 || a->type == O_REG16 || a->type == O_REG8) && (IS_EXPR_OR_IMM_OR_PC(*b) || b->type == O_CHAR)) {
+            int reg = reg_index(a);
+            int sz  = operand_bits(a);
+
             node->ins.pc = *pc;
-            *s = encode_imm(machine_code, reg, b->imm, 64, b->type == O_EXPR);
-            *pc += *s;
-        }
-        else if (a->type == O_REG32 && IS_EXPR_OR_IMM_OR_PC(*b)) {
-            uint8_t reg = find_reg32_index(a->reg);
-            node->ins.pc = *pc;
-            *s = encode_imm(machine_code, reg, b->imm, 32, b->type == O_EXPR);
-            *pc += *s;
-        }
-        else if (a->type == O_REG16 && b->type == O_IMM) {
-            uint8_t reg = find_reg16_index(a->reg);
-            node->ins.pc = *pc;
-            *s = encode_imm(machine_code, reg, b->imm, 16, 0);
-            *pc += *s;
-        }
-        else if (a->type == O_REG8 && (b->type == O_IMM || b->type == O_CHAR)) {
-            uint8_t reg = find_reg8_index(a->reg);
-            node->ins.pc = *pc;
-            *s = encode_imm(machine_code, reg, b->type == O_IMM ? b->imm : b->c, 8, 0);
+            *s = encode_group1_imm( machine_code, reg, (a->type == O_REG8 && b->type == O_CHAR) ? b->c : b->imm, sz, insn->group, b->type == O_EXPR);
             *pc += *s;
         }
 
-        // 2. reg, reg
-        else if (a->type == O_REG64 && b->type == O_REG64) {
-            uint8_t dest = find_reg64_index(a->reg);
-            uint8_t src  = find_reg64_index(b->reg);
+        else if ((a->type == O_REG64 && b->type == O_REG64) ||
+                (a->type == O_REG32 && b->type == O_REG32) ||
+                (a->type == O_REG16 && b->type == O_REG16) ||
+                (a->type == O_REG8  && b->type == O_REG8)) {
+
+            int dest = reg_index(a);
+            int src  = reg_index(b);
+            int sz   = operand_bits(a);
+
             node->ins.pc = *pc;
-            *s = encode_reg_reg(machine_code, dest, src, 64);
-            *pc += *s;
-        }
-        else if (a->type == O_REG32 && b->type == O_REG32) {
-            uint8_t dest = find_reg32_index(a->reg);
-            uint8_t src  = find_reg32_index(b->reg);
-            node->ins.pc = *pc;
-            *s = encode_reg_reg(machine_code, dest, src, 32);
-            *pc += *s;
-        }
-        else if (a->type == O_REG16 && b->type == O_REG16) {
-            uint8_t dest = find_reg16_index(a->reg);
-            uint8_t src  = find_reg16_index(b->reg);
-            node->ins.pc = *pc;
-            *s = encode_reg_reg(machine_code, dest, src, 16);
-            *pc += *s;
-        }
-        else if (a->type == O_REG8 && b->type == O_REG8) {
-            uint8_t dest = find_reg8_index(a->reg);
-            uint8_t src  = find_reg8_index(b->reg);
-            node->ins.pc = *pc;
-            *s = encode_reg_reg(machine_code, dest, src, 8);
+            *s = encode_group1_reg_reg( machine_code, dest, src, sz, a->type == O_REG8 ? insn->op_reg8_reg8 : insn->op_reg_reg);
+
             *pc += *s;
         }
 
-        // 3. reg, [mem]
-        else if (a->type == O_REG64 && b->type == O_MEM) {
-            uint8_t dest = find_reg64_index(a->reg);
-            AddrExpr *mem = &b->addr;
+        else if ((a->type == O_REG64 || a->type == O_REG32 || a->type == O_REG16 || a->type == O_REG8) && b->type == O_MEM) {
+
+            int reg = reg_index(a);
+            int sz  = operand_bits(a);
+
             node->ins.pc = *pc;
-            *s = encode_inst_rm_rm(machine_code, dest, mem, 64, op_rm_std, 0, 0);
-            *pc += *s;
-        }
-        else if (a->type == O_REG32 && b->type == O_MEM) {
-            uint8_t dest = find_reg32_index(a->reg);
-            AddrExpr *mem = &b->addr;
-            node->ins.pc = *pc;
-            *s = encode_inst_rm_rm(machine_code, dest, mem, 32, op_rm_std, 0, 0);
-            *pc += *s;
-        }
-        else if (a->type == O_REG16 && b->type == O_MEM) {
-            uint8_t dest = find_reg16_index(a->reg);
-            AddrExpr *mem = &b->addr;
-            node->ins.pc = *pc;
-            *s = encode_inst_rm_rm(machine_code, dest, mem, 16, op_rm_std, 0, 0);
-            *pc += *s;
-        }
-        else if (a->type == O_REG8 && b->type == O_MEM) {
-            uint8_t dest = find_reg8_index(a->reg);
-            AddrExpr *mem = &b->addr;
-            node->ins.pc = *pc;
-            *s = encode_inst_rm_rm(machine_code, dest, mem, 8, op_rm_8, 0, 0);
+
+            *s = encode_inst_rm_rm( machine_code, reg, &b->addr, sz, a->type == O_REG8
+                    ? insn->op_reg8_mem
+                    : insn->op_reg_mem,
+                0,0);
+
             *pc += *s;
         }
 
-        // 4. [mem], reg
-        else if (a->type == O_MEM && b->type == O_REG64) {
-            uint8_t src = find_reg64_index(b->reg);
-            AddrExpr *mem = &a->addr;
+        else if (a->type == O_MEM &&
+                (b->type == O_REG64 || b->type == O_REG32 || b->type == O_REG16 || b->type == O_REG8)) {
+
+            int reg = reg_index(b);
+            int sz  = operand_bits(b);
+
             node->ins.pc = *pc;
-            *s = encode_inst_rm_rm(machine_code, src, mem, 64, op_mem_std, 0, 0);
-            *pc += *s;
-        }
-        else if (a->type == O_MEM && b->type == O_REG32) {
-            uint8_t src = find_reg32_index(b->reg);
-            AddrExpr *mem = &a->addr;
-            node->ins.pc = *pc;
-            *s = encode_inst_rm_rm(machine_code, src, mem, 32, op_mem_std, 0, 0);
-            *pc += *s;
-        }
-        else if (a->type == O_MEM && b->type == O_REG16) {
-            uint8_t src = find_reg16_index(b->reg);
-            AddrExpr *mem = &a->addr;
-            node->ins.pc = *pc;
-            *s = encode_inst_rm_rm(machine_code, src, mem, 16, op_mem_std, 0, 0);
-            *pc += *s;
-        }
-        else if (a->type == O_MEM && b->type == O_REG8) {
-            uint8_t src = find_reg8_index(b->reg);
-            AddrExpr *mem = &a->addr;
-            node->ins.pc = *pc;
-            *s = encode_inst_rm_rm(machine_code, src, mem, 8, op_mem_8, 0, 0);
+
+            *s = encode_inst_rm_rm( machine_code, reg, &a->addr, sz,
+                b->type == O_REG8 ? insn->op_mem_reg8 : insn->op_mem_reg, 0,0);
+
             *pc += *s;
         }
 
-        // 5. [mem], imm
         else if (a->type == O_MEM && (IS_EXPR_OR_IMM_OR_PC(*b) || b->type == O_CHAR)) {
-            AddrExpr *mem = &a->addr;
-            node->ins.pc = *pc;
+
+            int sz;
+
             switch (node->ins.operands[1].imm_sz) {
-                case 1:
-                    *s = encode_inst_rm_rm(machine_code, group_digit, mem, 8,  0x80, 1, b->type == O_IMM ? b->imm : b->c);
-                    break;
-                case 2:
-                    *s = encode_inst_rm_rm(machine_code, group_digit, mem, 16, 0x81, 2, b->type == O_IMM ? b->imm : b->c);
-                    break;
-                case 4:
-                    *s = encode_inst_rm_rm(machine_code, group_digit, mem, 32, 0x81, 4, b->type == O_IMM ? b->imm : b->c);
-                    break;
-                case 8:
-                    *s = encode_inst_rm_rm(machine_code, group_digit, mem, 64, 0x81, 4, b->type == O_IMM ? b->imm : b->c);
-                    break;
+                case 1: sz = 8;  break;
+                case 2: sz = 16; break;
+                case 4: sz = 32; break;
+                case 8: sz = 64; break;
             }
+
+            uint32_t imm = b->type == O_CHAR ? b->c : b->imm;
+
+            node->ins.pc = *pc;
+
+            *s = encode_inst_rm_rm( machine_code, insn->group, &a->addr, sz,
+                sz == 8 ? 0x80 : 0x81,
+                sz == 8 ? 1 : (sz == 64 ? 4 : sz / 8),
+                imm);
             *pc += *s;
         }
     }
 
-    // Group 2 instructions: rol, ror, rcl, rcr, shl, shr, sar
-    else if (strcasecmp(node->cmd, "rol") == 0 ||
-            strcasecmp(node->cmd, "ror") == 0 ||
-            strcasecmp(node->cmd, "rcl") == 0 ||
-            strcasecmp(node->cmd, "rcr") == 0 ||
-            strcasecmp(node->cmd, "shl") == 0 ||
-            strcasecmp(node->cmd, "sal") == 0 ||
-            strcasecmp(node->cmd, "shr") == 0 ||
-            strcasecmp(node->cmd, "sar") == 0) {
+    // Group 2
+    else if (strcmp(node->cmd, "rcl") == 0 ||
+            strcmp(node->cmd, "rcr") == 0 ||
+            strcmp(node->cmd, "rol") == 0 ||
+            strcmp(node->cmd, "ror") == 0 ||
+            strcmp(node->cmd, "sar") == 0 ||
+            strcmp(node->cmd, "sal") == 0 ||
+            strcmp(node->cmd, "shl") == 0 ||
+            strcmp(node->cmd, "shr") == 0) {
 
-        uint8_t group_digit;  // /0 - /7
+        static const Group2Insn group2_table[] = {
+            {"rcl", 2},
+            {"rcr", 3},
+            {"rol", 0},
+            {"ror", 1},
+            {"sal", 4},
+            {"sar", 7},
+            {"shl", 4},
+            {"shr", 5},
+        };
 
-        if (strcasecmp(node->cmd, "rol") == 0)        group_digit = 0;
-        else if (strcasecmp(node->cmd, "ror") == 0)   group_digit = 1;
-        else if (strcasecmp(node->cmd, "rcl") == 0)   group_digit = 2;
-        else if (strcasecmp(node->cmd, "rcr") == 0)   group_digit = 3;
-        else if (strcasecmp(node->cmd, "shl") == 0 || strcasecmp(node->cmd, "sal") == 0) group_digit = 4;
-        else if (strcasecmp(node->cmd, "shr") == 0)   group_digit = 5;
-        else if (strcasecmp(node->cmd, "sar") == 0)   group_digit = 7;
+        const Group2Insn *insn = &group2_table[find_ins_idx(node->cmd, sizeof(group2_table) / sizeof(group2_table[0]), group2_table)];
 
-        // 1. op reg, 1  /  op [mem], 1
-        if ((b->type == O_IMM && b->imm == 1)) {
+        int sz;
+        uint8_t reg;
 
-            if (a->type == O_REG64) {
-                uint8_t reg = find_reg64_index(a->reg);
+        if (b->type == O_REG8 && strcmp(b->reg, "cl") == 0) {
+            if (a->type == O_MEM) {
+                sz = node->ins.operands[1].imm_sz;
+
                 node->ins.pc = *pc;
-                *s = encode_group2_reg_imm(machine_code, reg, 0xD1, group_digit, 1, 64);
+                *s = encode_inst_rm_rm(machine_code, insn->group, &a->addr, sz * 8, (sz * 8) == 8 ? 0xD2 : 0xD3, 111, 0);
                 *pc += *s;
             }
-            else if (a->type == O_REG32) {
-                uint8_t reg = find_reg32_index(a->reg);
-                node->ins.pc = *pc;
-                *s = encode_group2_reg_imm(machine_code, reg, 0xD1, group_digit, 1, 32);
-                *pc += *s;
-            }
-            else if (a->type == O_REG16) {
-                uint8_t reg = find_reg16_index(a->reg);
-                node->ins.pc = *pc;
-                *s = encode_group2_reg_imm(machine_code, reg, 0xD1, group_digit, 1, 16);
-                *pc += *s;
-            }
-            else if (a->type == O_REG8) {
-                uint8_t reg = find_reg8_index(a->reg);
-                node->ins.pc = *pc;
-                *s = encode_group2_reg_imm(machine_code, reg, 0xD0, group_digit, 1, 8);
-                *pc += *s;
-            }
-            else if (a->type == O_MEM) {
-                AddrExpr *mem = &a->addr;
-                node->ins.pc = *pc;
 
-                switch (node->ins.operands[1].imm_sz) {
-                    case 1:
-                        *s = encode_inst_rm_rm(machine_code, group_digit, mem, 8,  0xD0, 111, 0);
-                        break;
-                    case 2:
-                        *s = encode_inst_rm_rm(machine_code, group_digit, mem, 16, 0xD1, 111, 0);
-                        break;
-                    case 4:
-                        *s = encode_inst_rm_rm(machine_code, group_digit, mem, 32, 0xD1, 111, 0);
-                        break;
-                    case 8:
-                        *s = encode_inst_rm_rm(machine_code, group_digit, mem, 64, 0xD1, 111, 0);
-                        break;
-                }
+            else if (a->type == O_REG8 || a->type == O_REG16 || a->type == O_REG32 || a->type == O_REG64) {
+
+                sz = operand_bits(a);
+                reg = reg_index(a);
+
+                node->ins.pc = *pc;
+                *s = encode_group2_reg_cl(machine_code, reg, sz == 8 ? 0xD2 : 0xD3, insn->group, sz);
                 *pc += *s;
             }
+        }   
+        // reg, imm/char
+        else if ((b->type == O_IMM || b->type == O_CHAR) && (a->type == O_REG8 || a->type == O_REG16 || a->type == O_REG32 || a->type == O_REG64)) {
+
+            uint8_t imm = b->type == O_IMM ? (uint8_t)b->imm : b->c;
+            sz = operand_bits(a);
+            reg = reg_index(a);
+
+            node->ins.pc = *pc;
+
+            if (imm == 1) *s = encode_group2_reg_imm(machine_code, reg, sz == 8 ? 0xD0 : 0xD1, insn->group, 1, sz);
+            else *s = encode_group2_reg_imm(machine_code, reg, sz == 8 ? 0xC0 : 0xC1, insn->group, imm, sz);
+
+            *pc += *s;
         }
+        // mem, imm/char
+        else if ((b->type == O_IMM || b->type == O_CHAR) && (a->type == O_REG8 || a->type == O_REG16 || a->type == O_REG32 || a->type == O_REG64)) {
 
-        // 2. op reg, imm8  /  op [mem], imm8
-        else if (b->type == O_IMM || b->type == O_CHAR) {
-            uint8_t imm = (b->type == O_IMM) ? (uint8_t)b->imm : (uint8_t)b->c;
+            uint8_t imm = b->type == O_IMM ? b->imm : b->c;
+            sz = node->ins.operands[1].imm_sz;
 
-            if (a->type == O_REG64) {
-                uint8_t reg = find_reg64_index(a->reg);
-                node->ins.pc = *pc;
-                *s = encode_group2_reg_imm(machine_code, reg, 0xC1, group_digit, imm, 64);
-                *pc += *s;
-            }
-            else if (a->type == O_REG32) {
-                uint8_t reg = find_reg32_index(a->reg);
-                node->ins.pc = *pc;
-                *s = encode_group2_reg_imm(machine_code, reg, 0xC1, group_digit, imm, 32);
-                *pc += *s;
-            }
-            else if (a->type == O_REG16) {
-                uint8_t reg = find_reg16_index(a->reg);
-                node->ins.pc = *pc;
-                *s = encode_group2_reg_imm(machine_code, reg, 0xC1, group_digit, imm, 16);
-                *pc += *s;
-            }
-            else if (a->type == O_REG8) {
-                uint8_t reg = find_reg8_index(a->reg);
-                node->ins.pc = *pc;
-                *s = encode_group2_reg_imm(machine_code, reg, 0xC0, group_digit, imm, 8);
-                *pc += *s;
-            }
-            else if (a->type == O_MEM) {
-                AddrExpr *mem = &a->addr;
-                node->ins.pc = *pc;
-                switch (node->ins.operands[1].imm_sz) {
-                    case 1:
-                        *s = encode_inst_rm_rm(machine_code, group_digit, mem, 8,  0xC0, 111, 0);
-                        machine_code[*s] = (uint8_t)b->imm;
-                        (*s)++;
-                        break;
-                    case 2:
-                        *s = encode_inst_rm_rm(machine_code, group_digit, mem, 16, 0xC1, 111, 0);
-                        machine_code[*s] = (uint8_t)b->imm;
-                        (*s)++;
-                        break;
-                    case 4:
-                        *s = encode_inst_rm_rm(machine_code, group_digit, mem, 32, 0xC1, 111, 0);
-                        machine_code[*s] = (uint8_t)b->imm;
-                        (*s)++;
-                        break;
-                    case 8:
-                        *s = encode_inst_rm_rm(machine_code, group_digit, mem, 64, 0xC1, 111, 0);
-                        machine_code[*s] = (uint8_t)b->imm;
-                        (*s)++;
-                        break;
-                }
-                *pc += *s;
-            }
-        }
+            node->ins.pc = *pc;
 
-        // ── 3. op reg, cl  /  op [mem], cl ──────────────────────────────────
-        else if (b->type == O_REG8 && strcasecmp(b->reg, "cl") == 0) {
-            
-            if (a->type == O_REG64) {
-                uint8_t reg = find_reg64_index(a->reg);
-                node->ins.pc = *pc;
-                *s = encode_group2_reg_cl(machine_code, reg, 0xD3, group_digit, 64);
-                *pc += *s;
+            if (imm == 1) *s = encode_inst_rm_rm(machine_code, insn->group, &a->addr, sz * 8, (sz * 8) == 8 ? 0xD0 : 0xD1, 111, 0);
+            else {
+                *s = encode_inst_rm_rm(machine_code, insn->group, &a->addr, sz * 8, (sz * 8) == 8 ? 0xC0 : 0xC1, 111, 0);
+                machine_code[*s] = imm;
+                (*s)++;
             }
-            else if (a->type == O_REG32) {
-                uint8_t reg = find_reg32_index(a->reg);
-                node->ins.pc = *pc;
-                *s = encode_group2_reg_cl(machine_code, reg, 0xD3, group_digit, 32);
-                *pc += *s;
-            }
-            else if (a->type == O_REG16) {
-                uint8_t reg = find_reg16_index(a->reg);
-                node->ins.pc = *pc;
-                *s = encode_group2_reg_cl(machine_code, reg, 0xD3, group_digit, 16);
-                *pc += *s;
-            }
-            else if (a->type == O_REG8) {
-                uint8_t reg = find_reg8_index(a->reg);
-                node->ins.pc = *pc;
-                *s = encode_group2_reg_cl(machine_code, reg, 0xD2, group_digit, 8);
-                *pc += *s;
-            }
-            else if (a->type == O_MEM) {
-                AddrExpr *mem = &a->addr;
-                node->ins.pc = *pc;
-                switch (node->ins.operands[1].imm_sz) {
-                    case 1:
-                        *s = encode_inst_rm_rm(machine_code, group_digit, mem, 8,  0xD2, 111, 0);
-                        break;
-                    case 2:
-                        *s = encode_inst_rm_rm(machine_code, group_digit, mem, 16, 0xD3, 111, 0);
-                        break;
-                    case 4:
-                        *s = encode_inst_rm_rm(machine_code, group_digit, mem, 32, 0xD3, 111, 0);
-                        break;
-                    case 8:
-                        *s = encode_inst_rm_rm(machine_code, group_digit, mem, 64, 0xD3, 111, 0);
-                        break;
-                }
-                *pc += *s;
-            }
+
+            *pc += *s;
         }
     }
 
     // Group 3 instructions: not, neg, mul
-    else if (strcasecmp(node->cmd, "not") == 0 ||
-            strcasecmp(node->cmd, "neg") == 0 ||
-            strcasecmp(node->cmd, "mul") == 0) {
+    else if (strcmp(node->cmd, "not") == 0 ||
+            strcmp(node->cmd, "neg") == 0 ||
+            strcmp(node->cmd, "mul") == 0) {
 
-        uint8_t group_digit;
+        static const Group3Insn group3_table[] = {
+            {"mul", 4},
+            {"neg", 3},
+            {"not", 2},
+        };
 
-        // instructions such as imul, mul, div, idiv, test also includes to group, as they implemented below
+        const Group3Insn *insn = &group3_table[find_ins_idx(cmd, sizeof(group3_table) / sizeof(group3_table[0]), group3_table)];
 
-        if (strcasecmp(node->cmd, "not") == 0)        group_digit = 2;
-        else if (strcasecmp(node->cmd, "neg") == 0)   group_digit = 3;
-        else if (strcasecmp(node->cmd, "mul") == 0)   group_digit = 4;
+        if (a->type == O_REG64 || a->type == O_REG32 ||
+            a->type == O_REG16 || a->type == O_REG8) {
 
-        if (a->type == O_REG64) {
-            uint8_t reg = find_reg64_index(a->reg);
+            int reg = reg_index(a);
+            int sz = operand_bits(a);
+
             node->ins.pc = *pc;
-            *s = encode_group3_reg(machine_code, reg, 0xF7, group_digit, 64);
+            *s = encode_group3_reg(machine_code, reg, sz == 8 ? 0xF6 : 0xF7, insn->group, sz);
             *pc += *s;
         }
-        else if (a->type == O_REG32) {
-            uint8_t reg = find_reg32_index(a->reg);
-            node->ins.pc = *pc;
-            *s = encode_group3_reg(machine_code, reg, 0xF7, group_digit, 32);
-            *pc += *s;
-        }
-        else if (a->type == O_REG16) {
-            uint8_t reg = find_reg16_index(a->reg);
-            node->ins.pc = *pc;
-            *s = encode_group3_reg(machine_code, reg, 0xF7, group_digit, 16);
-            *pc += *s;
-        }
-        else if (a->type == O_REG8) {
-            uint8_t reg = find_reg8_index(a->reg);
-            node->ins.pc = *pc;
-            *s = encode_group3_reg(machine_code, reg, 0xF6, group_digit, 8);
-            *pc += *s;
-        }
+
         else if (a->type == O_MEM) {
             AddrExpr *mem = &a->addr;
             node->ins.pc = *pc;
 
             switch (node->ins.operands[1].imm_sz) {
                 case 1:
-                    *s = encode_inst_rm_rm(machine_code, group_digit, mem, 8, 0xF6, 111, 0);
+                    *s = encode_inst_rm_rm(machine_code, insn->group, mem, 8, 0xF6, 111, 0);
                     break;
                 case 2:
-                    *s = encode_inst_rm_rm(machine_code, group_digit, mem, 16, 0xF7, 111, 0);
+                    *s = encode_inst_rm_rm(machine_code, insn->group, mem, 16, 0xF7, 111, 0);
                     break;
                 case 4:
-                    *s = encode_inst_rm_rm(machine_code, group_digit, mem, 32, 0xF7, 111, 0);
+                    *s = encode_inst_rm_rm(machine_code, insn->group, mem, 32, 0xF7, 111, 0);
                     break;
                 case 8:
-                    *s = encode_inst_rm_rm(machine_code, group_digit, mem, 64, 0xF7, 111, 0);
+                    *s = encode_inst_rm_rm(machine_code, insn->group, mem, 64, 0xF7, 111, 0);
                     break;
             }
 
@@ -746,192 +523,58 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         }
     }
 
+    // TEST
+    else if (!strcmp(cmd, "test")) {
 
-    else if(!strcasecmp(cmd, "test")){
-        // ========================================================================
-        // 1. TEST REG, IMM (reg <- imm)
-        // ========================================================================
-        
-        // TEST R64, IMM64
-        if (a->type == O_REG64 && IS_EXPR_OR_IMM_OR_PC(*b)) {
+        if ((a->type == O_REG64 || a->type == O_REG32 ||
+            a->type == O_REG16 || a->type == O_REG8) &&
+            (b->type == O_REG64 || b->type == O_REG32 ||
+            b->type == O_REG16 || b->type == O_REG8)) {
 
-            uint8_t reg_idx = find_reg64_index(a->reg);
-            uint64_t imm = b->imm;
-
-            node->ins.pc = *pc;
-            *s = encode_test_reg_imm(machine_code, reg_idx, imm, 64);
-            *pc += *s;
-            
-        }
-
-        // TEST R32, IMM32
-        else if (a->type == O_REG32 && IS_EXPR_OR_IMM_OR_PC(*b)) {
-
-            uint8_t reg_idx = find_reg32_index(a->reg);
-            uint32_t imm = (uint32_t)(b->imm);
+            int dest = reg_index(a);
+            int src = reg_index(b);
+            int sz = operand_bits(a);
 
             node->ins.pc = *pc;
-            *s = encode_test_reg_imm(machine_code, reg_idx, (uint32_t)imm, 32);
-            *pc += *s;
-            
-        }
-
-        // TEST R16, IMM16
-        else if (a->type == O_REG16 && b->type == O_IMM) {
-
-            uint8_t reg_idx = find_reg16_index(a->reg);
-            uint16_t imm = (uint16_t)(b->imm);
-
-            node->ins.pc = *pc;
-            *s = encode_test_reg_imm(machine_code, reg_idx, (uint16_t)imm, 16);
-            *pc += *s;
-            
-        }
-
-        // TEST R8, IMM8/CHAR
-        else if (a->type == O_REG8 && (b->type == O_IMM || b->type == O_CHAR)) {
-
-            uint8_t c = b->c;
-            uint8_t reg_idx = find_reg8_index(a->reg);
-            uint8_t imm = (uint8_t)(b->imm);
-
-            node->ins.pc = *pc;
-            *s = encode_test_reg_imm(machine_code, reg_idx, (b->type == O_CHAR) ? (uint8_t)c : (uint8_t)imm, 8);
-            *pc += *s;
-            
-        }
-
-
-        // ========================================================================
-        // 2. TEST REG, REG (reg <- reg) (mod = 11)
-        // ========================================================================
-
-        else if (a->type == O_REG64 && b->type == O_REG64) {
-        
-            uint8_t rm = find_reg64_index(a->reg);
-            uint8_t reg = find_reg64_index(b->reg);
-
-            node->ins.pc = *pc;
-            *s = encode_test_reg_reg(machine_code, rm, reg, 64);
-            *pc += *s;
-            
-        }
-
-        else if (a->type == O_REG32 && b->type == O_REG32) {
-        
-            uint8_t rm = find_reg32_index(a->reg);
-            uint8_t reg = find_reg32_index(b->reg);
-
-            node->ins.pc = *pc;
-            *s = encode_test_reg_reg(machine_code, rm, reg, 32);
-            *pc += *s;
-            
-        }
-
-        else if (a->type == O_REG16 && b->type == O_REG16) {
-        
-            uint8_t rm = find_reg16_index(a->reg);
-            uint8_t reg = find_reg16_index(b->reg);
-
-            node->ins.pc = *pc;
-            *s = encode_test_reg_reg(machine_code, rm, reg, 16);
-            *pc += *s;
-            
-        }
-
-        else if (a->type == O_REG8 && b->type == O_REG8) {
-        
-            uint8_t rm = find_reg8_index(a->reg);
-            uint8_t reg = find_reg8_index(b->reg);
-
-            node->ins.pc = *pc;
-            *s = encode_test_reg_reg(machine_code, rm, reg, 8);
-            *pc += *s;
-            
-        }
-
-
-        // ========================================================================
-        // 3. TEST REG, [ADDR] / TEST [ADDR], REG
-        // ========================================================================
-
-        else if (
-            (a->type == O_REG64 && b->type == O_MEM) ||
-            (a->type == O_MEM   && b->type == O_REG64)
-        ) {
-            uint8_t reg;
-            AddrExpr *mem;
-
-            if (a->type == O_MEM) {
-                reg = find_reg64_index(b->reg);
-                mem = &a->addr;
-            } else {
-                reg = find_reg64_index(a->reg);
-                mem = &b->addr;
-            }
-
-            node->ins.pc = *pc;
-            *s = encode_inst_rm_rm(machine_code, reg, mem, 64, 0x85, 0, 0);
+            *s = encode_test_reg_reg(machine_code, dest, src, sz);
             *pc += *s;
         }
 
-        else if (
-            (a->type == O_REG32 && b->type == O_MEM) ||
-            (a->type == O_MEM   && b->type == O_REG32)
-        ) {
-            uint8_t reg;
-            AddrExpr *mem;
+        else if ((a->type == O_REG64 || a->type == O_REG32 ||
+                a->type == O_REG16 || a->type == O_REG8) &&
+                IS_EXPR_OR_IMM_OR_PC(*b)) {
 
-            if (a->type == O_MEM) {
-                reg = find_reg32_index(b->reg);
-                mem = &a->addr;
-            } else {
-                reg = find_reg32_index(a->reg);
-                mem = &b->addr;
-            }
+            int reg = reg_index(a);
+            int sz = operand_bits(a);
 
             node->ins.pc = *pc;
-            *s = encode_inst_rm_rm(machine_code, reg, mem, 32, 0x85, 0, 0);
+            *s = encode_test_reg_imm(machine_code, reg, b->imm, sz);
             *pc += *s;
         }
 
-        else if (
-            (a->type == O_REG16 && b->type == O_MEM) ||
-            (a->type == O_MEM   && b->type == O_REG16)
-        ) {
-            uint8_t reg;
-            AddrExpr *mem;
+        else if ((a->type == O_REG64 || a->type == O_REG32 ||
+                a->type == O_REG16 || a->type == O_REG8) &&
+                b->type == O_MEM) {
 
-            if (a->type == O_MEM) {
-                reg = find_reg16_index(b->reg);
-                mem = &a->addr;
-            } else {
-                reg = find_reg16_index(a->reg);
-                mem = &b->addr;
-            }
+            int reg = reg_index(a);
+            int sz = operand_bits(a);
 
             node->ins.pc = *pc;
-            *s = encode_inst_rm_rm(machine_code, reg, mem, 16, 0x85, 0, 0);
+            *s = encode_inst_rm_rm(machine_code, reg, &b->addr, sz,
+                sz == 8 ? 0x84 : 0x85, 0, 0);
             *pc += *s;
         }
 
-        else if (
-            (a->type == O_REG8 && b->type == O_MEM) ||
-            (a->type == O_MEM  && b->type == O_REG8)
-        ) {
-            uint8_t reg;
-            AddrExpr *mem;
+        else if (a->type == O_MEM &&
+                (b->type == O_REG64 || b->type == O_REG32 ||
+                b->type == O_REG16 || b->type == O_REG8)) {
 
-            if (a->type == O_MEM) {
-                reg = find_reg8_index(b->reg);
-                mem = &a->addr;
-            } else {
-                reg = find_reg8_index(a->reg);
-                mem = &b->addr;
-            }
+            int reg = reg_index(b);
+            int sz = operand_bits(b);
 
             node->ins.pc = *pc;
-            *s = encode_inst_rm_rm(machine_code, reg, mem, 8, 0x84, 0, 0);
+            *s = encode_inst_rm_rm(machine_code, reg, &a->addr, sz,
+                sz == 8 ? 0x84 : 0x85, 0, 0);
             *pc += *s;
         }
 
@@ -947,218 +590,97 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
             }
             *pc += *s;
             
-        }        
+        }   
     }
 
-    // IMUL - Signed Multiply
-    else if(!strcasecmp(cmd, "imul")){
-        // imul r64
-        if(a->type == O_REG64 && b->type == O_NONE){
-            uint8_t reg = find_reg64_index(a->reg);
-            node->ins.pc = *pc;
-            *s = encode_imul_reg(machine_code, reg, 64);
-            *pc += *s;
+    // IMUL
+    else if (!strcmp(cmd, "imul")) {
+
+        if (a->type == O_REG64 || a->type == O_REG32 ||
+            a->type == O_REG16 || a->type == O_REG8) {
+
+            int dest = reg_index(a);
+            int sz = operand_bits(a);
+
+            // imul reg
+            if ((a->type == O_REG8 || a->type == O_REG16 || a->type == O_REG32 || a->type == O_REG64) && b->type == O_NONE) {
+                node->ins.pc = *pc;
+                *s = encode_imul_reg(machine_code, dest, sz);
+                *pc += *s;
+            }
+
+            else if (b->type == O_REG64 || b->type == O_REG32 ||
+                    b->type == O_REG16 || b->type == O_REG8) {
+
+                int src = reg_index(b);
+
+                if (c->type == O_NONE) {
+                    node->ins.pc = *pc;
+                    *s = encode_imul_reg_reg(machine_code, src, dest, sz);
+                    *pc += *s;
+                }
+
+                else if (c->type == O_IMM) {
+                    node->ins.pc = *pc;
+                    *s = encode_imul_reg_reg_imm(machine_code, dest, src, c->imm, sz, c->type == O_EXPR);
+                    *pc += *s;
+                }
+            }
+
+            else if (c->type == O_NONE) {
+                node->ins.pc = *pc;
+                *s = encode_imul_reg_reg_imm(machine_code, dest, dest, b->imm, sz, b->type == O_EXPR);
+                *pc += *s;
+            }
         }
-
-        // imul r32
-        else if(a->type == O_REG32 && b->type == O_NONE){
-            uint8_t reg = find_reg32_index(a->reg);
-            node->ins.pc = *pc;
-            *s = encode_imul_reg(machine_code, reg, 32);
-            *pc += *s;
-        }
-
-        // imul r16
-        else if(a->type == O_REG16 && b->type == O_NONE){
-            uint8_t reg = find_reg16_index(a->reg);
-            node->ins.pc = *pc;
-            *s = encode_imul_reg(machine_code, reg, 16);
-            *pc += *s;
-        }
-
-        // imul r8
-        else if(a->type == O_REG8 && b->type == O_NONE){
-            uint8_t reg = find_reg8_index(a->reg);
-            node->ins.pc = *pc;
-            *s = encode_imul_reg(machine_code, reg, 8);
-            *pc += *s;
-        }
-
-
-        //===============
-        // imul reg, reg 
-        //===============
-
-        // imul r64, r64
-        else if(a->type == O_REG64 && b->type == O_REG64){
-            uint8_t src = find_reg64_index(a->reg);
-            uint8_t dest = find_reg64_index(b->reg);
-            node->ins.pc = *pc;
-            *s = encode_imul_reg_reg(machine_code, dest, src, 64);
-            *pc += *s;
-        }
-
-        // imul r32, r32
-        else if(a->type == O_REG32 && b->type == O_REG32){
-            uint8_t src = find_reg32_index(a->reg);
-            uint8_t dest = find_reg32_index(b->reg);
-            node->ins.pc = *pc;
-            *s = encode_imul_reg_reg(machine_code, dest, src, 32);
-            *pc += *s;
-        }
-
-        // imul r16, r16
-        else if(a->type == O_REG16 && b->type == O_REG16){
-            uint8_t src = find_reg16_index(a->reg);
-            uint8_t dest = find_reg16_index(b->reg);
-            node->ins.pc = *pc;
-            *s = encode_imul_reg_reg(machine_code, dest, src, 16);
-            *pc += *s;
-        }
-
-        // =====================================
-        // imul reg, reg, imm 
-        // =====================================
-
-        // imul r64, r64, imm32/imm8
-        if (a->type == O_REG64 && b->type == O_REG64 && IS_EXPR_OR_IMM_OR_PC(*c)) {
-            uint8_t dest = find_reg64_index(a->reg);
-            uint8_t src = find_reg64_index(b->reg);
-            uint64_t imm = c->imm;
-
-            node->ins.pc = *pc;
-            *s = encode_imul_reg_reg_imm(machine_code, dest, src, imm, 64, c->type == O_EXPR);
-            *pc += *s;
-            
-        }
-
-        // imul r32, r32, imm32/imm8
-        else if (a->type == O_REG32 && b->type == O_REG32 && IS_EXPR_OR_IMM_OR_PC(*c)) {
-            uint8_t dest = find_reg32_index(a->reg);
-            uint8_t src = find_reg32_index(b->reg);
-            uint64_t imm = c->imm;
-
-            node->ins.pc = *pc;
-            *s = encode_imul_reg_reg_imm(machine_code, dest, src, imm, 32, c->type == O_EXPR);
-            *pc += *s;
-            
-        }
-
-        // imul r16, r16, imm16/imm8
-        else if (a->type == O_REG16 && b->type == O_REG16 && c->type == O_IMM) {
-            uint8_t dest = find_reg16_index(a->reg);
-            uint8_t src = find_reg16_index(b->reg);
-            uint64_t imm = c->imm;
-
-            node->ins.pc = *pc;
-            *s = encode_imul_reg_reg_imm(machine_code, dest, src, imm, 16, c->type == O_EXPR);
-            *pc += *s;
-            
-        }
-
-        // =====================================
-        // 2. imul reg, imm (abstraction)
-        // =====================================
-
-        // imul r64, imm
-        else if (a->type == O_REG64 && (b->type == O_IMM || b->type == O_EXPR) && c->type == O_NONE) {
-            uint8_t reg = find_reg64_index(a->reg);
-            uint64_t imm = b->imm;
-
-            node->ins.pc = *pc;
-            *s = encode_imul_reg_reg_imm(machine_code, reg, reg, imm, 64, b->type == O_EXPR);
-            *pc += *s;
-            
-        }
-
-        // imul r32, imm
-        else if (a->type == O_REG32 && (b->type == O_IMM || b->type == O_EXPR) && c->type == O_NONE) {
-            uint8_t reg = find_reg32_index(a->reg);
-            uint64_t imm = b->imm;
-
-            node->ins.pc = *pc;
-            *s = encode_imul_reg_reg_imm(machine_code, reg, reg, imm, 32, b->type == O_EXPR);
-            *pc += *s;
-            
-        }
-
-        // imul r16, imm
-        else if (a->type == O_REG16 && b->type == O_IMM) {
-            uint8_t reg = find_reg16_index(a->reg);
-            uint64_t imm = b->imm;
-
-            node->ins.pc = *pc;
-            *s = encode_imul_reg_reg_imm(machine_code, reg, reg, imm, 16, b->type == O_EXPR);
-            *pc += *s;
-            
-        }
-        
     }
 
-    // DIV-Unsigned Divide
-    // IDIV-Signed Divide
-    else if (!strcasecmp(cmd, "div") || !strcasecmp(cmd, "idiv")){
-        
-        uint8_t group_digit = !strcasecmp(cmd, "div") ? 6 : 7;
+    // DIV / IDIV
+    else if (!strcmp(cmd, "div") || !strcmp(cmd, "idiv")) {
 
-        // i/div reg64        
-        if(a->type == O_REG64){
-            uint8_t src = find_reg64_index(a->reg);
+        static const Group3Insn div_table[] = {
+            {"div", 6},
+            {"idiv", 7},
+        };
 
-            *s = encode_div_or_idiv_reg(machine_code, group_digit, src, 64);
+        const Group3Insn *insn = &div_table[find_ins_idx(cmd, sizeof(div_table) / sizeof(div_table[0]), div_table)];
+
+        if (a->type == O_REG64 || a->type == O_REG32 ||
+            a->type == O_REG16 || a->type == O_REG8) {
+
+            int reg = reg_index(a);
+            int sz = operand_bits(a);
+
+            node->ins.pc = *pc;
+            *s = encode_div_or_idiv_reg(machine_code, insn->group, reg, sz);
             *pc += *s;
         }
 
-        // i/div reg32      
-        else if(a->type == O_REG32){
-            uint8_t src = find_reg32_index(a->reg);
-
-            *s = encode_div_or_idiv_reg(machine_code, group_digit, src, 32);
-            *pc += *s;
-        }
-
-        // i/div reg16        
-        else if(a->type == O_REG16){
-            uint8_t src = find_reg16_index(a->reg);
-
-            *s = encode_div_or_idiv_reg(machine_code, group_digit, src, 16);
-            *pc += *s;
-        }
-
-        // i/div reg8        
-        else if(a->type == O_REG8){
-            uint8_t src = find_reg8_index(a->reg);
-
-            *s = encode_div_or_idiv_reg(machine_code, group_digit, src, 8);
-            *pc += *s;
-        }
-
-        // =========
-        // i/div [mem] 
-        // =========       
         else if(a->type == O_MEM){
             AddrExpr *mem = &a->addr;
             
             node->ins.pc = *pc;
             switch (node->ins.operands[1].imm_sz){                 /* div [mem] does not gain imm*/
-                case 1: *s = encode_inst_rm_rm(machine_code, group_digit, mem, 8,  0xF6, 111, 0); break;
-                case 2: *s = encode_inst_rm_rm(machine_code, group_digit, mem, 16, 0xF7, 111, 0); break;
-                case 4: *s = encode_inst_rm_rm(machine_code, group_digit, mem, 32, 0xF7, 111, 0); break;
-                case 8: *s = encode_inst_rm_rm(machine_code, group_digit, mem, 64, 0xF7, 111, 0); break; 
+                case 1: *s = encode_inst_rm_rm(machine_code, insn->group, mem, 8,  0xF6, 111, 0); break;
+                case 2: *s = encode_inst_rm_rm(machine_code, insn->group, mem, 16, 0xF7, 111, 0); break;
+                case 4: *s = encode_inst_rm_rm(machine_code, insn->group, mem, 32, 0xF7, 111, 0); break;
+                case 8: *s = encode_inst_rm_rm(machine_code, insn->group, mem, 64, 0xF7, 111, 0); break; 
             }
             *pc += *s;
             
         }
-
     }
+
+
+
    
     // Group 4 instructions: inc, dec (r/m8)
-    else if ((!strcasecmp(node->cmd, "inc") && (a->type == O_REG8 || node->ins.operands[1].imm_sz == 1)) ||
-             (!strcasecmp(node->cmd, "dec") && (a->type == O_REG8 || node->ins.operands[1].imm_sz == 1))) {
+    else if ((!strcmp(node->cmd, "inc") && (a->type == O_REG8 || node->ins.operands[1].imm_sz == 1)) ||
+             (!strcmp(node->cmd, "dec") && (a->type == O_REG8 || node->ins.operands[1].imm_sz == 1))) {
 
         uint8_t group_digit;
 
-        if (strcasecmp(node->cmd, "inc") == 0) group_digit = 0;
+        if (strcmp(node->cmd, "inc") == 0) group_digit = 0;
         else group_digit = 1;
 
         if (a->type == O_REG8) {
@@ -1176,31 +698,21 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
     }
 
     // Group 5 instructions: inc, dec
-    else if (strcasecmp(node->cmd, "inc") == 0 ||
-            strcasecmp(node->cmd, "dec") == 0) {
+    else if (strcmp(node->cmd, "inc") == 0 ||
+            strcmp(node->cmd, "dec") == 0) {
 
         // also push, jmp, call implemented below
 
-        uint8_t group_digit = (strcasecmp(node->cmd, "inc") == 0) ? 0 : 1;
+        uint8_t group_digit = (strcmp(node->cmd, "inc") == 0) ? 0 : 1;
 
-        if (a->type == O_REG64) {
-            uint8_t reg = find_reg64_index(a->reg);
+
+        if(a->type == O_REG16 || a->type == O_REG32 || a->type == O_REG64){
             node->ins.pc = *pc;
-            *s = encode_group5_reg(machine_code, reg, 0xFF, group_digit, 64);
+            uint8_t reg = reg_index(a);
+            *s = encode_group5_reg(machine_code, reg, 0xFF, group_digit, operand_bits(a));
             *pc += *s;
         }
-        else if (a->type == O_REG32) {
-            uint8_t reg = find_reg32_index(a->reg);
-            node->ins.pc = *pc;
-            *s = encode_group5_reg(machine_code, reg, 0xFF, group_digit, 32);
-            *pc += *s;
-        }
-        else if (a->type == O_REG16) {
-            uint8_t reg = find_reg16_index(a->reg);
-            node->ins.pc = *pc;
-            *s = encode_group5_reg(machine_code, reg, 0xFF, group_digit, 16);
-            *pc += *s;
-        }
+
         else if (a->type == O_MEM) {
             AddrExpr *mem = &a->addr;
             node->ins.pc = *pc;
@@ -1224,43 +736,21 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
     }
 
     // push reg into stack
-    else if(!strcasecmp(cmd, "push")){
+    else if(!strcmp(cmd, "push")){
         // ==============
         // push reg
         // ==============
+        if (a->type == O_REG8 || a->type == O_REG16 ||
+            a->type == O_REG32 || a->type == O_REG64) {
 
-        if(a->type == O_REG64){
-            uint8_t reg = find_reg64_index(a->reg);
             node->ins.pc = *pc;
-            *s = encode_push_reg(machine_code, reg, 64);
+
+            uint8_t reg = reg_index(a);
+            *s = encode_push_reg(machine_code, reg, operand_bits(a));
+
             *pc += *s;
-            
         }
 
-        // N.E in 64 bit mode!
-        else if(a->type == O_REG32){
-            uint8_t reg = find_reg32_index(a->reg);
-            node->ins.pc = *pc;
-            *s = encode_push_reg(machine_code, reg, 32);
-            *pc += *s;
-            
-        }
-
-        else if(a->type == O_REG16){
-            uint8_t reg = find_reg16_index(a->reg);
-            node->ins.pc = *pc;
-            *s = encode_push_reg(machine_code, reg, 16);
-            *pc += *s;
-            
-        }
-
-        else if(a->type == O_REG8){
-            uint8_t reg = find_reg8_index(a->reg);
-            node->ins.pc = *pc;
-            *s = encode_push_reg(machine_code, reg, 8);
-            *pc += *s;
-            
-        }
         else if(a->type == O_MEM){
             AddrExpr *mem = &a->addr;
             node->ins.pc = *pc;
@@ -1284,57 +774,35 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
 
 
     // pop reg from stack
-    else if(!strcasecmp(cmd, "pop")){
+    else if(!strcmp(cmd, "pop")){
         // ==============
         // pop reg
         // ==============
 
-        if(a->type == O_REG64){
-            uint8_t reg = find_reg64_index(a->reg);
-            node->ins.pc = *pc;
-            *s = encode_pop_reg(machine_code, reg, 64);
-            *pc += *s;
-            
-        }
+        if (a->type == O_REG8 || a->type == O_REG16 ||
+            a->type == O_REG32 || a->type == O_REG64) {
 
-        // N.E in 64 bit mode!
-        else if(a->type == O_REG32){
-            uint8_t reg = find_reg32_index(a->reg);
             node->ins.pc = *pc;
-            *s = encode_pop_reg(machine_code, reg, 32);
-            *pc += *s;
-            
-        }
 
-        else if(a->type == O_REG16){
-            uint8_t reg = find_reg16_index(a->reg);
-            node->ins.pc = *pc;
-            *s = encode_pop_reg(machine_code, reg, 16);
-            *pc += *s;
-            
-        }
+            uint8_t reg = reg_index(a);
+            *s = encode_pop_reg(machine_code, reg, operand_bits(a));
 
-        else if(a->type == O_REG8){
-            uint8_t reg = find_reg8_index(a->reg);
-            node->ins.pc = *pc;
-            *s = encode_pop_reg(machine_code, reg, 8);
             *pc += *s;
-            
         }
         
     }
 
     
     // legacy code
-    else if(!strcasecmp(cmd, "jmp") || !strcasecmp(cmd, "call")) {
+    else if(!strcmp(cmd, "jmp") || !strcmp(cmd, "call")) {
 
-        uint8_t group_digit = !strcasecmp(cmd, "jmp") ? 4 : 2;
+        uint8_t group_digit = !strcmp(cmd, "jmp") ? 4 : 2;
 
         // =========================
         // JMP/CALL label (REL32)
         // =========================
         if(a->type == O_EXPR || a->type == O_PC) { 
-            uint8_t opcode = (!strcasecmp(cmd, "jmp")) ? 0xE9 : 0xE8;
+            uint8_t opcode = (!strcmp(cmd, "jmp")) ? 0xE9 : 0xE8;
 
             machine_code[0] = opcode;
             *(uint32_t*)(machine_code + 1) = 0x0;
@@ -1353,7 +821,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
             int reg_idx = find_reg64_index(node->ins.operands[0].reg);
             if(reg_idx >= 8) rex |= REX_B;
             
-            if(!strcasecmp(node->cmd, "jmp"))  modrm = emit_modrm(0b11, group_digit, reg_idx); // FF /4
+            if(!strcmp(node->cmd, "jmp"))  modrm = emit_modrm(0b11, group_digit, reg_idx); // FF /4
             else modrm = emit_modrm(0b11, group_digit, reg_idx);  // FF /2
             
             
@@ -1422,16 +890,16 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         int pos = 0;
         uint8_t opcode2 = 0;
 
-        if (!strcasecmp(node->cmd, "je") || !strcasecmp(node->cmd, "jz"))        opcode2 = 0x84;
-        else if (!strcasecmp(node->cmd, "jne") || !strcasecmp(node->cmd, "jnz")) opcode2 = 0x85;
-        else if (!strcasecmp(node->cmd, "jl"))  opcode2 = 0x8C;
-        else if (!strcasecmp(node->cmd, "jge")) opcode2 = 0x8D;
-        else if (!strcasecmp(node->cmd, "jle")) opcode2 = 0x8E; 
-        else if (!strcasecmp(node->cmd, "jg"))  opcode2 = 0x8F;
-        else if (!strcasecmp(node->cmd, "jb") || !strcasecmp(node->cmd, "jc"))   opcode2 = 0x82;    
-        else if (!strcasecmp(node->cmd, "ja"))  opcode2 = 0x87;
-        else if (!strcasecmp(node->cmd, "jae"))  opcode2 = 0x83;
-        else if (!strcasecmp(node->cmd, "jbe"))  opcode2 = 0x86;
+        if (!strcmp(node->cmd, "je") || !strcmp(node->cmd, "jz"))        opcode2 = 0x84;
+        else if (!strcmp(node->cmd, "jne") || !strcmp(node->cmd, "jnz")) opcode2 = 0x85;
+        else if (!strcmp(node->cmd, "jl"))  opcode2 = 0x8C;
+        else if (!strcmp(node->cmd, "jge")) opcode2 = 0x8D;
+        else if (!strcmp(node->cmd, "jle")) opcode2 = 0x8E; 
+        else if (!strcmp(node->cmd, "jg"))  opcode2 = 0x8F;
+        else if (!strcmp(node->cmd, "jb") || !strcmp(node->cmd, "jc"))   opcode2 = 0x82;    
+        else if (!strcmp(node->cmd, "ja"))  opcode2 = 0x87;
+        else if (!strcmp(node->cmd, "jae"))  opcode2 = 0x83;
+        else if (!strcmp(node->cmd, "jbe"))  opcode2 = 0x86;
 
         node->machine_code[pos++] = 0x0F;
         node->machine_code[pos++] = opcode2;
@@ -1445,328 +913,326 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
     }
 
 
-    // // movzx, movsx
-    if(!strcasecmp(cmd, "movzx") || !strcasecmp(cmd, "movsx")){
-        uint8_t opcode = !strcasecmp(cmd, "movzx") ? 0xB7 : 0xBF;
+    else if (!strcmp(cmd, "movzx") || !strcmp(cmd, "movsx")) {
+        uint8_t opcode = !strcmp(cmd, "movzx") ? 0xB6 : 0xBE;
 
-        // b->type = 8bit reg
-        if(a->type == O_REG16 && b->type == O_REG8){
-            uint8_t dest = find_reg16_index(a->reg);
-            uint8_t src = find_reg8_index(b->reg);
+        if ((b->type == O_REG8  && a->type >= O_REG16) ||
+            (b->type == O_REG16 && a->type >= O_REG32)) {
+
+            uint8_t dest = reg_index(a);
+            uint8_t src  = reg_index(b);
+            uint8_t sz   = operand_bits(a);
+
+            if (b->type == O_REG16)opcode++;
 
             node->ins.pc = *pc;
-            *s =  encode_two_byte_opcode_reg(machine_code, opcode - 1, dest, src, 16, 0);
+            *s = encode_two_byte_opcode_reg(machine_code, opcode, dest, src, sz, 0);
             *pc += *s;
+            
         }
 
-        if(a->type == O_REG32 && b->type == O_REG8){
-            uint8_t dest = find_reg32_index(a->reg);
-            uint8_t src = find_reg8_index(b->reg);
+        else if ((a->type == O_REG16 || a->type == O_REG32 || a->type == O_REG64) &&
+                b->type == O_MEM) {
 
-            node->ins.pc = *pc;
-            *s =  encode_two_byte_opcode_reg(machine_code, opcode - 1, dest, src, 32, 0);
-            *pc += *s;
-    
+            uint8_t src_sz = b->imm_sz;
+
+            if ((src_sz == 1 && a->type >= O_REG16) ||
+                (src_sz == 2 && a->type >= O_REG32)) {
+
+                uint8_t dest = reg_index(a);
+                uint8_t sz   = operand_bits(a);
+
+
+                node->ins.pc = *pc;
+                *s = encode_inst_reg_rm2(machine_code, opcode, dest, &b->addr, sz, 0);
+                *pc += *s;
+            }
         }
-        if(a->type == O_REG64 && b->type == O_REG8){
-            uint8_t dest = find_reg64_index(a->reg);
-            uint8_t src = find_reg8_index(b->reg);
-
-            node->ins.pc = *pc;
-            *s =  encode_two_byte_opcode_reg(machine_code, opcode - 1, dest, src, 64, 0);
-            *pc += *s;
-        }
-
-        
-        // b->type = 16bit reg
-
-        if(a->type == O_REG32 && b->type == O_REG16){
-            uint8_t dest = find_reg32_index(a->reg);
-            uint8_t src = find_reg16_index(b->reg);
-
-            node->ins.pc = *pc;
-            *s =  encode_two_byte_opcode_reg(machine_code, opcode, dest, src, 32, 0);
-            *pc += *s;
-        }
-    
-        if(a->type == O_REG64 && b->type == O_REG16){
-            uint8_t dest = find_reg64_index(a->reg);
-            uint8_t src = find_reg16_index(b->reg);
-
-            node->ins.pc = *pc;
-            *s =  encode_two_byte_opcode_reg(machine_code, opcode, dest, src, 64, 0);
-            *pc += *s;
-        }        
-
-        // r16 <- r/m8
-        if (a->type == O_REG16 && b->type == O_MEM && b->imm_sz == 1) {
-            uint8_t dest = find_reg16_index(a->reg);
-
-            node->ins.pc = *pc;
-            *s = encode_inst_reg_rm2(machine_code, opcode - 1, dest, &b->addr, 16, 0);
-            *pc += *s;
-        }
-
-        // r32 <- r/m8
-        if (a->type == O_REG32 && b->type == O_MEM && b->imm_sz == 1) {
-            uint8_t dest = find_reg32_index(a->reg);
-
-            node->ins.pc = *pc;
-            *s = encode_inst_reg_rm2(machine_code, opcode - 1, dest, &b->addr, 32, 0);
-            *pc += *s;
-        }
-
-        // r64 <- r/m8
-        if (a->type == O_REG64 && b->type == O_MEM && b->imm_sz == 1) {
-            uint8_t dest = find_reg64_index(a->reg);
-
-            node->ins.pc = *pc;
-            *s = encode_inst_reg_rm2(machine_code, opcode - 1, dest, &b->addr, 64, 0);
-            *pc += *s;
-        }
-
-        // r32 <- r/m16
-        if (a->type == O_REG32 && b->type == O_MEM && b->imm_sz == 2) {
-            uint8_t dest = find_reg32_index(a->reg);
-
-            node->ins.pc = *pc;
-            *s = encode_inst_reg_rm2(machine_code, opcode, dest, &b->addr, 32, 0);
-            *pc += *s;
-        }
-
-        // r64 <- r/m16
-        if (a->type == O_REG64 && b->type == O_MEM && b->imm_sz == 2) {
-            uint8_t dest = find_reg64_index(a->reg);
-
-            node->ins.pc = *pc;
-            *s = encode_inst_reg_rm2(machine_code, opcode, dest, &b->addr, 64, 0);
-            *pc += *s;
-        }
-
     } 
 
     // bsf, bsr
-    if (!strcasecmp(cmd, "bsf") || !strcasecmp(cmd, "bsr")) {
+    else if (!strcmp(cmd, "bsf") || !strcmp(cmd, "bsr")) {
+        uint8_t opcode = !strcmp(cmd, "bsf") ? 0xBC : 0xBD;
 
-        uint8_t opcode = !strcasecmp(cmd, "bsf") ? 0xBC : 0xBD;
+        if ((a->type == O_REG16 || a->type == O_REG32 || a->type == O_REG64) &&
+            b->type == a->type) {
 
-        // r16 <- r16
-        if (a->type == O_REG16 && b->type == O_REG16) {
-            uint8_t dest = find_reg16_index(a->reg);
-            uint8_t src  = find_reg16_index(b->reg);
+            uint8_t dest = reg_index(a);
+            uint8_t src  = reg_index(b);
+            uint8_t sz   = operand_bits(a);
 
             node->ins.pc = *pc;
-            *s = encode_two_byte_opcode_reg(machine_code, opcode, dest, src, 16, 0);
+            *s = encode_two_byte_opcode_reg(machine_code, opcode, dest, src, sz, 0);
             *pc += *s;
         }
 
-        // r32 <- r32
-        if (a->type == O_REG32 && b->type == O_REG32) {
-            uint8_t dest = find_reg32_index(a->reg);
-            uint8_t src  = find_reg32_index(b->reg);
+        else if ((a->type == O_REG16 || a->type == O_REG32 || a->type == O_REG64) &&
+                b->type == O_MEM &&
+                b->imm_sz == operand_bits(a) / 8) {
+
+            uint8_t dest = reg_index(a);
+            uint8_t sz   = operand_bits(a);
 
             node->ins.pc = *pc;
-            *s = encode_two_byte_opcode_reg(machine_code, opcode, dest, src, 32, 0);
-            *pc += *s;
-        }
-
-        // r64 <- r64
-        if (a->type == O_REG64 && b->type == O_REG64) {
-            uint8_t dest = find_reg64_index(a->reg);
-            uint8_t src  = find_reg64_index(b->reg);
-
-            node->ins.pc = *pc;
-            *s = encode_two_byte_opcode_reg(machine_code, opcode, dest, src, 64, 0);
-            *pc += *s;
-        }
-
-        // r16 <- r/m16
-        if (a->type == O_REG16 && b->type == O_MEM && b->imm_sz == 2) {
-            uint8_t dest = find_reg16_index(a->reg);
-
-            node->ins.pc = *pc;
-            *s = encode_inst_reg_rm2(machine_code, opcode, dest, &b->addr, 16, 0);
-            *pc += *s;
-        }
-
-        // r32 <- r/m32
-        if (a->type == O_REG32 && b->type == O_MEM && b->imm_sz == 4) {
-            uint8_t dest = find_reg32_index(a->reg);
-
-            node->ins.pc = *pc;
-            *s = encode_inst_reg_rm2(machine_code, opcode, dest, &b->addr, 32, 0);
-            *pc += *s;
-        }
-
-        // r64 <- r/m64
-        if (a->type == O_REG64 && b->type == O_MEM && b->imm_sz == 8) {
-            uint8_t dest = find_reg64_index(a->reg);
-
-            node->ins.pc = *pc;
-            *s = encode_inst_reg_rm2(machine_code, opcode, dest, &b->addr, 64, 0);
+            *s = encode_inst_reg_rm2(machine_code, opcode, dest, &b->addr, sz, 0);
             *pc += *s;
         }
     }
 
     // cmovcc
-    if (!strncasecmp(cmd, "cmov", 4)) {
+    else if (!strncasecmp(cmd, "cmov", 4)) {
 
-        uint8_t opcode = 0;
+        static const CmovccInsn movcc_table[] = {
+            {"cmova",   0x47},
+            {"cmovae",  0x43},
+            {"cmovb",   0x42},
+            {"cmovbe",  0x46},
+            {"cmovc",   0x42},
+            {"cmove",   0x44},
+            {"cmovg",   0x4F},
+            {"cmovge",  0x4D},
+            {"cmovl",   0x4C},
+            {"cmovle",  0x4E},
+            {"cmovna",  0x46},
+            {"cmovnae", 0x42},
+            {"cmovnb",  0x43},
+            {"cmovnbe", 0x47},
+            {"cmovnc",  0x43},
+            {"cmovne",  0x45},
+            {"cmovng",  0x4E},
+            {"cmovnge", 0x4C},
+            {"cmovnl",  0x4D},
+            {"cmovnle", 0x4F},
+            {"cmovno",  0x41},
+            {"cmovnp",  0x4B},
+            {"cmovns", 0x49},
+            {"cmovnz", 0x45},
+            {"cmovo",   0x40},
+            {"cmovp",   0x4A},
+            {"cmovpe",  0x4A},
+            {"cmovpo",  0x4B},
+            {"cmovs",   0x48},
+            {"cmovz",   0x44},
+        };
 
-        if      (!strcasecmp(cmd, "cmovo"))  opcode = 0x40;
-        else if (!strcasecmp(cmd, "cmovno")) opcode = 0x41;
-        else if (!strcasecmp(cmd, "cmovb"))  opcode = 0x42;
-        else if (!strcasecmp(cmd, "cmovc"))  opcode = 0x42;
-        else if (!strcasecmp(cmd, "cmovnae"))opcode = 0x42;
-        else if (!strcasecmp(cmd, "cmovae")) opcode = 0x43;
-        else if (!strcasecmp(cmd, "cmovnb")) opcode = 0x43;
-        else if (!strcasecmp(cmd, "cmovnc")) opcode = 0x43;
-        else if (!strcasecmp(cmd, "cmove"))  opcode = 0x44;
-        else if (!strcasecmp(cmd, "cmovz"))  opcode = 0x44;
-        else if (!strcasecmp(cmd, "cmovne")) opcode = 0x45;
-        else if (!strcasecmp(cmd, "cmovnz")) opcode = 0x45;
-        else if (!strcasecmp(cmd, "cmovbe")) opcode = 0x46;
-        else if (!strcasecmp(cmd, "cmovna")) opcode = 0x46;
-        else if (!strcasecmp(cmd, "cmova"))  opcode = 0x47;
-        else if (!strcasecmp(cmd, "cmovnbe"))opcode = 0x47;
-        else if (!strcasecmp(cmd, "cmovs"))  opcode = 0x48;
-        else if (!strcasecmp(cmd, "cmovns")) opcode = 0x49;
-        else if (!strcasecmp(cmd, "cmovp"))  opcode = 0x4A;
-        else if (!strcasecmp(cmd, "cmovpe")) opcode = 0x4A;
-        else if (!strcasecmp(cmd, "cmovnp")) opcode = 0x4B;
-        else if (!strcasecmp(cmd, "cmovpo")) opcode = 0x4B;
-        else if (!strcasecmp(cmd, "cmovl"))  opcode = 0x4C;
-        else if (!strcasecmp(cmd, "cmovnge"))opcode = 0x4C;
-        else if (!strcasecmp(cmd, "cmovge")) opcode = 0x4D;
-        else if (!strcasecmp(cmd, "cmovnl")) opcode = 0x4D;
-        else if (!strcasecmp(cmd, "cmovle")) opcode = 0x4E;
-        else if (!strcasecmp(cmd, "cmovng")) opcode = 0x4E;
-        else if (!strcasecmp(cmd, "cmovg"))  opcode = 0x4F;
-        else if (!strcasecmp(cmd, "cmovnle"))opcode = 0x4F;
+        const CmovccInsn *insn = &movcc_table[find_ins_idx( cmd, sizeof(movcc_table) / sizeof(movcc_table[0]), movcc_table)];
 
-        // r16 <- r16
-        if (a->type == O_REG16 && b->type == O_REG16) {
+
+        uint8_t bits = operand_bits(a);
+        uint8_t dest = reg_index(a);
+
+        // reg <- reg
+        if ((a->type == O_REG16 || a->type == O_REG32 || a->type == O_REG64) &&
+            a->type == b->type) {
+
             node->ins.pc = *pc;
-            *s = encode_two_byte_opcode_reg(machine_code, opcode, find_reg16_index(a->reg), find_reg16_index(b->reg), 16, 0);
+            *s = encode_two_byte_opcode_reg( machine_code, insn->opcode, dest, reg_index(b), bits, 0);
             *pc += *s;
         }
 
-        // r32 <- r32
-        if (a->type == O_REG32 && b->type == O_REG32) {
-            node->ins.pc = *pc;
-            *s = encode_two_byte_opcode_reg(machine_code, opcode, find_reg32_index(a->reg), find_reg32_index(b->reg), 32, 0);
-            *pc += *s;
-        }
+        // reg <- r/m
+        else if ((a->type == O_REG16 || a->type == O_REG32 || a->type == O_REG64) &&
+                b->type == O_MEM) {
 
-        // r64 <- r64
-        if (a->type == O_REG64 && b->type == O_REG64) {
             node->ins.pc = *pc;
-            *s = encode_two_byte_opcode_reg(machine_code, opcode, find_reg64_index(a->reg), find_reg64_index(b->reg), 64, 0);
-            *pc += *s;
-        }
-
-        // r16 <- r/m16
-        if (a->type == O_REG16 && b->type == O_MEM) {
-            node->ins.pc = *pc;
-            *s = encode_inst_reg_rm2(machine_code, opcode, find_reg16_index(a->reg), &b->addr, 16, 0);
-            *pc += *s;
-        }
-
-        // r32 <- r/m32
-        if (a->type == O_REG32 && b->type == O_MEM) {
-            node->ins.pc = *pc;
-            *s = encode_inst_reg_rm2(machine_code, opcode, find_reg32_index(a->reg), &b->addr, 32, 0);
-            *pc += *s;
-        }
-
-        // r64 <- r/m64
-        if (a->type == O_REG64 && b->type == O_MEM) {
-            node->ins.pc = *pc;
-            *s = encode_inst_reg_rm2(machine_code, opcode, find_reg64_index(a->reg), &b->addr, 64, 0);
+            *s = encode_inst_reg_rm2( machine_code, insn->opcode, dest, &b->addr, bits, 0);
             *pc += *s;
         }
     }
 
     // setcc
-    if (!strncasecmp(cmd, "set", 3)) {
-        
-        uint8_t opcode = 0;
+    else if (!strncasecmp(cmd, "set", 3)) {
 
-        if      (!strcasecmp(cmd, "seto"))   opcode = 0x90;
-        else if (!strcasecmp(cmd, "setno"))  opcode = 0x91;
-        else if (!strcasecmp(cmd, "setb"))   opcode = 0x92;
-        else if (!strcasecmp(cmd, "setc"))   opcode = 0x92;
-        else if (!strcasecmp(cmd, "setnae")) opcode = 0x92;
-        else if (!strcasecmp(cmd, "setae"))  opcode = 0x93;
-        else if (!strcasecmp(cmd, "setnb"))  opcode = 0x93;
-        else if (!strcasecmp(cmd, "setnc"))  opcode = 0x93;
-        else if (!strcasecmp(cmd, "sete"))   opcode = 0x94;
-        else if (!strcasecmp(cmd, "setz"))   opcode = 0x94;
-        else if (!strcasecmp(cmd, "setne"))  opcode = 0x95;
-        else if (!strcasecmp(cmd, "setnz"))  opcode = 0x95;
-        else if (!strcasecmp(cmd, "setbe"))  opcode = 0x96;
-        else if (!strcasecmp(cmd, "setna"))  opcode = 0x96;
-        else if (!strcasecmp(cmd, "seta"))   opcode = 0x97;
-        else if (!strcasecmp(cmd, "setnbe")) opcode = 0x97;
-        else if (!strcasecmp(cmd, "sets"))   opcode = 0x98;
-        else if (!strcasecmp(cmd, "setns"))  opcode = 0x99;
-        else if (!strcasecmp(cmd, "setp"))   opcode = 0x9A;
-        else if (!strcasecmp(cmd, "setpe"))  opcode = 0x9A;
-        else if (!strcasecmp(cmd, "setnp"))  opcode = 0x9B;
-        else if (!strcasecmp(cmd, "setpo"))  opcode = 0x9B;
-        else if (!strcasecmp(cmd, "setl"))   opcode = 0x9C;
-        else if (!strcasecmp(cmd, "setnge")) opcode = 0x9C;
-        else if (!strcasecmp(cmd, "setge"))  opcode = 0x9D;
-        else if (!strcasecmp(cmd, "setnl"))  opcode = 0x9D;
-        else if (!strcasecmp(cmd, "setle"))  opcode = 0x9E;
-        else if (!strcasecmp(cmd, "setng"))  opcode = 0x9E;
-        else if (!strcasecmp(cmd, "setg"))   opcode = 0x9F;
-        else if (!strcasecmp(cmd, "setnle")) opcode = 0x9F;
+        static const SetccInsn setcc_table[] = {
+            {"seta",    0x97},
+            {"setae",   0x93},
+            {"setb",    0x92},
+            {"setbe",   0x96},
+            {"setc",    0x92},
+            {"sete",    0x94},
+            {"setg",    0x9F},
+            {"setge",   0x9D},
+            {"setl",    0x9C},
+            {"setle",   0x9E},
+            {"setna",   0x96},
+            {"setnae",  0x92},
+            {"setnb",   0x93},
+            {"setnbe",  0x97},
+            {"setnc",   0x93},
+            {"setne",   0x95},
+            {"setnge",  0x9C},
+            {"setng",   0x9E},
+            {"setnl",   0x9D},
+            {"setnle",  0x9F},
+            {"setno",   0x91},
+            {"setnp",   0x9B},
+            {"setns",   0x99},
+            {"setnz",   0x95},
+            {"seto",    0x90},
+            {"setp",    0x9A},
+            {"setpe",   0x9A},
+            {"setpo",   0x9B},
+            {"sets",    0x98},
+            {"setz",    0x94},
+        };
 
-        // r/m8 <- 1/0
+        const SetccInsn *insn = &setcc_table[find_ins_idx(cmd,sizeof(setcc_table) / sizeof(setcc_table[0]),setcc_table)];
+
+        uint8_t opcode = insn->opcode;
+
+        // r/m8
         if (a->type == O_REG8) {
             node->ins.pc = *pc;
-            *s = encode_two_byte_opcode_reg(machine_code, opcode, 0, find_reg8_index(a->reg), 8, 0);
+            *s = encode_two_byte_opcode_reg(machine_code,opcode,0,find_reg8_index(a->reg),8,0);
             *pc += *s;
         }
 
-        if (a->type == O_MEM) {
+        // r/m8 = memory
+        else if (a->type == O_MEM) {
             node->ins.pc = *pc;
-            *s = encode_inst_reg_rm2(machine_code, opcode, 0, &a->addr, 8, 0);
+            *s = encode_inst_reg_rm2(machine_code,opcode,0,&a->addr,8,0);
             *pc += *s;
         }
     }
 
+
+    else if (is2arrin(Sign_extensions, Sign_extensions_COUNT, (char*)cmd)) {
+        if (strcmp(cmd, "cqo") == 0) {machine_code[0] = 0x48;machine_code[1] = 0x99;*s = 2;}
+        else if (strcmp(cmd, "cdq") == 0) {machine_code[0] = 0x99;*s = 1;}
+        else if (strcmp(cmd, "cwd") == 0) {machine_code[0] = 0x66;machine_code[1] = 0x99;*s = 2;}
+        else if (strcmp(cmd, "cdqe") == 0) {machine_code[0] = 0x48;machine_code[1] = 0x98;*s = 2;}
+        else if (strcmp(cmd, "cwde") == 0) {machine_code[0] = 0x98;*s = 1;}
+        else if (strcmp(cmd, "cbw") == 0) {machine_code[0] = 0x66;machine_code[1] = 0x98;*s = 2;}
+        *pc += *s;
+    }
+
+    else if(is2arrin(zero_operand_instructions, zero_operand_instructions_COUNT, (char*)cmd)){
+
+        if(!strcmp(node->cmd, "syscall")){  machine_code[0] = 0x0F; machine_code[1] = 0x05; *s = 2;}
+        else if(!strcmp(cmd, "ret")){machine_code[0] = 0xC3;*s = 1;}
+        else if(!strcmp(cmd, "nop")){machine_code[0] = 0x90; *s = 1;}
+        else if (strcmp(cmd, "clc") == 0) {machine_code[0] = 0xF8;*s = 1;}
+        else if (strcmp(cmd, "stc") == 0) {machine_code[0] = 0xF9;*s = 1;}
+        else if (strcmp(cmd, "cmc") == 0) {machine_code[0] = 0xF5;*s = 1;}
+        else if (strcmp(cmd, "cld") == 0) {machine_code[0] = 0xFC;*s = 1;}
+        else if (strcmp(cmd, "std") == 0) {machine_code[0] = 0xFD;*s = 1;}
+        else if (strcmp(cmd, "cli") == 0) {machine_code[0] = 0xFA;*s = 1;}
+        else if (strcmp(cmd, "sti") == 0) {machine_code[0] = 0xFB;*s = 1;}
+        else if (strcmp(cmd, "lahf") == 0) {machine_code[0] = 0x9F;*s = 1;}
+        else if (strcmp(cmd, "sahf") == 0) {machine_code[0] = 0x9E;*s = 1;}
+        else if (strcmp(cmd, "pushf") == 0 || strcmp(cmd, "pushfq") == 0) {machine_code[0] = 0x9C;*s = 1;}
+        else if (strcmp(cmd, "popf") == 0 || strcmp(cmd, "popfq") == 0) {machine_code[0] = 0x9D;*s = 1;}
+        else if (strcmp(cmd, "leave") == 0) {machine_code[0] = 0xC9;*s = 1;}
+        else if (strcmp(cmd, "iret") == 0 || strcmp(cmd, "iretq") == 0) {machine_code[0] = 0xCF;*s = 1;}
+        else if (strcmp(cmd, "cpuid") == 0) {machine_code[0] = 0x0F;machine_code[1] = 0xA2;*s = 2;}
+        else if (strcmp(cmd, "hlt") == 0) {machine_code[0] = 0xF4;*s = 1;}
+        else if (strcmp(cmd, "wait") == 0 || strcmp(cmd, "fwait") == 0) {machine_code[0] = 0x9B;*s = 1;}
+        else if (strcmp(cmd, "pause") == 0) {machine_code[0] = 0xF3;machine_code[1] = 0x90;*s = 2;}
+        else if (strcmp(cmd, "ud2") == 0) {machine_code[0] = 0x0F;machine_code[1] = 0x0B;*s = 2;}
+        *pc += *s;
+    }
+
+
+    else if(!strcmp(cmd, "lea")){
+        if (a->type == O_REG64 && b->type == O_MEM) {
+            uint8_t reg = find_reg64_index(a->reg);
+            AddrExpr *mem = &b->addr;
+
+
+            node->ins.pc = *pc;
+            *s = encode_inst_rm_rm(machine_code, reg, mem, 64, 0x8D, 0, 0);
+            *pc += *s;
+            
+        }
+        
+    }
+
+
+    else if (!strcmp("xchg", cmd)) {
+
+        uint8_t size = 0;
+        uint8_t opcode = 0;
+
+        if (a->type == O_REG64 && b->type == O_REG64) { size = 64; opcode = 0x87;}
+        else if (a->type == O_REG32 && b->type == O_REG32) { size = 32; opcode = 0x87;}
+        else if (a->type == O_REG16 && b->type == O_REG16) {size = 16;opcode = 0x87;}
+        else if (a->type == O_REG8 && b->type == O_REG8) {size = 8;opcode = 0x86;}
+
+        /* reg, reg */
+        if (size) {
+            uint8_t rm = reg_index(a);
+            uint8_t reg = reg_index(b);
+
+            node->ins.pc = *pc;
+            *s = encode_xchg_reg_reg(machine_code, rm, reg, size);
+            *pc += *s;
+        }
+
+        /* reg, mem / mem, reg */
+        else if ((a->type == O_REG64 && b->type == O_MEM) ||
+                (a->type == O_MEM && b->type == O_REG64) ||
+                (a->type == O_REG32 && b->type == O_MEM) ||
+                (a->type == O_MEM && b->type == O_REG32) ||
+                (a->type == O_REG16 && b->type == O_MEM) ||
+                (a->type == O_MEM && b->type == O_REG16) ||
+                (a->type == O_REG8  && b->type == O_MEM) ||
+                (a->type == O_MEM && b->type == O_REG8)) {
+
+            int reg_is_a = (a->type != O_MEM);
+            Operand *r = reg_is_a ? a : b;
+            Operand *m = reg_is_a ? b : a;
+
+            uint8_t opcode = 0x87;
+
+            size = operand_bits(r);
+            if(size == 8) opcode --; 
+
+            uint8_t reg = reg_index(r);
+
+            node->ins.pc = *pc;
+            *s = encode_inst_rm_rm( machine_code, reg, &m->addr, size, opcode, 0, 0);
+            *pc += *s;
+        }
+    }
+
+
     // SSE XMM register instructions
-    if (!strcasecmp(cmd, "movaps") ||
-        !strcasecmp(cmd, "movups") ||
-        !strcasecmp(cmd, "xorps")  ||
-        !strcasecmp(cmd, "andps")  ||
-        !strcasecmp(cmd, "andnps") ||
-        !strcasecmp(cmd, "orps")   ||
-        !strcasecmp(cmd, "addps")  ||
-        !strcasecmp(cmd, "subps")  ||
-        !strcasecmp(cmd, "mulps")  ||
-        !strcasecmp(cmd, "divps")) {
+    if (!strcmp(cmd, "movaps") ||
+        !strcmp(cmd, "movups") ||
+        !strcmp(cmd, "xorps")  ||
+        !strcmp(cmd, "andps")  ||
+        !strcmp(cmd, "andnps") ||
+        !strcmp(cmd, "orps")   ||
+        !strcmp(cmd, "addps")  ||
+        !strcmp(cmd, "subps")  ||
+        !strcmp(cmd, "mulps")  ||
+        !strcmp(cmd, "divps")) {
 
         if(!sse_defined) {fprintf(stderr, "AmmAsm:%d: Warn: program uses SSE, but current CPU does't support it(might give #UD)\n", node->line);}
-        uint8_t opcode = 0;
-        int store = 0;
 
-        if (!strcasecmp(cmd, "movaps")) opcode = 0x28;
-        else if (!strcasecmp(cmd, "movups")) opcode = 0x10;
-        else if (!strcasecmp(cmd, "xorps")) opcode = 0x57;
-        else if (!strcasecmp(cmd, "andps")) opcode = 0x54;
-        else if (!strcasecmp(cmd, "andnps")) opcode = 0x55;
-        else if (!strcasecmp(cmd, "orps")) opcode = 0x56;
-        else if (!strcasecmp(cmd, "addps")) opcode = 0x58;
-        else if (!strcasecmp(cmd, "mulps")) opcode = 0x59;
-        else if (!strcasecmp(cmd, "subps")) opcode = 0x5C;
-        else if (!strcasecmp(cmd, "divps")) opcode = 0x5E;
+        static const SseInsn sse_table[] = {
+            {"addps",  0x58},
+            {"andnps", 0x55},
+            {"andps",  0x54},
+            {"divps",  0x5E},
+            {"movaps", 0x28},
+            {"movups", 0x10},
+            {"mulps",  0x59},
+            {"orps",   0x56},
+            {"subps",  0x5C},
+            {"xorps",  0x57},
 
-        // xmm, xmm
+        };
+
+        int sse_idx = find_ins_idx(cmd, (sizeof(sse_table) / sizeof(sse_table[0])), sse_table);
+
+
+        if (!sse_defined) {fprintf(stderr,"AmmAsm:%d: Warn: program uses SSE, but current CPU doesn't support it (might give #UD)\n", node->line);}
+
+        uint8_t opcode = sse_table[sse_idx].opcode;
+
+        // XMM, XMM
         if (a->type == O_XMM && b->type == O_XMM) {
-
             node->ins.pc = *pc;
 
             *s = encode_two_byte_opcode_reg( machine_code, opcode, find_xmm_index(a->reg), find_xmm_index(b->reg), 128, 0);
@@ -1776,7 +1242,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
 
 
         // xmm, [mem]
-        if (a->type == O_XMM && b->type == O_MEM) {
+        else if (a->type == O_XMM && b->type == O_MEM) {
             node->ins.pc = *pc;
             *s = encode_inst_reg_rm2( machine_code, opcode, find_xmm_index(a->reg), &b->addr, 128, 0);
             *pc += *s;
@@ -1784,7 +1250,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
 
 
         // [mem], xmm
-        if (!strcasecmp(cmd, "movaps") || !strcasecmp(cmd, "movups")) {
+        else if (!strcasecmp(cmd, "movaps") || !strcasecmp(cmd, "movups")) {
             if (a->type == O_MEM && b->type == O_XMM) {
                 node->ins.pc = *pc;
                 *s = encode_inst_reg_rm2( machine_code, opcode + 1, find_xmm_index(b->reg), &a->addr, 128, 0);
@@ -1792,129 +1258,77 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
             }
         }
     }
+    
 
 
-    // SSE2 XMM register instructions
-    if (!strcasecmp(cmd, "movdqa") ||
-        !strcasecmp(cmd, "movdqu") ||
-        !strcasecmp(cmd, "paddb")  ||
-        !strcasecmp(cmd, "paddw")  ||
-        !strcasecmp(cmd, "paddd")  ||
-        !strcasecmp(cmd, "psubb")  ||
-        !strcasecmp(cmd, "psubw")  ||
-        !strcasecmp(cmd, "psubd")  ||
-        !strcasecmp(cmd, "pand")   ||
-        !strcasecmp(cmd, "pandn")  ||
-        !strcasecmp(cmd, "por")    ||
-        !strcasecmp(cmd, "pxor")   ||
-        !strcasecmp(cmd, "pcmpeqb")||
-        !strcasecmp(cmd, "pcmpeqw")||
-        !strcasecmp(cmd, "pcmpeqd")||
-        !strcasecmp(cmd, "pcmpgtb")||
-        !strcasecmp(cmd, "pcmpgtw")||
-        !strcasecmp(cmd, "pcmpgtd")   ||
-        !strcasecmp(cmd, "punpcklbw") ||
-        !strcasecmp(cmd, "punpcklwd") ||
-        !strcasecmp(cmd, "punpckldq") ||
-        !strcasecmp(cmd, "punpcklqdq")||
-
-        !strcasecmp(cmd, "punpckhbw") ||
-        !strcasecmp(cmd, "punpckhwd") ||
-        !strcasecmp(cmd, "punpckhdq") ||
-        !strcasecmp(cmd, "punpckhqdq")||
-        !strcasecmp(cmd, "pmovmskb")  ||
-
-        !strcasecmp(cmd, "packsswb")  ||
-        !strcasecmp(cmd, "packssdw")  ||
-        !strcasecmp(cmd, "packuswb")  ||
-
-        !strcasecmp(cmd, "pmaxub")    ||
-        !strcasecmp(cmd, "pminub")    ||
-        !strcasecmp(cmd, "pmaxsw")    ||
-        !strcasecmp(cmd, "pminsw")    ||
-
-
-        // 0F 71/72/73
-        !strcasecmp(cmd, "psllw")     ||
-        !strcasecmp(cmd, "pslld")     ||
-        !strcasecmp(cmd, "psllq")     ||
-
-        !strcasecmp(cmd, "psrlw")     ||
-        !strcasecmp(cmd, "psrld")     ||
-        !strcasecmp(cmd, "psrlq")     ||
-
-        !strcasecmp(cmd, "psraw")     ||
-        !strcasecmp(cmd, "psrad")     ||
-        // only xmm, imm8
-        !strcasecmp(cmd, "psrldq")    ||
-        !strcasecmp(cmd, "pslldq")){
-
-        if(!sse2_defined) {fprintf(stderr, "AmmAsm:%d: Warn: program uses SSE2, but current CPU does't support it(might give #UD)\n", node->line);}
-
+    // SSE2 XMM register instructions (old version)
+    if ((!strcmp("movdqa", cmd) || !strcmp("movdqu", cmd)) || cmd[0] == 'p'){
         uint8_t opcode = 0;
         uint8_t prefix = 0x66;
         uint8_t group_digit = 0;
 
-        if      (!strcasecmp(cmd, "movdqa"))  opcode = 0x6F;
-        else if (!strcasecmp(cmd, "movdqu"))  { opcode = 0x6F; prefix = 0xF3; }
+        if      (!strcmp(cmd, "movdqa"))  opcode = 0x6F;
+        else if (!strcmp(cmd, "movdqu"))  { opcode = 0x6F; prefix = 0xF3; }
 
-        else if (!strcasecmp(cmd, "paddb"))   opcode = 0xFC;
-        else if (!strcasecmp(cmd, "paddw"))   opcode = 0xFD;
-        else if (!strcasecmp(cmd, "paddd"))   opcode = 0xFE;
+        else if (!strcmp(cmd, "paddb"))   opcode = 0xFC;
+        else if (!strcmp(cmd, "paddw"))   opcode = 0xFD;
+        else if (!strcmp(cmd, "paddd"))   opcode = 0xFE;
 
-        else if (!strcasecmp(cmd, "psubb"))   opcode = 0xF8;
-        else if (!strcasecmp(cmd, "psubw"))   opcode = 0xF9;
-        else if (!strcasecmp(cmd, "psubd"))   opcode = 0xFA;
+        else if (!strcmp(cmd, "psubb"))   opcode = 0xF8;
+        else if (!strcmp(cmd, "psubw"))   opcode = 0xF9;
+        else if (!strcmp(cmd, "psubd"))   opcode = 0xFA;
 
-        else if (!strcasecmp(cmd, "pand"))    opcode = 0xDB;
-        else if (!strcasecmp(cmd, "pandn"))   opcode = 0xDF;
-        else if (!strcasecmp(cmd, "por"))     opcode = 0xEB;
-        else if (!strcasecmp(cmd, "pxor"))    opcode = 0xEF;
+        else if (!strcmp(cmd, "pand"))    opcode = 0xDB;
+        else if (!strcmp(cmd, "pandn"))   opcode = 0xDF;
+        else if (!strcmp(cmd, "por"))     opcode = 0xEB;
+        else if (!strcmp(cmd, "pxor"))    opcode = 0xEF;
 
-        else if (!strcasecmp(cmd, "pcmpeqb")) opcode = 0x74;
-        else if (!strcasecmp(cmd, "pcmpeqw")) opcode = 0x75;
-        else if (!strcasecmp(cmd, "pcmpeqd")) opcode = 0x76;
+        else if (!strcmp(cmd, "pcmpeqb")) opcode = 0x74;
+        else if (!strcmp(cmd, "pcmpeqw")) opcode = 0x75;
+        else if (!strcmp(cmd, "pcmpeqd")) opcode = 0x76;
 
-        else if (!strcasecmp(cmd, "pcmpgtb")) opcode = 0x64;
-        else if (!strcasecmp(cmd, "pcmpgtw")) opcode = 0x65;
-        else if (!strcasecmp(cmd, "pcmpgtd")) opcode = 0x66;
-        else if (!strcasecmp(cmd, "punpcklbw")) opcode = 0x60;
+        else if (!strcmp(cmd, "pcmpgtb")) opcode = 0x64;
+        else if (!strcmp(cmd, "pcmpgtw")) opcode = 0x65;
+        else if (!strcmp(cmd, "pcmpgtd")) opcode = 0x66;
+        else if (!strcmp(cmd, "punpcklbw")) opcode = 0x60;
         
-        else if (!strcasecmp(cmd, "punpcklwd")) opcode = 0x61;
-        else if (!strcasecmp(cmd, "punpckldq")) opcode = 0x62;
-        else if (!strcasecmp(cmd, "punpcklqdq"))opcode = 0x6C;
+        else if (!strcmp(cmd, "punpcklwd")) opcode = 0x61;
+        else if (!strcmp(cmd, "punpckldq")) opcode = 0x62;
+        else if (!strcmp(cmd, "punpcklqdq"))opcode = 0x6C;
 
-        else if (!strcasecmp(cmd, "punpckhbw")) opcode = 0x68;
-        else if (!strcasecmp(cmd, "punpckhwd")) opcode = 0x69;
-        else if (!strcasecmp(cmd, "punpckhdq")) opcode = 0x6A;
-        else if (!strcasecmp(cmd, "punpckhqdq"))opcode = 0x6D;
+        else if (!strcmp(cmd, "punpckhbw")) opcode = 0x68;
+        else if (!strcmp(cmd, "punpckhwd")) opcode = 0x69;
+        else if (!strcmp(cmd, "punpckhdq")) opcode = 0x6A;
+        else if (!strcmp(cmd, "punpckhqdq"))opcode = 0x6D;
 
-        else if (!strcasecmp(cmd, "packsswb"))  opcode = 0x63;
-        else if (!strcasecmp(cmd, "packuswb"))  opcode = 0x67;
-        else if (!strcasecmp(cmd, "packssdw"))  opcode = 0x6B;
+        else if (!strcmp(cmd, "packsswb"))  opcode = 0x63;
+        else if (!strcmp(cmd, "packuswb"))  opcode = 0x67;
+        else if (!strcmp(cmd, "packssdw"))  opcode = 0x6B;
 
-        else if (!strcasecmp(cmd, "pmaxub"))    opcode = 0xDE;
-        else if (!strcasecmp(cmd, "pminub"))    opcode = 0xDA;
-        else if (!strcasecmp(cmd, "pmaxsw"))    opcode = 0xEE;
-        else if (!strcasecmp(cmd, "pminsw"))    opcode = 0xEA;
+        else if (!strcmp(cmd, "pmaxub"))    opcode = 0xDE;
+        else if (!strcmp(cmd, "pminub"))    opcode = 0xDA;
+        else if (!strcmp(cmd, "pmaxsw"))    opcode = 0xEE;
+        else if (!strcmp(cmd, "pminsw"))    opcode = 0xEA;
 
-        else if (!strcasecmp(cmd, "psllw"))     {opcode = 0xF1; group_digit = 6;}
-        else if (!strcasecmp(cmd, "pslld"))     {opcode = 0xF2; group_digit = 6;}
-        else if (!strcasecmp(cmd, "psllq"))     {opcode = 0xF3; group_digit = 6;}
+        else if (!strcmp(cmd, "psllw"))     {opcode = 0xF1; group_digit = 6;}
+        else if (!strcmp(cmd, "pslld"))     {opcode = 0xF2; group_digit = 6;}
+        else if (!strcmp(cmd, "psllq"))     {opcode = 0xF3; group_digit = 6;}
 
-        else if (!strcasecmp(cmd, "psrlw"))     {opcode = 0xD1; group_digit = 2;}
-        else if (!strcasecmp(cmd, "psrld"))     {opcode = 0xD2; group_digit = 2;}
-        else if (!strcasecmp(cmd, "psrlq"))     {opcode = 0xD3; group_digit = 2;}
+        else if (!strcmp(cmd, "psrlw"))     {opcode = 0xD1; group_digit = 2;}
+        else if (!strcmp(cmd, "psrld"))     {opcode = 0xD2; group_digit = 2;}
+        else if (!strcmp(cmd, "psrlq"))     {opcode = 0xD3; group_digit = 2;}
 
-        else if (!strcasecmp(cmd, "pslldq")) group_digit = 7;
-        else if (!strcasecmp(cmd, "psrldq")) group_digit = 3;
+        else if (!strcmp(cmd, "pslldq")) group_digit = 7;
+        else if (!strcmp(cmd, "psrldq")) group_digit = 3;
 
-        else if (!strcasecmp(cmd, "pmovmskb"))  opcode = 0xD7;
-        else if (!strcasecmp(cmd, "psraw"))     {opcode = 0xE1; group_digit = 4;}
-        else if (!strcasecmp(cmd, "psrad"))     {opcode = 0xE2; group_digit = 4;}
+        else if (!strcmp(cmd, "pmovmskb"))  opcode = 0xD7;
+        else if (!strcmp(cmd, "psraw"))     {opcode = 0xE1; group_digit = 4;}
+        else if (!strcmp(cmd, "psrad"))     {opcode = 0xE2; group_digit = 4;}
+        else goto skip;
+        if(!sse2_defined) {fprintf(stderr, "AmmAsm:%d: Warn: program uses SSE2, but current CPU does't support it(might give #UD)\n", node->line);}
 
         // pmovmskb r32, xmm
-        if (!strcasecmp(cmd, "pmovmskb")) {
+        if (!strcmp(cmd, "pmovmskb")) {
 
             if (a->type == O_REG32 && b->type == O_XMM) {
                 node->ins.pc = *pc;
@@ -1930,8 +1344,8 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         }
 
         // movdqa / movdqu
-        else if (!strcasecmp(cmd, "movdqa") ||
-                !strcasecmp(cmd, "movdqu")) {
+        else if (!strcmp(cmd, "movdqa") ||
+                !strcmp(cmd, "movdqu")) {
 
             // xmm, xmm
             if (a->type == O_XMM && b->type == O_XMM) {
@@ -1956,8 +1370,8 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         }
 
         // xmm, imm8 (group 12)
-        else if((!strcasecmp(cmd, "psrlw") || !strcasecmp(cmd, "psraw") || 
-                 !strcasecmp(cmd, "psllw")) && b->type == O_IMM){
+        else if((!strcmp(cmd, "psrlw") || !strcmp(cmd, "psraw") || 
+                 !strcmp(cmd, "psllw")) && b->type == O_IMM){
             
             // pack you intel, what is this? I done, I switch to ARM!
             node->ins.pc = *pc;
@@ -1966,8 +1380,8 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         }
 
         // xmm, imm8 (group 13)
-        else if((!strcasecmp(cmd, "psrld") || !strcasecmp(cmd, "psrad") || 
-                 !strcasecmp(cmd, "pslld")) && b->type == O_IMM){
+        else if((!strcmp(cmd, "psrld") || !strcmp(cmd, "psrad") || 
+                 !strcmp(cmd, "pslld")) && b->type == O_IMM){
             
             // pack you intel, what is this? I done, I switch to ARM!
             node->ins.pc = *pc;
@@ -1976,8 +1390,8 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         }
 
         // xmm, imm8 (group 14)
-        else if((!strcasecmp(cmd, "psrlq") || !strcasecmp(cmd, "psrldq") || 
-                 !strcasecmp(cmd, "psllq") || !strcasecmp(cmd, "pslldq")) && b->type == O_IMM){
+        else if((!strcmp(cmd, "psrlq") || !strcmp(cmd, "psrldq") || 
+                 !strcmp(cmd, "psllq") || !strcmp(cmd, "pslldq")) && b->type == O_IMM){
             
             // pack you intel, what is this? I done, I switch to ARM!
             node->ins.pc = *pc;
@@ -2000,59 +1414,140 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
             *pc += *s;
         }
 
+        else if (!strcmp(cmd, "movq")) {
+
+            // xmm, xmm
+            if (a->type == O_XMM && b->type == O_XMM) {
+                node->ins.pc = *pc;
+                *s = encode_two_byte_opcode_reg(machine_code, 0x7E, find_xmm_index(a->reg), find_xmm_index(b->reg), 128, 0xF3);
+                *pc += *s;
+            }
+
+            // xmm, [mem]
+            if (a->type == O_XMM && b->type == O_MEM) {
+                node->ins.pc = *pc;
+                *s = encode_inst_reg_rm2(machine_code, 0x7E, find_xmm_index(a->reg), &b->addr, 128, 0xF3);
+                *pc += *s;
+            }
+
+            // [mem], xmm
+            if (a->type == O_MEM && b->type == O_XMM) {
+                node->ins.pc = *pc;
+                *s = encode_inst_reg_rm2(machine_code, 0xD6, find_xmm_index(b->reg), &a->addr, 128, 0x66);
+                *pc += *s;
+            }
+
+            // xmm, r64
+            if (a->type == O_XMM && b->type == O_REG64) {
+                node->ins.pc = *pc;
+                *s = encode_xmm_or_r64__xmm_or_r64(machine_code, find_xmm_index(a->reg), find_reg64_index(b->reg), 0);
+                *pc += *s;
+            }
+
+            // r64, xmm
+            if (a->type == O_REG64 && b->type == O_XMM) {
+                node->ins.pc = *pc;
+                *s = encode_xmm_or_r64__xmm_or_r64(machine_code, find_reg64_index(a->reg), find_xmm_index(b->reg), 1);
+                *pc += *s;
+            }
+        }
 
     }
 
-    else if (!strcasecmp(cmd, "movq")) {
+skip:
 
-        // xmm, xmm
-        if (a->type == O_XMM && b->type == O_XMM) {
-            node->ins.pc = *pc;
-            *s = encode_two_byte_opcode_reg(machine_code, 0x7E, find_xmm_index(a->reg), find_xmm_index(b->reg), 128, 0xF3);
-            *pc += *s;
-        }
-
-        // xmm, [mem]
-        if (a->type == O_XMM && b->type == O_MEM) {
-            node->ins.pc = *pc;
-            *s = encode_inst_reg_rm2(machine_code, 0x7E, find_xmm_index(a->reg), &b->addr, 128, 0xF3);
-            *pc += *s;
-        }
-
-        // [mem], xmm
-        if (a->type == O_MEM && b->type == O_XMM) {
-            node->ins.pc = *pc;
-            *s = encode_inst_reg_rm2(machine_code, 0xD6, find_xmm_index(b->reg), &a->addr, 128, 0x66);
-            *pc += *s;
-        }
-
-        // xmm, r64
-        if (a->type == O_XMM && b->type == O_REG64) {
-            node->ins.pc = *pc;
-            *s = encode_xmm_or_r64__xmm_or_r64(machine_code, find_xmm_index(a->reg), find_reg64_index(b->reg), 0);
-            *pc += *s;
-        }
-
-        // r64, xmm
-        if (a->type == O_REG64 && b->type == O_XMM) {
-            node->ins.pc = *pc;
-            *s = encode_xmm_or_r64__xmm_or_r64(machine_code, find_reg64_index(a->reg), find_xmm_index(b->reg), 1);
-            *pc += *s;
-        }
-    }
 
     // весь ад здесь
-    // AVX1 / AVX2 / AVX-512
-    else if(cmd[0] == 'v') {
+    // AVX1 / AVX2 / AVX-512 (Refactored version)
+    if(cmd[0] == 'v') {
+        
         if(!avx2_defined) {fprintf(stderr, "AmmAsm:%d: Warn: program uses AVX2, but current CPU does't support it(might give #UD)\n", node->line);}
         if(!avx_defined) {fprintf(stderr, "AmmAsm:%d: Warn: program uses AVX, but current CPU does't support it(might give #UD)\n", node->line);}
-        uint8_t opcode = 0;
-        uint8_t vex_pp = VEX_PP_NONE;
-        uint8_t vex_map = VEX_MAP_0F;
-        uint8_t only_can_be_evex = 0;
 
-        uint8_t evex_pp = EVEX_PP_NONE;
-        uint8_t evex_map = EVEX_MAP_0F;
+
+        static const AvxInsn avx_table[] = {
+            {"vaddpd",  0x58, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 1, TUPLE_FULL, 0},
+            {"vaddps",  0x58, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vaddsd",  0x58, VEX_PP_F2,  VEX_MAP_0F, VEX_PP_F2,  VEX_MAP_0F, 3, 1, TUPLE_T1,   0},
+            {"vaddss",  0x58, VEX_PP_F3,  VEX_MAP_0F, VEX_PP_F3,  VEX_MAP_0F, 3, 0, TUPLE_T1,   0},
+            {"vandpd",  0x54, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 1, TUPLE_FULL, 0},
+            {"vandps",  0x54, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vcvtdq2ps",  0x5B, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 2, 0, TUPLE_HALF, 0},
+            {"vcvtpd2ps",  0x5A, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 2, 1, TUPLE_HALF, 0},
+            {"vcvtps2dq",  0x5B, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 2, 0, TUPLE_HALF, 0},
+            {"vcvtps2pd",  0x5A, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 2, 0, TUPLE_HALF, 0},
+            {"vcvttps2dq", 0x5B, VEX_PP_F3,  VEX_MAP_0F, VEX_PP_F3,  VEX_MAP_0F, 2, 0, TUPLE_HALF, 0},
+            {"vdivpd",  0x5E, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 1, TUPLE_FULL, 0},
+            {"vdivps",  0x5E, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vmaxpd",  0x5F, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 1, TUPLE_FULL, 0},
+            {"vmaxps",  0x5F, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vmaxsh",  0x5F, 0, 0, EVEX_PP_F3, EVEX_MAP_UNNAMED5, 3, 0, TUPLE_T1, 1},
+            {"vminpd",  0x5D, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 1, TUPLE_FULL, 0},
+            {"vminps",  0x5D, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vminsh",  0x5D, 0, 0, EVEX_PP_F3, EVEX_MAP_UNNAMED5, 3, 0, TUPLE_T1, 1},
+            {"vmovapd", 0x28, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 2, 1, TUPLE_FULL, 0},
+            {"vmovaps", 0x28, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 2, 0, TUPLE_FULL, 0},
+            {"vmovdqa", 0x6F, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 2, 1, TUPLE_FULL, 0},
+            {"vmovdqu", 0x6F, VEX_PP_F3,  VEX_MAP_0F, VEX_PP_F3,  VEX_MAP_0F, 2, 0, TUPLE_FULL, 0},
+            {"vmovupd", 0x10, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 2, 1, TUPLE_FULL, 0},
+            {"vmovups", 0x10, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 2, 0, TUPLE_FULL, 0},
+            {"vmulpd",  0x59, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 1, TUPLE_FULL, 0},
+            {"vmulps",  0x59, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vmulsd",  0x59, VEX_PP_F2,  VEX_MAP_0F, VEX_PP_F2,  VEX_MAP_0F, 3, 1, TUPLE_T1,   0},
+            {"vmulss",  0x59, VEX_PP_F3,  VEX_MAP_0F, VEX_PP_F3,  VEX_MAP_0F, 3, 0, TUPLE_T1,   0},
+            {"vorpd",   0x56, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 1, TUPLE_FULL, 0},
+            {"vorps",   0x56, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vpackssdw", 0x6B, VEX_PP_66, VEX_MAP_0F, VEX_PP_66, VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vpacksswb", 0x63, VEX_PP_66, VEX_MAP_0F, VEX_PP_66, VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vpackuswb", 0x67, VEX_PP_66, VEX_MAP_0F, VEX_PP_66, VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vpaddb",  0xFC, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vpaddd",  0xFE, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vpaddq",  0xD4, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 1, TUPLE_FULL, 0},
+            {"vpaddw",  0xFD, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vpand",   0xDB, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vpcmpeqd",0x76, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vpcmpgtd",0x66, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vpmaxsw", 0xEE, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vpmaxub", 0xDE, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vpminsw", 0xEA, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vpminub", 0xDA, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vpor",    0xEB, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vpslld",  0xF2, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vpsllq",  0xF3, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 1, TUPLE_FULL, 0},
+            {"vpsllw",  0xF1, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vpsrad",  0xE2, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vpsraw",  0xE1, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vpsrld",  0xD2, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vpsrlq",  0xD3, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 1, TUPLE_FULL, 0},
+            {"vpsrlw",  0xD1, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vpsubb",  0xF8, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vpsubd",  0xFA, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vpsubw",  0xF9, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vpunpckhbw", 0x68, VEX_PP_66, VEX_MAP_0F, VEX_PP_66, VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vpunpckhdq", 0x6A, VEX_PP_66, VEX_MAP_0F, VEX_PP_66, VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vpunpckhwd", 0x69, VEX_PP_66, VEX_MAP_0F, VEX_PP_66, VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vpunpcklbw", 0x60, VEX_PP_66, VEX_MAP_0F, VEX_PP_66, VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vpunpckldq", 0x62, VEX_PP_66, VEX_MAP_0F, VEX_PP_66, VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vpunpcklwd", 0x61, VEX_PP_66, VEX_MAP_0F, VEX_PP_66, VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vpxor",   0xEF, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vsqrtpd", 0x51, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 2, 1, TUPLE_FULL, 0},
+            {"vsqrtps", 0x51, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 2, 0, TUPLE_FULL, 0},
+            {"vsubpd",  0x5C, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 1, TUPLE_FULL, 0},
+            {"vsubps",  0x5C, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vxorpd",  0x57, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 1, TUPLE_FULL, 0},
+            {"vxorps",  0x57, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+        };
+
+
+        const AvxInsn *insn = &avx_table[find_ins_idx(cmd, sizeof(avx_table) / sizeof(avx_table[0]), avx_table)];
+
+        uint8_t opcode = insn->opcode;
+        uint8_t vex_pp = insn->vex_pp;
+        uint8_t vex_map = insn->vex_map;
+        uint8_t only_can_be_evex = insn->only_evex;
+
+        uint8_t evex_pp = insn->evex_pp;
+        uint8_t evex_map = insn->evex_map;
         
         uint8_t evex_aaa = a->mask_reg;
         uint8_t evex_z   = a->z_reg;
@@ -2061,103 +1556,12 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
 
         uint8_t need_evex = 0;
 
-        uint8_t operands = 3;
+        uint8_t operands = insn->operands;
 
-        uint8_t W = 0;
+        uint8_t W = insn->W;
         
-        uint8_t typle = 0;  
+        uint8_t typle = insn->tuple;
 
-             if(!strcasecmp(cmd, "vaddps"))  { opcode = 0x58; vex_pp = evex_pp = VEX_PP_NONE; W = 0; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vaddpd"))  { opcode = 0x58; vex_pp = evex_pp = VEX_PP_66;  W = 1; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vsubps"))  { opcode = 0x5C; vex_pp = evex_pp = VEX_PP_NONE; W = 0; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vsubpd"))  { opcode = 0x5C; vex_pp = evex_pp = VEX_PP_66;  W = 1; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vmulps"))  { opcode = 0x59; vex_pp = evex_pp = VEX_PP_NONE; W = 0; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vmulpd"))  { opcode = 0x59; vex_pp = evex_pp = VEX_PP_66;  W = 1; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vdivps"))  { opcode = 0x5E; vex_pp = evex_pp = VEX_PP_NONE; W = 0; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vdivpd"))  { opcode = 0x5E; vex_pp = evex_pp = VEX_PP_66;  W = 1; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vmaxps"))  { opcode = 0x5F; vex_pp = evex_pp = VEX_PP_NONE; W = 0; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vmaxpd"))  { opcode = 0x5F; vex_pp = evex_pp = VEX_PP_66;  W = 1; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vminps"))  { opcode = 0x5D; vex_pp = evex_pp = VEX_PP_NONE; W = 0; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vminpd"))  { opcode = 0x5D; vex_pp = evex_pp = VEX_PP_66;  W = 1; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vsqrtps")) { opcode = 0x51; vex_pp = evex_pp = VEX_PP_NONE; operands = 2; W = 0; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vsqrtpd")) { opcode = 0x51; vex_pp = evex_pp = VEX_PP_66;  operands = 2; W = 1; typle = TUPLE_FULL; }
-
- 
-        else if(!strcasecmp(cmd, "vandps"))  { opcode = 0x54; vex_pp = evex_pp = VEX_PP_NONE; W = 0; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vandpd"))  { opcode = 0x54; vex_pp = evex_pp = VEX_PP_66;  W = 1; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vorps"))   { opcode = 0x56; vex_pp = evex_pp = VEX_PP_NONE; W = 0; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vorpd"))   { opcode = 0x56; vex_pp = evex_pp = VEX_PP_66;  W = 1; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vxorps"))  { opcode = 0x57; vex_pp = evex_pp = VEX_PP_NONE; W = 0; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vxorpd"))  { opcode = 0x57; vex_pp = evex_pp = VEX_PP_66;  W = 1; typle = TUPLE_FULL; }
-
-        else if(!strcasecmp(cmd, "vaddss"))  { opcode = 0x58; vex_pp = evex_pp = VEX_PP_F3; W = 0; typle = TUPLE_T1; }
-        else if(!strcasecmp(cmd, "vaddsd"))  { opcode = 0x58; vex_pp = evex_pp = VEX_PP_F2; W = 1; typle = TUPLE_T1; }
-        else if(!strcasecmp(cmd, "vmulss"))  { opcode = 0x59; vex_pp = evex_pp = VEX_PP_F3; W = 0; typle = TUPLE_T1; }
-        else if(!strcasecmp(cmd, "vmulsd"))  { opcode = 0x59; vex_pp = evex_pp = VEX_PP_F2; W = 1; typle = TUPLE_T1; }
-
-        else if(!strcasecmp(cmd, "vpaddb"))  { opcode = 0xFC; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vpaddw"))  { opcode = 0xFD; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vpaddd"))  { opcode = 0xFE; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; W =0; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vpaddq"))  { opcode = 0xD4; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; W =1; typle = TUPLE_FULL; }
-
-        else if(!strcasecmp(cmd, "vpand"))   { opcode = 0xDB; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vpor"))    { opcode = 0xEB; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vpxor"))   { opcode = 0xEF; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; typle = TUPLE_FULL; }
-
-        else if(!strcasecmp(cmd, "vpcmpeqd")){ opcode = 0x76; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vpcmpgtd")){ opcode = 0x66; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; typle = TUPLE_FULL; }
-
-     
-        else if(!strcasecmp(cmd, "vmovaps")) { opcode = 0x28; vex_pp = evex_pp = VEX_PP_NONE; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vmovapd")) { opcode = 0x28; vex_pp = evex_pp = VEX_PP_66;  W =1; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vmovups")) { opcode = 0x10; vex_pp = evex_pp = VEX_PP_NONE; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vmovupd")) { opcode = 0x10; vex_pp = evex_pp = VEX_PP_66;  W =1; typle = TUPLE_FULL; }
-
-        else if(!strcasecmp(cmd, "vmovdqa")) { opcode = 0x6F; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; W =1; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vmovdqu")) { opcode = 0x6F; vex_pp = evex_pp = VEX_PP_F3; vex_map = evex_map = VEX_MAP_0F; typle = TUPLE_FULL; }
-
-        else if(!strcasecmp(cmd, "vcvtdq2ps"))  { opcode = 0x5B; vex_pp = evex_pp = VEX_PP_NONE; typle = TUPLE_HALF; }
-        else if(!strcasecmp(cmd, "vcvtps2dq"))  { opcode = 0x5B; vex_pp = evex_pp = VEX_PP_66;  W =0; typle = TUPLE_HALF; }
-        else if(!strcasecmp(cmd, "vcvttps2dq")) { opcode = 0x5B; vex_pp = evex_pp = VEX_PP_F3;   typle = TUPLE_HALF; }
-        else if(!strcasecmp(cmd, "vcvtps2pd"))  { opcode = 0x5A; vex_pp = evex_pp = VEX_PP_NONE; typle = TUPLE_HALF; }
-        else if(!strcasecmp(cmd, "vcvtpd2ps"))  { opcode = 0x5A; vex_pp = evex_pp = VEX_PP_66;  W =1; typle = TUPLE_HALF; }
-
-        else if(!strcasecmp(cmd, "vpsubb"))   { opcode = 0xF8; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vpsubw"))   { opcode = 0xF9; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vpsubd"))   { opcode = 0xFA; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; typle = TUPLE_FULL; }
-
-        else if(!strcasecmp(cmd, "vpunpcklbw")) { opcode = 0x60; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vpunpcklwd")) { opcode = 0x61; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vpunpckldq")) { opcode = 0x62; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; W = 0; typle = TUPLE_FULL; }
-
-        else if(!strcasecmp(cmd, "vpunpckhbw")) { opcode = 0x68; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vpunpckhwd")) { opcode = 0x69; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vpunpckhdq")) { opcode = 0x6A; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; W =0; typle = TUPLE_FULL; }
-
-        else if(!strcasecmp(cmd, "vpacksswb")) { opcode = 0x63; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vpackuswb")) { opcode = 0x67; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vpackssdw")) { opcode = 0x6B; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; W =0; typle = TUPLE_FULL; }
-
-        else if(!strcasecmp(cmd, "vpmaxub")) { opcode = 0xDE; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vpminub")) { opcode = 0xDA; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vpmaxsw")) { opcode = 0xEE; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vpminsw")) { opcode = 0xEA; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; typle = TUPLE_FULL; }
-
-        else if(!strcasecmp(cmd, "vpsllw")) { opcode = 0xF1; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vpslld")) { opcode = 0xF2; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vpsllq")) { opcode = 0xF3; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; W=1; typle = TUPLE_FULL; }
-
-        else if(!strcasecmp(cmd, "vpsrlw")) { opcode = 0xD1; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vpsrld")) { opcode = 0xD2; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vpsrlq")) { opcode = 0xD3; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; W=1; typle = TUPLE_FULL; }
-
-        else if(!strcasecmp(cmd, "vpsraw")) { opcode = 0xE1; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; typle = TUPLE_FULL; }
-        else if(!strcasecmp(cmd, "vpsrad")) { opcode = 0xE2; vex_pp = evex_pp = VEX_PP_66; vex_map = evex_map = VEX_MAP_0F; typle = TUPLE_FULL; }
-
-        // AVX-512 FP16 (только EVEX, скаляры)
-        else if(!strcasecmp(cmd, "vminsh"))     { opcode = 0x5D; evex_map = EVEX_MAP_UNNAMED5; evex_pp = EVEX_PP_F3; evex_aaa = a->mask_reg; evex_z = a->z_reg; only_can_be_evex = 1; need_evex = 1; typle = TUPLE_T1; }
-        else if(!strcasecmp(cmd, "vmaxsh"))     { opcode = 0x5F; evex_map = EVEX_MAP_UNNAMED5; evex_pp = EVEX_PP_F3; evex_aaa = a->mask_reg; evex_z = a->z_reg; only_can_be_evex = 1; need_evex = 1; typle = TUPLE_T1; }    
-        
         // ============
         uint8_t ra = (a->type == O_XMM || a->type == O_YMM || a->type == O_ZMM) ? find_xmm_index(a->reg) : 0;
         uint8_t rb = (b->type == O_XMM || b->type == O_YMM || b->type == O_ZMM) ? find_xmm_index(b->reg) : 0;
@@ -2173,11 +1577,11 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         if(only_can_be_evex){
             if(!avx512_fp16_defined) {fprintf(stderr, "AmmAsm:%d: Warn: program uses AVX-512_fp16, but current CPU does't support it(might give #UD)\n", node->line);}
                 
-            if((!strcasecmp(cmd, "vminsh") || !strcasecmp(cmd, "vmaxsh")) && a->type != O_XMM){fprintf(stderr, "AmmAsm:%d: '%s' supports only xmm registers\n", node->line, node->cmd); exit(1);}
+            if((!strcmp(cmd, "vminsh") || !strcmp(cmd, "vmaxsh")) && a->type != O_XMM){fprintf(stderr, "AmmAsm:%d: '%s' supports only xmm registers\n", node->line, node->cmd); exit(1);}
 
             if((a->type == O_XMM && b->type == O_XMM && c->type == O_XMM)){
                 node->ins.pc = *pc;
-                *s = encode_avx512_xmm_xmm_xmm(machine_code, opcode, find_xmm_index(a->reg), 
+                *s = encode_avx512_reg_reg_reg(machine_code, opcode, find_xmm_index(a->reg), 
                     find_xmm_index(b->reg), find_xmm_index(c->reg),
                     evex_map, EVEX_XMM, evex_pp, W, evex_aaa, evex_z);
                 *pc += *s;
@@ -2185,7 +1589,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
 
             else if(a->type == O_XMM && b->type == O_XMM && c->type == O_MEM){
                 node->ins.pc = *pc;
-                *s = encode_avx512_xmm_xmm_rm( machine_code, opcode, find_xmm_index(a->reg), find_xmm_index(b->reg),
+                *s = encode_avx512_reg_reg_rm( machine_code, opcode, find_xmm_index(a->reg), find_xmm_index(b->reg),
                     &c->addr, evex_map, EVEX_XMM,
                     evex_pp, 0, evex_aaa, evex_z, eff_typle, broatcast);
                 *pc += *s;
@@ -2195,412 +1599,81 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         if(need_evex){
             if(!avx512f_defined) {fprintf(stderr, "AmmAsm:%d: Warn: program uses general AVX-512, but current CPU does't support it(might give #UD)\n", node->line);}
 
-            // xmm, xmm, xmm
-            if(a->type == O_XMM && b->type == O_XMM && (operands == 2 || c->type == O_XMM)){
+            // reg, reg, reg/none
+            if((a->type == O_XMM && b->type == O_XMM && (operands == 2 || c->type == O_XMM)) ||
+              (a->type == O_YMM && b->type == O_YMM && (operands == 2 || c->type == O_YMM))||
+              (a->type == O_ZMM && b->type == O_ZMM && (operands == 2 || c->type == O_ZMM))){
                 if(!avx512vl_defined) {fprintf(stderr, "AmmAsm:%d: Warn: program uses AVX-512_vl, but current CPU does't support it(might give #UD)\n", node->line);}
                 node->ins.pc = *pc;
-                *s = encode_avx512_xmm_xmm_xmm(machine_code, opcode, 
+                *s = encode_avx512_reg_reg_reg(machine_code, opcode, 
                     find_xmm_index(a->reg), 
                     (operands == 2) ?  0 : find_xmm_index(b->reg), 
                     (operands == 2) ?  find_xmm_index(b->reg) : find_xmm_index(c->reg),
-                    evex_map, EVEX_XMM, evex_pp, W, evex_aaa, evex_z);
+                    evex_map,
+                    a->type == O_XMM ? EVEX_XMM : 
+                    a->type == O_YMM ? EVEX_YMM : 
+                                       EVEX_ZMM, 
+                    evex_pp, W, evex_aaa, evex_z);
                 *pc += *s;
             }
 
-            // xmm, xmm, mem 
-            else if(a->type == O_XMM && ((operands == 2 && b->type == O_MEM) || (operands == 3 && b->type == O_XMM && c->type == O_MEM))){
+            // reg, reg/none, mem 
+            else if((a->type == O_XMM && ((operands == 2 && b->type == O_MEM) || (operands == 3 && b->type == O_XMM && c->type == O_MEM))) ||
+                    (a->type == O_YMM && ((operands == 2 && b->type == O_MEM) || (operands == 3 && b->type == O_YMM && c->type == O_MEM))) ||
+                    (a->type == O_ZMM && ((operands == 2 && b->type == O_MEM) || (operands == 3 && b->type == O_ZMM && c->type == O_MEM)))){
                 node->ins.pc = *pc;
                 AddrExpr *mem = (operands == 2) ? &b->addr : &c->addr; 
-                *s = encode_avx512_xmm_xmm_rm( machine_code, opcode, 
+                *s = encode_avx512_reg_reg_rm( machine_code, opcode, 
                     find_xmm_index(a->reg), 
                     (operands == 2) ? 0 : find_xmm_index(b->reg), 
                     mem,
-                    evex_map, EVEX_XMM,
+                    evex_map, 
+                    a->type == O_XMM ? EVEX_XMM : 
+                    a->type == O_YMM ? EVEX_YMM : 
+                                       EVEX_ZMM,
                     evex_pp, W, evex_aaa, evex_z, eff_typle, broatcast);
                 *pc += *s;
             }
 
-            // ymm, ymm, ymm
-            else if(a->type == O_YMM && b->type == O_YMM && (operands == 2 || c->type == O_YMM)){
-                if(!avx512vl_defined) {fprintf(stderr, "AmmAsm:%d: Warn: program uses AVX-512_vl, but current CPU does't support it(might give #UD)\n", node->line);}
-                node->ins.pc = *pc;
-                *s = encode_avx512_ymm_ymm_ymm(machine_code, opcode, 
-                    find_xmm_index(a->reg), 
-                    (operands == 2) ?  0 : find_xmm_index(b->reg), 
-                    (operands == 2) ?  find_xmm_index(b->reg) : find_xmm_index(c->reg),
-                    evex_map, EVEX_YMM, evex_pp, W, evex_aaa, evex_z);
-                *pc += *s;
-            }
-
-            // ymm, ymm, mem
-            else if(a->type == O_YMM && ((operands == 2 && b->type == O_MEM) || (operands == 3 && b->type == O_YMM && c->type == O_MEM))){
-                node->ins.pc = *pc;
-                AddrExpr *mem = (operands == 2) ? &b->addr : &c->addr; 
-                *s = encode_avx512_ymm_ymm_rm( machine_code, opcode, 
-                    find_xmm_index(a->reg), 
-                    (operands == 2) ? 0 : find_xmm_index(b->reg), 
-                    mem,
-                    evex_map, EVEX_YMM,
-                    evex_pp, W, evex_aaa, evex_z, eff_typle, broatcast);
-                *pc += *s;
-            }        
-
-            // zmm, zmm, zmm
-            else if((a->type == O_ZMM && b->type == O_ZMM && (operands == 2 || c->type == O_ZMM))){
-                node->ins.pc = *pc;
-                *s = encode_avx512_zmm_zmm_zmm(machine_code, opcode, 
-                    find_xmm_index(a->reg), 
-                    (operands == 2) ?  0 : find_xmm_index(b->reg), 
-                    (operands == 2) ?  find_xmm_index(b->reg) : find_xmm_index(c->reg),
-                    evex_map, EVEX_ZMM, evex_pp, W, evex_aaa, evex_z);
-                *pc += *s;
-            } 
-
-            // zmm, zmm, mem
-            else if(a->type == O_ZMM && ((operands == 2 && b->type == O_MEM) || (operands == 3 && b->type == O_ZMM && c->type == O_MEM))){
-                node->ins.pc = *pc;
-                AddrExpr *mem = (operands == 2) ? &b->addr : &c->addr; 
-                *s = encode_avx512_zmm_zmm_rm( machine_code, opcode, 
-                    find_xmm_index(a->reg), 
-                    (operands == 2) ? 0 : find_xmm_index(b->reg), 
-                    mem,
-                    evex_map, EVEX_ZMM,
-                    evex_pp, W, evex_aaa, evex_z, eff_typle, broatcast);
-                *pc += *s;
-            }
         }
 
-        // pack you intel, go hell
+        // hibrid version
         else{ // AVX
             // xmm/ymm, xmm/ymm, xmm/ymm
             if(((a->type == O_XMM && find_xmm_index(a->reg) >= 16)) || ((b->type == O_XMM && find_xmm_index(b->reg) >= 16)) || ((c->type == O_XMM && find_xmm_index(c->reg) >= 16))) {fprintf(stderr, "AmmAsm:%d: AVX/AVX2 can use only xmm0-xmm15 registers\n", node->line);exit(1);}
             if(((a->type == O_YMM && find_xmm_index(a->reg) >= 16)) || ((b->type == O_YMM && find_xmm_index(b->reg) >= 16)) || ((c->type == O_YMM && find_xmm_index(c->reg) >= 16))) {fprintf(stderr, "AmmAsm:%d: AVX/AVX2 can use only ymm0-ymm15 registers\n", node->line);exit(1);}
             
-            if(a->type == O_XMM && b->type == O_XMM && (operands == 2 || c->type == O_XMM)){
+            if((a->type == O_XMM && b->type == O_XMM && (operands == 2 || c->type == O_XMM)) ||
+               (a->type == O_YMM && b->type == O_YMM && (operands == 2 || c->type == O_YMM))||
+               (a->type == O_ZMM && b->type == O_ZMM && (operands == 2 || c->type == O_ZMM))){
                 node->ins.pc = *pc;
-                *s = encode_avx_xmm_xmm_xmm(machine_code, opcode, 
+                *s = encode_avx_reg_reg_reg(machine_code, opcode, 
                     find_xmm_index(a->reg), 
                     (operands == 2) ?  0 : find_xmm_index(b->reg), 
                     (operands == 2) ?  find_xmm_index(b->reg) : find_xmm_index(c->reg),
-                    VEX_XMM, vex_pp, vex_map);
+                    a->type == O_XMM ? VEX_XMM : 
+                    a->type == O_YMM ? VEX_YMM : 0,
+                    vex_pp, vex_map);
                 *pc += *s;
             }
 
-            else if(a->type == O_XMM && ((operands == 2 && b->type == O_MEM) || (operands == 3 && b->type == O_XMM && c->type == O_MEM))){
+            else if((a->type == O_XMM && ((operands == 2 && b->type == O_MEM) || (operands == 3 && b->type == O_XMM && c->type == O_MEM))) ||
+                    (a->type == O_YMM && ((operands == 2 && b->type == O_MEM) || (operands == 3 && b->type == O_YMM && c->type == O_MEM)))){
+
                 node->ins.pc = *pc;
                 AddrExpr *mem = (operands == 2) ? &b->addr : &c->addr; 
-                *s = encode_avx_xmm_xmm_mem(machine_code, opcode, 
+                *s = encode_avx_reg_reg_mem(machine_code, opcode, 
                     find_xmm_index(a->reg), 
                     (operands == 2) ? 0 : find_xmm_index(b->reg), 
                     mem,
-                    VEX_XMM, vex_pp, vex_map);
-                *pc += *s;
-            }
-
-            if(a->type == O_YMM && b->type == O_YMM && (operands == 2 || c->type == O_YMM)){
-                node->ins.pc = *pc;
-                *s = encode_avx_ymm_ymm_ymm(machine_code, opcode, 
-                    find_xmm_index(a->reg), 
-                    (operands == 2) ?  0 : find_xmm_index(b->reg), 
-                    (operands == 2) ?  find_xmm_index(b->reg) : find_xmm_index(c->reg),
-                    VEX_YMM, vex_pp, vex_map);
-                *pc += *s;
-            }
-
-            else if(a->type == O_YMM && ((operands == 2 && b->type == O_MEM) || (operands == 3 && b->type == O_YMM && c->type == O_MEM))){
-                node->ins.pc = *pc;
-                AddrExpr *mem = (operands == 2) ? &b->addr : &c->addr; 
-                *s = encode_avx_ymm_ymm_mem(machine_code, opcode, 
-                    find_xmm_index(a->reg), 
-                    (operands == 2) ? 0 : find_xmm_index(b->reg), 
-                    mem,
-                    VEX_YMM, vex_pp, vex_map);
+                    a->type == O_XMM ? VEX_XMM : 
+                    a->type == O_YMM ? VEX_YMM : 0,
+                    vex_pp, vex_map);
                 *pc += *s;
             }
         }
     }
 
-
-    // lea - Load Effective Address
-
-    else if(!strcasecmp(cmd, "lea")){
-        if (a->type == O_REG64 && b->type == O_MEM) {
-            uint8_t reg = find_reg64_index(a->reg);
-            AddrExpr *mem = &b->addr;
-
-
-            node->ins.pc = *pc;
-            *s = encode_inst_rm_rm(machine_code, reg, mem, 64, 0x8D, 0, 0);
-            *pc += *s;
-            
-        }
-        
-    }
-    
-    // ABI SYSTEM-V
-    else if(!strcasecmp(node->cmd, "syscall")){
-        node->ins.pc = *pc;
-        node->machine_code[0] = 0x0F;
-        node->machine_code[1] = 0x05;
-        *s = 2;
-        *pc += 2;
-    }
-
-    // pop rip
-    else if(!strcasecmp(cmd, "ret")){
-        node->ins.pc = *pc;
-        node->machine_code[0] = 0xC3;
-        *s = 1;
-        *pc += 1;   
-    }
-
-    else if(!strcasecmp(cmd, "nop")){
-        node->ins.pc = *pc;
-        node->machine_code[0] = 0x90;
-        *s = 1;
-        *pc += 1;
-    }
-
-    else if (is2arrin(Sign_extensions, Sign_extensions_COUNT, (char*)cmd)) {
-        if (strcasecmp(cmd, "cqo") == 0) {
-            machine_code[0] = 0x48;
-            machine_code[1] = 0x99;
-            *s = 2;
-        }
-        else if (strcasecmp(cmd, "cdq") == 0) {
-            machine_code[0] = 0x99;
-            *s = 1;
-        }
-        else if (strcasecmp(cmd, "cwd") == 0) {
-            machine_code[0] = 0x66;
-            machine_code[1] = 0x99;
-            *s = 2;
-        }
-        else if (strcasecmp(cmd, "cdqe") == 0) {
-            machine_code[0] = 0x48;
-            machine_code[1] = 0x98;
-            *s = 2;
-        }
-        else if (strcasecmp(cmd, "cwde") == 0) {
-            machine_code[0] = 0x98;
-            *s = 1;
-        }
-        else if (strcasecmp(cmd, "cbw") == 0) {
-            machine_code[0] = 0x66;
-            machine_code[1] = 0x98;
-            *s = 2;
-        }
-
-        *pc += *s;
-    }
-
-    else if(is2arrin(zero_operand_instructions, zero_operand_instructions_COUNT, (char*)cmd)){
-        if (strcasecmp(cmd, "clc") == 0) {
-            machine_code[0] = 0xF8;
-            *s = 1;
-        }
-        else if (strcasecmp(cmd, "stc") == 0) {
-            machine_code[0] = 0xF9;
-            *s = 1;
-        }
-        else if (strcasecmp(cmd, "cmc") == 0) {
-            machine_code[0] = 0xF5;
-            *s = 1;
-        }
-        else if (strcasecmp(cmd, "cld") == 0) {
-            machine_code[0] = 0xFC;
-            *s = 1;
-        }
-        else if (strcasecmp(cmd, "std") == 0) {
-            machine_code[0] = 0xFD;
-            *s = 1;
-        }
-        else if (strcasecmp(cmd, "cli") == 0) {
-            machine_code[0] = 0xFA;
-            *s = 1;
-        }
-        else if (strcasecmp(cmd, "sti") == 0) {
-            machine_code[0] = 0xFB;
-            *s = 1;
-        }
-        else if (strcasecmp(cmd, "lahf") == 0) {
-            machine_code[0] = 0x9F;
-            *s = 1;
-        }
-        else if (strcasecmp(cmd, "sahf") == 0) {
-            machine_code[0] = 0x9E;
-            *s = 1;
-        }
-        else if (strcasecmp(cmd, "pushf") == 0 || strcasecmp(cmd, "pushfq") == 0) {
-            machine_code[0] = 0x9C;
-            *s = 1;
-        }
-        else if (strcasecmp(cmd, "popf") == 0 || strcasecmp(cmd, "popfq") == 0) {
-            machine_code[0] = 0x9D;
-            *s = 1;
-        }
-        else if (strcasecmp(cmd, "leave") == 0) {
-            machine_code[0] = 0xC9;
-            *s = 1;
-        }
-        else if (strcasecmp(cmd, "iret") == 0 || strcasecmp(cmd, "iretq") == 0) {
-            machine_code[0] = 0xCF;
-            *s = 1;
-        }
-        else if (strcasecmp(cmd, "cpuid") == 0) {
-            machine_code[0] = 0x0F;
-            machine_code[1] = 0xA2;
-            *s = 2;
-        }
-        else if (strcasecmp(cmd, "hlt") == 0) {
-            machine_code[0] = 0xF4;
-            *s = 1;
-        }
-        else if (strcasecmp(cmd, "wait") == 0 || strcasecmp(cmd, "fwait") == 0) {
-            machine_code[0] = 0x9B;
-            *s = 1;
-        }
-        else if (strcasecmp(cmd, "pause") == 0) {
-            machine_code[0] = 0xF3;
-            machine_code[1] = 0x90;
-            *s = 2;
-        }
-        else if (strcasecmp(cmd, "ud2") == 0) {
-            machine_code[0] = 0x0F;
-            machine_code[1] = 0x0B;
-            *s = 2;
-        }
-        *pc += *s;
-    }
-
-    else if(!strcasecmp("xchg", cmd)){
-
-        if (a->type == O_REG64 && b->type == O_REG64) {
-        
-            uint8_t rm = find_reg64_index(a->reg);
-            uint8_t reg = find_reg64_index(b->reg);
-
-            node->ins.pc = *pc;
-            *s = encode_xchg_reg_reg(machine_code, rm, reg, 64);
-            *pc += *s;
-            
-        }
-
-        else if (a->type == O_REG32 && b->type == O_REG32) {
-        
-            uint8_t rm = find_reg32_index(a->reg);
-            uint8_t reg = find_reg32_index(b->reg);
-
-            node->ins.pc = *pc;
-            *s = encode_xchg_reg_reg(machine_code, rm, reg, 32);
-            *pc += *s;
-            
-        }
-
-        else if (a->type == O_REG16 && b->type == O_REG16) {
-        
-            uint8_t rm = find_reg16_index(a->reg);
-            uint8_t reg = find_reg16_index(b->reg);
-
-            node->ins.pc = *pc;
-            *s = encode_xchg_reg_reg(machine_code, rm, reg, 16);
-            *pc += *s;
-            
-        }
-
-        else if (a->type == O_REG8 && b->type == O_REG8) {
-        
-            uint8_t rm = find_reg8_index(a->reg);
-            uint8_t reg = find_reg8_index(b->reg);
-
-            node->ins.pc = *pc;
-            *s = encode_xchg_reg_reg(machine_code, rm, reg, 8);
-            *pc += *s;
-            
-        }
-
-        else if (a->type == O_REG64 && b->type == O_MEM) {
-            uint8_t reg = find_reg64_index(a->reg);
-            AddrExpr *mem = &b->addr;
-
-            node->ins.pc = *pc;
-            *s = encode_inst_rm_rm(machine_code, reg, mem, 64, 0x87, 0, 0);
-            *pc += *s;
-            
-        }
-
-
-        else if (a->type == O_REG32 && b->type == O_MEM) {
-            uint8_t reg = find_reg32_index(a->reg);
-            AddrExpr *mem = &b->addr;
-
-            node->ins.pc = *pc;
-            *s = encode_inst_rm_rm(machine_code, reg, mem, 32, 0x87, 0, 0);
-            *pc += *s;
-            
-        }
-
-        else if (a->type == O_REG16 && b->type == O_MEM) {
-            uint8_t reg = find_reg16_index(a->reg);
-            AddrExpr *mem = &b->addr;
-
-            node->ins.pc = *pc;
-            *s = encode_inst_rm_rm(machine_code, reg, mem, 16, 0x87, 0, 0);
-            *pc += *s;
-            
-        }
-
-
-        else if (a->type == O_REG8 && b->type == O_MEM) {
-            uint8_t reg = find_reg8_index(a->reg);
-            AddrExpr *mem = &b->addr;
-
-            node->ins.pc = *pc;
-            *s = encode_inst_rm_rm(machine_code, reg, mem, 8, 0x86, 0, 0);
-            *pc += *s;
-            
-        }
-
-        else if (a->type == O_MEM && b->type == O_REG64) {
-            uint8_t reg = find_reg64_index(b->reg);
-            AddrExpr *mem = &a->addr;
-
-            node->ins.pc = *pc;
-            *s = encode_inst_rm_rm(machine_code, reg, mem, 64, 0x87, 0, 0);
-            *pc += *s;
-            
-        }
-
-        else if (a->type == O_MEM && b->type == O_REG32) {
-            uint8_t reg = find_reg32_index(b->reg);
-            AddrExpr *mem = &a->addr;
-
-            node->ins.pc = *pc;
-            *s = encode_inst_rm_rm(machine_code, reg, mem, 32, 0x87, 0, 0);
-            *pc += *s;
-            
-        }
-
-        else if (a->type == O_MEM && b->type == O_REG16) {
-            uint8_t reg = find_reg16_index(b->reg);
-            AddrExpr *mem = &a->addr;
-
-            node->ins.pc = *pc;
-            *s = encode_inst_rm_rm(machine_code, reg, mem, 16, 0x87, 0, 0);
-            *pc += *s;
-            
-        }
-
-        else if (a->type == O_MEM && b->type == O_REG8) {
-            uint8_t reg = find_reg8_index(b->reg);
-            AddrExpr *mem = &a->addr;
-
-            node->ins.pc = *pc;
-            *s = encode_inst_rm_rm(machine_code, reg, mem, 8, 0x86, 0, 0);
-            *pc += *s;
-            
-        }
-    }
 
 
     if(*s == 0){

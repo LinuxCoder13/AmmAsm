@@ -5,7 +5,7 @@
 
 
 #include "main.h"
-#define VERSION "2.4.6"
+#define VERSION "2.4.7"
 
 void compiler(uint8_t *text, int *textsize, uint64_t *e_entry) {
     if (!text) return;
@@ -107,13 +107,13 @@ int main(int argc, char **argv){
     const char* out = "a.out";
  
     for (int i = 1; i < argc; ++i){
-        if (!astrcmp(argv[i], "-o")){ out = argv[i+1]; i++; continue; }
-        if (!astrcmp(argv[i], "-pie")){ pie_mode = 1;  continue; }
-        if (!astrcmp(argv[i], "-E")){ stop_compile = 1;  continue; }
-        if (!astrcmp(argv[i], "-c")){ out = argv[i+1]; i++; obj_file = 1; continue; }
-        if (!astrcmp(argv[i], "-v")){ printf("AASM version %s\n", VERSION); exit(0);}
-        if (!astrcmp(argv[i], "-d") || !astrcmp(argv[i], "--debug")) { debug = 1; continue;}
-        if (!astrcmp(argv[i], "-h") || !astrcmp(argv[i], "--help")){ 
+        if (!strcmp(argv[i], "-o")){ out = argv[i+1]; i++; continue; }
+        if (!strcmp(argv[i], "-pie")){ pie_mode = 1;  continue; }
+        if (!strcmp(argv[i], "-E")){ stop_compile = 1;  continue; }
+        if (!strcmp(argv[i], "-c")){ out = argv[i+1]; i++; obj_file = 1; continue; }
+        if (!strcmp(argv[i], "-v")){ printf("AASM version %s\n", VERSION); exit(0);}
+        if (!strcmp(argv[i], "-d") || !strcmp(argv[i], "--debug")) { debug = 1; continue;}
+        if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")){ 
             puts("AASM - Amm Assembler\n");
             puts("Usage:");
             puts("  ./aasm [options] <input_file>\n");

@@ -84,14 +84,14 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
  
     for (int i = 0; i < ast_len; i++) {
         if (ast[i].type == AST_SECTION) {
-            if (strcasecmp(ast[i].section.secname, ".data") == 0 ||
-                strcasecmp(ast[i].section.secname, "data")  == 0)
+            if (strcmp(ast[i].section.secname, ".data") == 0 ||
+                strcmp(ast[i].section.secname, "data")  == 0)
                 data_start_idx = i;
-            else if (strcasecmp(ast[i].section.secname, ".text") == 0 ||
-                     strcasecmp(ast[i].section.secname, "text")  == 0)
+            else if (strcmp(ast[i].section.secname, ".text") == 0 ||
+                     strcmp(ast[i].section.secname, "text")  == 0)
                 text_start_idx = i;
-            else if (strcasecmp(ast[i].section.secname, ".bss") == 0 ||
-                    strcasecmp(ast[i].section.secname, "bss")  == 0)
+            else if (strcmp(ast[i].section.secname, ".bss") == 0 ||
+                    strcmp(ast[i].section.secname, "bss")  == 0)
                 bss_start_idx = i;
         }
     }
@@ -402,7 +402,7 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
                         for (int s = 0; s < sym_count; s++) {
                             if (syms[s].st_name == 0) continue; // '\0'
                             const uint8_t *sname = strtab_buf + syms[s].st_name; // geting name by offset
-                            if (!astrcmp(sname, lab)) {
+                            if (!strcmp(sname, lab)) {
                                 sym_idx = s;
                                 break;
                             }
@@ -457,7 +457,7 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
                                 for (int s2 = 0; s2 < sym_count; s2++) {
                                     if (syms[s2].st_name == 0) continue;
                                     const uint8_t *sname = strtab_buf + syms[s2].st_name;
-                                    if (!astrcmp(sname, lab2)) { sym_idx2 = s2; break; }
+                                    if (!strcmp(sname, lab2)) { sym_idx2 = s2; break; }
                                 }
     
                                 uint64_t imm_reloc_off =
@@ -478,8 +478,8 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
                 }
 
                 // jmp label
-                if ((strcasecmp(ast[i].cmd, "jmp")  == 0 || 
-                    strcasecmp(ast[i].cmd, "call") == 0 ||
+                if ((strcmp(ast[i].cmd, "jmp")  == 0 || 
+                    strcmp(ast[i].cmd, "call") == 0 ||
                     is2arrin(JCC, JCC_COUNT, ast[i].cmd)) &&
                     ast[i].ins.operands[0].type == O_EXPR){
 
@@ -493,7 +493,7 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
                         for (int s = 0; s < sym_count; s++) {
                             if (syms[s].st_name == 0) continue; // '\0'
                             const uint8_t *sname = strtab_buf + syms[s].st_name; // geting name by offset
-                            if (!astrcmp(sname, lab)) {
+                            if (!strcmp(sname, lab)) {
                                 sym_idx = s;
                                 break;
                             }
@@ -519,12 +519,10 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
                 else if 
                     (ast[i].ins.operands[1].type == O_EXPR &&
                     expr_label_count(&ast[i].ins.operands[1].expr) == 1 &&
-                    ast[i].ins.operands[1].expr.count == 1 &&
-                    ((ast[i].ins.operands[0].type == O_MEM && !ast[i].ins.operands[0].addr.is_rip_rel) ||
-                     (ast[i].ins.operands[0].type == O_REG32))){
-
-                    
-
+                    ((ast[i].ins.operands[0].type == O_MEM && !ast[i].ins.operands[0].addr.is_rip_rel) || (ast[i].ins.operands[0].type == O_REG32) || 
+                    (ast[i].ins.operands[0].type == O_REG64 && is2arrin(short_imm_instructions, short_imm_instructions_COUNT, ast[i].cmd)))){
+                                            
+                    if(ast[i].ins.operands[1].expr.count > 1){ fprintf(stderr, "AmmAsm:%d: realoc via added not supported\n", ast[i].line); exit(1);}
 
                     const uint8_t *lab2 = get_label_from_expr(ast[i].ins.operands[1].expr);
                     if (lab2 && *lab2 && rela_count < 256) {
@@ -532,7 +530,7 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
                         for (int s2 = 0; s2 < sym_count; s2++) {
                             if (syms[s2].st_name == 0) continue;
                             const uint8_t *sname = strtab_buf + syms[s2].st_name;
-                            if (!astrcmp(sname, lab2)) { sym_idx2 = s2; break; }
+                            if (!strcmp(sname, lab2)) { sym_idx2 = s2; break; }
                         }
                         uint64_t imm_reloc_off =
                             (ast[i].ins.pc - text_start_pc) +
@@ -541,14 +539,13 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
                         relas[rela_count].r_info   = ((uint64_t)sym_idx2 << 32) | R_X86_64_32;
                         relas[rela_count].r_addend = 0;
                         rela_count++;
-                        memset(text_buf + imm_reloc_off, 0, 4);
+                        
                     }
                     break;
                 }
                 
                 // resolving R_X86_64_64
                 else if (oper->type == O_EXPR ) {
-
                     int sym_idx = data_section_sym_idx;
                     uint8_t *lab = NULL;
                     for (int k = 0; k < oper->expr.count; k++) {
@@ -567,7 +564,7 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
                         if (syms[s].st_name == 0) continue;
 
                         const uint8_t *sname = strtab_buf + syms[s].st_name;
-                        if (!astrcmp(sname, lab)) {
+                        if (!strcmp(sname, lab)) {
                             sym_idx = s;
                             break;
                         }
