@@ -1580,6 +1580,7 @@ skip:
             if((!strcmp(cmd, "vminsh") || !strcmp(cmd, "vmaxsh")) && a->type != O_XMM){fprintf(stderr, "AmmAsm:%d: '%s' supports only xmm registers\n", node->line, node->cmd); exit(1);}
 
             if((a->type == O_XMM && b->type == O_XMM && c->type == O_XMM)){
+                printf("a\n");
                 node->ins.pc = *pc;
                 *s = encode_avx512_reg_reg_reg(machine_code, opcode, find_xmm_index(a->reg), 
                     find_xmm_index(b->reg), find_xmm_index(c->reg),
@@ -1596,7 +1597,7 @@ skip:
             }
         }
 
-        if(need_evex){
+        else if(need_evex){
             if(!avx512f_defined) {fprintf(stderr, "AmmAsm:%d: Warn: program uses general AVX-512, but current CPU does't support it(might give #UD)\n", node->line);}
 
             // reg, reg, reg/none
