@@ -375,16 +375,9 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
             *pc += *s;
         }
 
-        else if (a->type == O_MEM && (IS_EXPR_OR_IMM_OR_PC(*b) || b->type == O_CHAR)) {
+        else if (a->type == O_MEM && (IS_EXPR_OR_IMM_OR_PC(*b) || b->type == O_CHAR) && node->ins.operands[1].imm_sz) {
 
-            int sz;
-
-            switch (node->ins.operands[1].imm_sz) {
-                case 1: sz = 8;  break;
-                case 2: sz = 16; break;
-                case 4: sz = 32; break;
-                case 8: sz = 64; break;
-            }
+            int sz = node->ins.operands[1].imm_sz * 8;
 
             uint32_t imm = b->type == O_CHAR ? b->c : b->imm;
 
@@ -458,7 +451,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
             *pc += *s;
         }
         // mem, imm/char
-        else if ((b->type == O_IMM || b->type == O_CHAR) && (a->type == O_REG8 || a->type == O_REG16 || a->type == O_REG32 || a->type == O_REG64)) {
+        else if ((b->type == O_IMM || b->type == O_CHAR) && (a->type == O_MEM) && node->ins.operands[1].imm_sz) {
 
             uint8_t imm = b->type == O_IMM ? b->imm : b->c;
             sz = node->ins.operands[1].imm_sz;
@@ -1676,7 +1669,7 @@ skip:
     }
 
 
-
+erorr:
     if(*s == 0){
         printf("AmmAsm: Debug: !Instruction did\'t compile, operands:\n");
         printf("AmmAsm:%d: %s ", node->line, cmd);
