@@ -1122,6 +1122,10 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         else if (strcmp(cmd, "wait") == 0 || strcmp(cmd, "fwait") == 0) {machine_code[0] = 0x9B;*s = 1;}
         else if (strcmp(cmd, "pause") == 0) {machine_code[0] = 0xF3;machine_code[1] = 0x90;*s = 2;}
         else if (strcmp(cmd, "ud2") == 0) {machine_code[0] = 0x0F;machine_code[1] = 0x0B;*s = 2;}
+        else if (!strcmp(cmd, "rdpru")){
+            if (!rdpru_defined) {fprintf(stderr,"AmmAsm:%d: Warn: program uses RDPRU but current CPU doesn't support it (might give #UD)\n", node->line);}
+            machine_code[0] = 0x0F; machine_code[1] = 0x01; machine_code[2] = 0xFD;*s = 3;
+        }
         *pc += *s;
     }
 

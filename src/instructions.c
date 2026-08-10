@@ -144,6 +144,7 @@ const char *CMDS[] = {
     "pxor",
     "rcl",
     "rcr",
+    "rdpru", // NASM 3.02 does not support!
     "ret",
     "rol",
     "ror",
@@ -308,7 +309,7 @@ const int short_imm_instructions_COUNT = sizeof(short_imm_instructions) / sizeof
 
 const char *zero_operand_instructions[] = {
     "clc", "cld", "cli", "cmc", "cpuid", "fwait", "hlt", "iret", "iretq",
-    "lahf", "nop", "pause", "popf", "popfq", "pushf", "ret", "sahf", "stc",
+    "lahf", "nop", "pause", "popf", "popfq", "pushf", "rdpru", "ret", "sahf", "stc",
     "std", "sti", "syscall", "ud2", "wait", NULL
 };
 

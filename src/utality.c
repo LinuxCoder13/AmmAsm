@@ -519,6 +519,20 @@ void check_cpu(){
     );
 
     if (eax & (1 << 23)) avx512_fp16_defined = 1;
+
+    eax = 0x80000008;
+    ecx = 0;
+
+    __asm__ __volatile__(
+        ".intel_syntax noprefix\n"
+        "cpuid\n"
+        ".att_syntax"
+        : "+a"(eax), "=b"(ebx), "+c"(ecx), "=d"(edx)
+        :
+        : "cc"
+    );
+
+    if (ebx & (1u << 4)) rdpru_defined = 1;
 }
 
 
