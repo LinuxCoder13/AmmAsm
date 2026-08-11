@@ -558,7 +558,7 @@ FWAIT                              [oi: 9b]
 PAUSE                              [oi: f3 90]
 UD2                                [oi: 0f 0b]
 LFENCE                             [oi: 0f ae e8]
-RDTSM                              [oi: 0f 31]
+RDTSC                              [oi: 0f 31]
 RDTSCP                             [oi: 0f 01 f9]
 RDPRU                              [oi: 0f 01 fd]
 
@@ -1066,10 +1066,10 @@ VPSRAD    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f e2 /r]            AVX
 VPSRAD    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f e2 /r]            AVX,AVX2
 
 ; --- AVX-512 FP16  -------------------------
-VMAXSH    xmmreg,xmmreg,xmmreg     [evex.nds.128.f3.5c 5f /r]           AVX512VL,AVX512F
-VMAXSH    xmmreg,xmmreg,mem16      [evex.nds.128.f3.5c 5f /r]           AVX512VL,AVX512F
-VMAXSH    xmmreg{k1}{z},xmmreg,xmmreg [evex.nds.128.f3.5c 5f /r]        AVX512VL,AVX512F
+VMAXSH    xmmreg,xmmreg,xmmreg     [evex.nds.128.f3.5c 5f /r]           AVX512VL,AVX512FP16
+VMAXSH    xmmreg,xmmreg,mem16      [evex.nds.128.f3.5c 5f /r]           AVX512VL,AVX512FP16
+VMAXSH    xmmreg{k1}{z},xmmreg,xmmreg [evex.nds.128.f3.5c 5f /r]        AVX512VL,AVX512FP16
 
-VMINSH    xmmreg,xmmreg,xmmreg     [evex.nds.128.f3.5c 5d /r]           AVX512VL,AVX512F
-VMINSH    xmmreg,xmmreg,mem16      [evex.nds.128.f3.5c 5d /r]           AVX512VL,AVX512F
-VMINSH    xmmreg{k1}{z},xmmreg,xmmreg [evex.nds.128.f3.5c 5d /r]        AVX512VL,AVX512F
+VMINSH    xmmreg,xmmreg,xmmreg     [evex.nds.128.f3.5c 5d /r]           AVX512VL,AVX512FP16
+VMINSH    xmmreg,xmmreg,mem16      [evex.nds.128.f3.5c 5d /r]           AVX512VL,AVX512FP16
+VMINSH    xmmreg{k1}{z},xmmreg,xmmreg [evex.nds.128.f3.5c 5d /r]        AVX512VL,AVX512FP16
