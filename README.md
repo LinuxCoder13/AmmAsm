@@ -39,6 +39,8 @@ AmmAsm is a handwritten x86-64 assembler designed for simplicity and clarity, ed
 
 9) Backend refactoring
 
+9) Added Documentation for every supported instruction in AmmAsm
+
 ---
 
 ## Advanced AVX-512 Support (EVEX Prefix)
@@ -298,7 +300,7 @@ ld prog.o -o output && chmod +x output && ./output
 
 ## Known Limitations
 
-- Limited instruction set - Only a subset of the x86-64 instruction set is currently implemented (look at `./src/instructions.c`)
+- Limited instruction set - Only a subset of the x86-64 instruction set is currently implemented (look at `./insn.dat`)
 - x87 FPU not implemented
 - No `ah, bh, ch, dh` registers (sorry)
 

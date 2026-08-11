@@ -1,0 +1,1075 @@
+; ============================================================================
+; AmmAsm v2.4.7 - instruction database (NASM insns.dat format)
+; Generated from the encoder backend (DeepSeek)
+; ============================================================================
+
+; --- MOV --------------------------------------------------------------------
+MOV       reg64,imm64              [oi: 48 b8+r iq]                    X86_64
+MOV       reg32,imm32              [oi: b8+r id]
+MOV       reg16,imm16              [oi: 66 b8+r iw]
+MOV       reg8,imm8                [oi: b0+r ib]
+MOV       reg64,reg64              [rm: 48 89 /r]                      X86_64
+MOV       reg32,reg32              [rm: 89 /r]
+MOV       reg16,reg16              [rm: 66 89 /r]
+MOV       reg8,reg8                [rm: 88 /r]
+MOV       reg64,mem64              [rm: 48 8b /r]                      X86_64
+MOV       reg32,mem32              [rm: 8b /r]
+MOV       reg16,mem16              [rm: 66 8b /r]
+MOV       reg8,mem8                [rm: 8a /r]
+MOV       mem64,reg64              [rm: 48 89 /r]                      X86_64
+MOV       mem32,reg32              [rm: 89 /r]
+MOV       mem16,reg16              [rm: 66 89 /r]
+MOV       mem8,reg8                [rm: 88 /r]
+MOV       byte mem,imm8            [mi: c6 /0 ib]
+MOV       word mem,imm16           [mi: 66 c7 /0 iw]
+MOV       dword mem,imm32          [mi: c7 /0 id]
+MOV       qword mem,imm32          [mi: 48 c7 /0 id]                   X86_64
+
+; --- Group 1 (add, or, adc, sbb, and, sub, xor, cmp) -----------------------
+ADD       reg8,reg8                [rm: 02 /r]
+ADD       reg16,reg16              [rm: 66 03 /r]
+ADD       reg32,reg32              [rm: 03 /r]
+ADD       reg64,reg64              [rm: 48 03 /r]                      X86_64
+ADD       reg8,mem8                [rm: 02 /r]
+ADD       reg16,mem16              [rm: 66 03 /r]
+ADD       reg32,mem32              [rm: 03 /r]
+ADD       reg64,mem64              [rm: 48 03 /r]                      X86_64
+ADD       mem8,reg8                [rm: 00 /r]
+ADD       mem16,reg16              [rm: 66 01 /r]
+ADD       mem32,reg32              [rm: 01 /r]
+ADD       mem64,reg64              [rm: 48 01 /r]                      X86_64
+ADD       reg8,imm8                [oi: 80 /0 ib]
+ADD       reg16,imm16              [oi: 66 83 /0 ib,s]                 ; sign-extended
+ADD       reg32,imm32              [oi: 83 /0 ib,s]
+ADD       reg64,imm32              [oi: 48 83 /0 ib,s]                 X86_64
+ADD       byte mem,imm8            [mi: 80 /0 ib]
+ADD       word mem,imm16           [mi: 66 81 /0 iw]
+ADD       dword mem,imm32          [mi: 81 /0 id]
+ADD       qword mem,imm32          [mi: 48 81 /0 id]                   X86_64
+
+OR        reg8,reg8                [rm: 0a /r]
+OR        reg16,reg16              [rm: 66 0b /r]
+OR        reg32,reg32              [rm: 0b /r]
+OR        reg64,reg64              [rm: 48 0b /r]                      X86_64
+OR        reg8,mem8                [rm: 0a /r]
+OR        reg16,mem16              [rm: 66 0b /r]
+OR        reg32,mem32              [rm: 0b /r]
+OR        reg64,mem64              [rm: 48 0b /r]                      X86_64
+OR        mem8,reg8                [rm: 08 /r]
+OR        mem16,reg16              [rm: 66 09 /r]
+OR        mem32,reg32              [rm: 09 /r]
+OR        mem64,reg64              [rm: 48 09 /r]                      X86_64
+OR        reg8,imm8                [oi: 80 /1 ib]
+OR        reg16,imm16              [oi: 66 83 /1 ib,s]
+OR        reg32,imm32              [oi: 83 /1 ib,s]
+OR        reg64,imm32              [oi: 48 83 /1 ib,s]                 X86_64
+OR        byte mem,imm8            [mi: 80 /1 ib]
+OR        word mem,imm16           [mi: 66 81 /1 iw]
+OR        dword mem,imm32          [mi: 81 /1 id]
+OR        qword mem,imm32          [mi: 48 81 /1 id]                   X86_64
+
+ADC       reg8,reg8                [rm: 12 /r]
+ADC       reg16,reg16              [rm: 66 13 /r]
+ADC       reg32,reg32              [rm: 13 /r]
+ADC       reg64,reg64              [rm: 48 13 /r]                      X86_64
+ADC       reg8,mem8                [rm: 12 /r]
+ADC       reg16,mem16              [rm: 66 13 /r]
+ADC       reg32,mem32              [rm: 13 /r]
+ADC       reg64,mem64              [rm: 48 13 /r]                      X86_64
+ADC       mem8,reg8                [rm: 10 /r]
+ADC       mem16,reg16              [rm: 66 11 /r]
+ADC       mem32,reg32              [rm: 11 /r]
+ADC       mem64,reg64              [rm: 48 11 /r]                      X86_64
+ADC       reg8,imm8                [oi: 80 /2 ib]
+ADC       reg16,imm16              [oi: 66 83 /2 ib,s]
+ADC       reg32,imm32              [oi: 83 /2 ib,s]
+ADC       reg64,imm32              [oi: 48 83 /2 ib,s]                 X86_64
+ADC       byte mem,imm8            [mi: 80 /2 ib]
+ADC       word mem,imm16           [mi: 66 81 /2 iw]
+ADC       dword mem,imm32          [mi: 81 /2 id]
+ADC       qword mem,imm32          [mi: 48 81 /2 id]                   X86_64
+
+SBB       reg8,reg8                [rm: 1a /r]
+SBB       reg16,reg16              [rm: 66 1b /r]
+SBB       reg32,reg32              [rm: 1b /r]
+SBB       reg64,reg64              [rm: 48 1b /r]                      X86_64
+SBB       reg8,mem8                [rm: 1a /r]
+SBB       reg16,mem16              [rm: 66 1b /r]
+SBB       reg32,mem32              [rm: 1b /r]
+SBB       reg64,mem64              [rm: 48 1b /r]                      X86_64
+SBB       mem8,reg8                [rm: 18 /r]
+SBB       mem16,reg16              [rm: 66 19 /r]
+SBB       mem32,reg32              [rm: 19 /r]
+SBB       mem64,reg64              [rm: 48 19 /r]                      X86_64
+SBB       reg8,imm8                [oi: 80 /3 ib]
+SBB       reg16,imm16              [oi: 66 83 /3 ib,s]
+SBB       reg32,imm32              [oi: 83 /3 ib,s]
+SBB       reg64,imm32              [oi: 48 83 /3 ib,s]                 X86_64
+SBB       byte mem,imm8            [mi: 80 /3 ib]
+SBB       word mem,imm16           [mi: 66 81 /3 iw]
+SBB       dword mem,imm32          [mi: 81 /3 id]
+SBB       qword mem,imm32          [mi: 48 81 /3 id]                   X86_64
+
+AND       reg8,reg8                [rm: 22 /r]
+AND       reg16,reg16              [rm: 66 23 /r]
+AND       reg32,reg32              [rm: 23 /r]
+AND       reg64,reg64              [rm: 48 23 /r]                      X86_64
+AND       reg8,mem8                [rm: 22 /r]
+AND       reg16,mem16              [rm: 66 23 /r]
+AND       reg32,mem32              [rm: 23 /r]
+AND       reg64,mem64              [rm: 48 23 /r]                      X86_64
+AND       mem8,reg8                [rm: 20 /r]
+AND       mem16,reg16              [rm: 66 21 /r]
+AND       mem32,reg32              [rm: 21 /r]
+AND       mem64,reg64              [rm: 48 21 /r]                      X86_64
+AND       reg8,imm8                [oi: 80 /4 ib]
+AND       reg16,imm16              [oi: 66 83 /4 ib,s]
+AND       reg32,imm32              [oi: 83 /4 ib,s]
+AND       reg64,imm32              [oi: 48 83 /4 ib,s]                 X86_64
+AND       byte mem,imm8            [mi: 80 /4 ib]
+AND       word mem,imm16           [mi: 66 81 /4 iw]
+AND       dword mem,imm32          [mi: 81 /4 id]
+AND       qword mem,imm32          [mi: 48 81 /4 id]                   X86_64
+
+SUB       reg8,reg8                [rm: 2a /r]
+SUB       reg16,reg16              [rm: 66 2b /r]
+SUB       reg32,reg32              [rm: 2b /r]
+SUB       reg64,reg64              [rm: 48 2b /r]                      X86_64
+SUB       reg8,mem8                [rm: 2a /r]
+SUB       reg16,mem16              [rm: 66 2b /r]
+SUB       reg32,mem32              [rm: 2b /r]
+SUB       reg64,mem64              [rm: 48 2b /r]                      X86_64
+SUB       mem8,reg8                [rm: 28 /r]
+SUB       mem16,reg16              [rm: 66 29 /r]
+SUB       mem32,reg32              [rm: 29 /r]
+SUB       mem64,reg64              [rm: 48 29 /r]                      X86_64
+SUB       reg8,imm8                [oi: 80 /5 ib]
+SUB       reg16,imm16              [oi: 66 83 /5 ib,s]
+SUB       reg32,imm32              [oi: 83 /5 ib,s]
+SUB       reg64,imm32              [oi: 48 83 /5 ib,s]                 X86_64
+SUB       byte mem,imm8            [mi: 80 /5 ib]
+SUB       word mem,imm16           [mi: 66 81 /5 iw]
+SUB       dword mem,imm32          [mi: 81 /5 id]
+SUB       qword mem,imm32          [mi: 48 81 /5 id]                   X86_64
+
+XOR       reg8,reg8                [rm: 32 /r]
+XOR       reg16,reg16              [rm: 66 33 /r]
+XOR       reg32,reg32              [rm: 33 /r]
+XOR       reg64,reg64              [rm: 48 33 /r]                      X86_64
+XOR       reg8,mem8                [rm: 32 /r]
+XOR       reg16,mem16              [rm: 66 33 /r]
+XOR       reg32,mem32              [rm: 33 /r]
+XOR       reg64,mem64              [rm: 48 33 /r]                      X86_64
+XOR       mem8,reg8                [rm: 30 /r]
+XOR       mem16,reg16              [rm: 66 31 /r]
+XOR       mem32,reg32              [rm: 31 /r]
+XOR       mem64,reg64              [rm: 48 31 /r]                      X86_64
+XOR       reg8,imm8                [oi: 80 /6 ib]
+XOR       reg16,imm16              [oi: 66 83 /6 ib,s]
+XOR       reg32,imm32              [oi: 83 /6 ib,s]
+XOR       reg64,imm32              [oi: 48 83 /6 ib,s]                 X86_64
+XOR       byte mem,imm8            [mi: 80 /6 ib]
+XOR       word mem,imm16           [mi: 66 81 /6 iw]
+XOR       dword mem,imm32          [mi: 81 /6 id]
+XOR       qword mem,imm32          [mi: 48 81 /6 id]                   X86_64
+
+CMP       reg8,reg8                [rm: 3a /r]
+CMP       reg16,reg16              [rm: 66 3b /r]
+CMP       reg32,reg32              [rm: 3b /r]
+CMP       reg64,reg64              [rm: 48 3b /r]                      X86_64
+CMP       reg8,mem8                [rm: 3a /r]
+CMP       reg16,mem16              [rm: 66 3b /r]
+CMP       reg32,mem32              [rm: 3b /r]
+CMP       reg64,mem64              [rm: 48 3b /r]                      X86_64
+CMP       mem8,reg8                [rm: 38 /r]
+CMP       mem16,reg16              [rm: 66 39 /r]
+CMP       mem32,reg32              [rm: 39 /r]
+CMP       mem64,reg64              [rm: 48 39 /r]                      X86_64
+CMP       reg8,imm8                [oi: 80 /7 ib]
+CMP       reg16,imm16              [oi: 66 83 /7 ib,s]
+CMP       reg32,imm32              [oi: 83 /7 ib,s]
+CMP       reg64,imm32              [oi: 48 83 /7 ib,s]                 X86_64
+CMP       byte mem,imm8            [mi: 80 /7 ib]
+CMP       word mem,imm16           [mi: 66 81 /7 iw]
+CMP       dword mem,imm32          [mi: 81 /7 id]
+CMP       qword mem,imm32          [mi: 48 81 /7 id]                   X86_64
+
+; --- Shift / Rotate (Group 2) ----------------------------------------------
+RCL       reg8,1                   [rm: d0 /2]
+RCL       reg16,1                  [rm: 66 d1 /2]
+RCL       reg32,1                  [rm: d1 /2]
+RCL       reg64,1                  [rm: 48 d1 /2]                      X86_64
+RCL       reg8,imm8                [rmi: c0 /2 ib]
+RCL       reg16,imm8               [rmi: 66 c1 /2 ib]
+RCL       reg32,imm8               [rmi: c1 /2 ib]
+RCL       reg64,imm8               [rmi: 48 c1 /2 ib]                  X86_64
+RCL       reg8,cl                  [rm: d2 /2]
+RCL       reg16,cl                 [rm: 66 d3 /2]
+RCL       reg32,cl                 [rm: d3 /2]
+RCL       reg64,cl                 [rm: 48 d3 /2]                      X86_64
+RCL       byte mem,1               [rm: d0 /2]
+RCL       word mem,1               [rm: 66 d1 /2]
+RCL       dword mem,1              [rm: d1 /2]
+RCL       qword mem,1              [rm: 48 d1 /2]                      X86_64
+RCL       byte mem,imm8            [rmi: c0 /2 ib]
+RCL       word mem,imm8            [rmi: 66 c1 /2 ib]
+RCL       dword mem,imm8           [rmi: c1 /2 ib]
+RCL       qword mem,imm8           [rmi: 48 c1 /2 ib]                  X86_64
+RCL       byte mem,cl              [rm: d2 /2]
+RCL       word mem,cl              [rm: 66 d3 /2]
+RCL       dword mem,cl             [rm: d3 /2]
+RCL       qword mem,cl             [rm: 48 d3 /2]                      X86_64
+
+; (rcr /3, rol /0, ror /1, sal/shl /4, sar /7, shr /5 - аналогично)
+RCR       reg8,1                   [rm: d0 /3]
+RCR       reg16,1                  [rm: 66 d1 /3]
+RCR       reg32,1                  [rm: d1 /3]
+RCR       reg64,1                  [rm: 48 d1 /3]
+RCR       reg8,imm8                [rmi: c0 /3 ib]
+RCR       reg16,imm8               [rmi: 66 c1 /3 ib]
+RCR       reg32,imm8               [rmi: c1 /3 ib]
+RCR       reg64,imm8               [rmi: 48 c1 /3 ib]
+RCR       reg8,cl                  [rm: d2 /3]
+RCR       reg16,cl                 [rm: 66 d3 /3]
+RCR       reg32,cl                 [rm: d3 /3]
+RCR       reg64,cl                 [rm: 48 d3 /3]
+; memory - also
+
+ROL       reg8,1                   [rm: d0 /0]
+ROL       reg16,1                  [rm: 66 d1 /0]
+ROL       reg32,1                  [rm: d1 /0]
+ROL       reg64,1                  [rm: 48 d1 /0]
+ROL       reg8,imm8                [rmi: c0 /0 ib]
+ROL       reg16,imm8               [rmi: 66 c1 /0 ib]
+ROL       reg32,imm8               [rmi: c1 /0 ib]
+ROL       reg64,imm8               [rmi: 48 c1 /0 ib]
+ROL       reg8,cl                  [rm: d2 /0]
+ROL       reg16,cl                 [rm: 66 d3 /0]
+ROL       reg32,cl                 [rm: d3 /0]
+ROL       reg64,cl                 [rm: 48 d3 /0]
+
+ROR       reg8,1                   [rm: d0 /1]
+ROR       reg16,1                  [rm: 66 d1 /1]
+ROR       reg32,1                  [rm: d1 /1]
+ROR       reg64,1                  [rm: 48 d1 /1]
+ROR       reg8,imm8                [rmi: c0 /1 ib]
+ROR       reg16,imm8               [rmi: 66 c1 /1 ib]
+ROR       reg32,imm8               [rmi: c1 /1 ib]
+ROR       reg64,imm8               [rmi: 48 c1 /1 ib]
+ROR       reg8,cl                  [rm: d2 /1]
+ROR       reg16,cl                 [rm: 66 d3 /1]
+ROR       reg32,cl                 [rm: d3 /1]
+ROR       reg64,cl                 [rm: 48 d3 /1]
+
+SAL       reg8,1                   [rm: d0 /4]
+SAL       reg16,1                  [rm: 66 d1 /4]
+SAL       reg32,1                  [rm: d1 /4]
+SAL       reg64,1                  [rm: 48 d1 /4]
+SAL       reg8,imm8                [rmi: c0 /4 ib]
+SAL       reg16,imm8               [rmi: 66 c1 /4 ib]
+SAL       reg32,imm8               [rmi: c1 /4 ib]
+SAL       reg64,imm8               [rmi: 48 c1 /4 ib]
+SAL       reg8,cl                  [rm: d2 /4]
+SAL       reg16,cl                 [rm: 66 d3 /4]
+SAL       reg32,cl                 [rm: d3 /4]
+SAL       reg64,cl                 [rm: 48 d3 /4]
+
+SHL       reg8,1                   [rm: d0 /4]
+SHL       reg16,1                  [rm: 66 d1 /4]
+SHL       reg32,1                  [rm: d1 /4]
+SHL       reg64,1                  [rm: 48 d1 /4]
+SHL       reg8,imm8                [rmi: c0 /4 ib]
+SHL       reg16,imm8               [rmi: 66 c1 /4 ib]
+SHL       reg32,imm8               [rmi: c1 /4 ib]
+SHL       reg64,imm8               [rmi: 48 c1 /4 ib]
+SHL       reg8,cl                  [rm: d2 /4]
+SHL       reg16,cl                 [rm: 66 d3 /4]
+SHL       reg32,cl                 [rm: d3 /4]
+SHL       reg64,cl                 [rm: 48 d3 /4]
+
+SHR       reg8,1                   [rm: d0 /5]
+SHR       reg16,1                  [rm: 66 d1 /5]
+SHR       reg32,1                  [rm: d1 /5]
+SHR       reg64,1                  [rm: 48 d1 /5]
+SHR       reg8,imm8                [rmi: c0 /5 ib]
+SHR       reg16,imm8               [rmi: 66 c1 /5 ib]
+SHR       reg32,imm8               [rmi: c1 /5 ib]
+SHR       reg64,imm8               [rmi: 48 c1 /5 ib]
+SHR       reg8,cl                  [rm: d2 /5]
+SHR       reg16,cl                 [rm: 66 d3 /5]
+SHR       reg32,cl                 [rm: d3 /5]
+SHR       reg64,cl                 [rm: 48 d3 /5]
+
+SAR       reg8,1                   [rm: d0 /7]
+SAR       reg16,1                  [rm: 66 d1 /7]
+SAR       reg32,1                  [rm: d1 /7]
+SAR       reg64,1                  [rm: 48 d1 /7]
+SAR       reg8,imm8                [rmi: c0 /7 ib]
+SAR       reg16,imm8               [rmi: 66 c1 /7 ib]
+SAR       reg32,imm8               [rmi: c1 /7 ib]
+SAR       reg64,imm8               [rmi: 48 c1 /7 ib]
+SAR       reg8,cl                  [rm: d2 /7]
+SAR       reg16,cl                 [rm: 66 d3 /7]
+SAR       reg32,cl                 [rm: d3 /7]
+SAR       reg64,cl                 [rm: 48 d3 /7]
+
+; --- Unary (Group 3) -------------------------------------------------------
+NOT       reg8                     [rm: f6 /2]
+NOT       reg16                    [rm: 66 f7 /2]
+NOT       reg32                    [rm: f7 /2]
+NOT       reg64                    [rm: 48 f7 /2]                      X86_64
+NOT       byte mem                 [rm: f6 /2]
+NOT       word mem                 [rm: 66 f7 /2]
+NOT       dword mem                [rm: f7 /2]
+NOT       qword mem                [rm: 48 f7 /2]                      X86_64
+
+NEG       reg8                     [rm: f6 /3]
+NEG       reg16                    [rm: 66 f7 /3]
+NEG       reg32                    [rm: f7 /3]
+NEG       reg64                    [rm: 48 f7 /3]                      X86_64
+NEG       byte mem                 [rm: f6 /3]
+NEG       word mem                 [rm: 66 f7 /3]
+NEG       dword mem                [rm: f7 /3]
+NEG       qword mem                [rm: 48 f7 /3]                      X86_64
+
+MUL       reg8                     [rm: f6 /4]
+MUL       reg16                    [rm: 66 f7 /4]
+MUL       reg32                    [rm: f7 /4]
+MUL       reg64                    [rm: 48 f7 /4]                      X86_64
+MUL       byte mem                 [rm: f6 /4]
+MUL       word mem                 [rm: 66 f7 /4]
+MUL       dword mem                [rm: f7 /4]
+MUL       qword mem                [rm: 48 f7 /4]                      X86_64
+
+; --- TEST ------------------------------------------------------------------
+TEST      reg8,reg8                [rm: 84 /r]
+TEST      reg16,reg16              [rm: 66 85 /r]
+TEST      reg32,reg32              [rm: 85 /r]
+TEST      reg64,reg64              [rm: 48 85 /r]                      X86_64
+TEST      reg8,imm8                [rmi: f6 /0 ib]
+TEST      reg16,imm16              [rmi: 66 f7 /0 iw]
+TEST      reg32,imm32              [rmi: f7 /0 id]
+TEST      reg64,imm32              [rmi: 48 f7 /0 id]                  X86_64
+TEST      reg8,mem8                [rm: 84 /r]
+TEST      reg16,mem16              [rm: 66 85 /r]
+TEST      reg32,mem32              [rm: 85 /r]
+TEST      reg64,mem64              [rm: 48 85 /r]                      X86_64
+TEST      mem8,reg8                [rm: 84 /r]
+TEST      mem16,reg16              [rm: 66 85 /r]
+TEST      mem32,reg32              [rm: 85 /r]
+TEST      mem64,reg64              [rm: 48 85 /r]                      X86_64
+TEST      byte mem,imm8            [rmi: f6 /0 ib]
+TEST      word mem,imm16           [rmi: 66 f7 /0 iw]
+TEST      dword mem,imm32          [rmi: f7 /0 id]
+TEST      qword mem,imm32          [rmi: 48 f7 /0 id]                  X86_64
+
+; --- IMUL ------------------------------------------------------------------
+IMUL      reg8                     [rm: f6 /5]
+IMUL      reg16                    [rm: 66 f7 /5]
+IMUL      reg32                    [rm: f7 /5]
+IMUL      reg64                    [rm: 48 f7 /5]                      X86_64
+IMUL      reg16,reg16              [rm: 66 0f af /r]
+IMUL      reg32,reg32              [rm: 0f af /r]
+IMUL      reg64,reg64              [rm: 48 0f af /r]                   X86_64
+IMUL      reg16,reg16,imm8         [rmi: 66 6b /r ib]
+IMUL      reg32,reg32,imm8         [rmi: 6b /r ib]
+IMUL      reg64,reg64,imm8         [rmi: 48 6b /r ib]                  X86_64
+IMUL      reg16,reg16,imm16        [rmi: 66 69 /r iw]
+IMUL      reg32,reg32,imm32        [rmi: 69 /r id]
+IMUL      reg64,reg64,imm32        [rmi: 48 69 /r id]                  X86_64
+IMUL      reg16,imm16              [rmi: 66 69 /r iw]                  ; == IMUL reg,reg,imm
+IMUL      reg32,imm32              [rmi: 69 /r id]
+IMUL      reg64,imm32              [rmi: 48 69 /r id]
+
+; --- DIV / IDIV ------------------------------------------------------------
+DIV       reg8                     [rm: f6 /6]
+DIV       reg16                    [rm: 66 f7 /6]
+DIV       reg32                    [rm: f7 /6]
+DIV       reg64                    [rm: 48 f7 /6]                      X86_64
+DIV       byte mem                 [rm: f6 /6]
+DIV       word mem                 [rm: 66 f7 /6]
+DIV       dword mem                [rm: f7 /6]
+DIV       qword mem                [rm: 48 f7 /6]                      X86_64
+
+IDIV      reg8                     [rm: f6 /7]
+IDIV      reg16                    [rm: 66 f7 /7]
+IDIV      reg32                    [rm: f7 /7]
+IDIV      reg64                    [rm: 48 f7 /7]                      X86_64
+IDIV      byte mem                 [rm: f6 /7]
+IDIV      word mem                 [rm: 66 f7 /7]
+IDIV      dword mem                [rm: f7 /7]
+IDIV      qword mem                [rm: 48 f7 /7]                      X86_64
+
+; --- INC / DEC (8-bit - Group 4, else - группа 5) ----------------
+INC       reg8                     [rm: fe /0]
+INC       reg16                    [rm: 66 ff /0]
+INC       reg32                    [rm: ff /0]
+INC       reg64                    [rm: 48 ff /0]                      X86_64
+INC       byte mem                 [rm: fe /0]
+INC       word mem                 [rm: 66 ff /0]
+INC       dword mem                [rm: ff /0]
+INC       qword mem                [rm: 48 ff /0]                      X86_64
+
+DEC       reg8                     [rm: fe /1]
+DEC       reg16                    [rm: 66 ff /1]
+DEC       reg32                    [rm: ff /1]
+DEC       reg64                    [rm: 48 ff /1]                      X86_64
+DEC       byte mem                 [rm: fe /1]
+DEC       word mem                 [rm: 66 ff /1]
+DEC       dword mem                [rm: ff /1]
+DEC       qword mem                [rm: 48 ff /1]                      X86_64
+
+; --- PUSH / POP ------------------------------------------------------------
+PUSH      reg16                    [r: 66 50+r]
+PUSH      reg64                    [r: 50+r]                           X86_64
+PUSH      word mem                 [rm: 66 ff /6]
+PUSH      qword mem                [rm: ff /6]                         X86_64
+
+POP       reg16                    [r: 66 58+r]
+POP       reg64                    [r: 58+r]                           X86_64
+
+; --- LEA -------------------------------------------------------------------
+LEA       reg64,mem                [rm: 48 8d /r]                      X86_64
+
+; --- XCHG ------------------------------------------------------------------
+XCHG      reg8,reg8                [rm: 86 /r]
+XCHG      reg16,reg16              [rm: 66 87 /r]
+XCHG      reg32,reg32              [rm: 87 /r]
+XCHG      reg64,reg64              [rm: 48 87 /r]                      X86_64
+XCHG      reg64,mem64              [rm: 48 87 /r]                      X86_64
+XCHG      mem64,reg64              [rm: 48 87 /r]                      X86_64
+XCHG      reg32,mem32              [rm: 87 /r]
+XCHG      mem32,reg32              [rm: 87 /r]
+XCHG      reg16,mem16              [rm: 66 87 /r]
+XCHG      mem16,reg16              [rm: 66 87 /r]
+XCHG      reg8,mem8                [rm: 86 /r]
+XCHG      mem8,reg8                [rm: 86 /r]
+XCHG      rax,reg64                [r: 48 90+r]                        X86_64
+
+; --- JMP / CALL ------------------------------------------------------------
+JMP       rel32                    [d: e9]                             
+JMP       reg64                    [rm: 48 ff /4]                      X86_64
+JMP       qword mem                [rm: 48 ff /4]                      X86_64
+CALL      rel32                    [d: e8]
+CALL      reg64                    [rm: 48 ff /2]                      X86_64
+CALL      qword mem                [rm: 48 ff /2]                      X86_64
+
+; --- Jcc (conditional) -----------------------------------------------------
+JE        rel32                    [d: 0f 84]
+JZ        rel32                    [d: 0f 84]
+JNE       rel32                    [d: 0f 85]
+JNZ       rel32                    [d: 0f 85]
+JL        rel32                    [d: 0f 8c]
+JGE       rel32                    [d: 0f 8d]
+JLE       rel32                    [d: 0f 8e]
+JG        rel32                    [d: 0f 8f]
+JB        rel32                    [d: 0f 82]
+JC        rel32                    [d: 0f 82]
+JA        rel32                    [d: 0f 87]
+JAE       rel32                    [d: 0f 83]
+JBE       rel32                    [d: 0f 86]
+
+; --- MOVZX / MOVSX ---------------------------------------------------------
+MOVZX     reg16,reg8               [rm: 66 0f b6 /r]
+MOVZX     reg32,reg8               [rm: 0f b6 /r]
+MOVZX     reg64,reg8               [rm: 48 0f b6 /r]                   X86_64
+MOVZX     reg32,reg16              [rm: 0f b7 /r]
+MOVZX     reg64,reg16              [rm: 48 0f b7 /r]                   X86_64
+MOVZX     reg16,mem8               [rm: 66 0f b6 /r]
+MOVZX     reg32,mem8               [rm: 0f b6 /r]
+MOVZX     reg64,mem8               [rm: 48 0f b6 /r]
+MOVZX     reg32,mem16              [rm: 0f b7 /r]
+MOVZX     reg64,mem16              [rm: 48 0f b7 /r]
+
+MOVSX     reg16,reg8               [rm: 66 0f be /r]
+MOVSX     reg32,reg8               [rm: 0f be /r]
+MOVSX     reg64,reg8               [rm: 48 0f be /r]                   X86_64
+MOVSX     reg32,reg16              [rm: 0f bf /r]
+MOVSX     reg64,reg16              [rm: 48 0f bf /r]                   X86_64
+MOVSX     reg16,mem8               [rm: 66 0f be /r]
+MOVSX     reg32,mem8               [rm: 0f be /r]
+MOVSX     reg64,mem8               [rm: 48 0f be /r]
+MOVSX     reg32,mem16              [rm: 0f bf /r]
+MOVSX     reg64,mem16              [rm: 48 0f bf /r]
+
+; --- BSF / BSR -------------------------------------------------------------
+BSF       reg16,reg16              [rm: 66 0f bc /r]
+BSF       reg32,reg32              [rm: 0f bc /r]
+BSF       reg64,reg64              [rm: 48 0f bc /r]                   X86_64
+BSF       reg16,mem16              [rm: 66 0f bc /r]
+BSF       reg32,mem32              [rm: 0f bc /r]
+BSF       reg64,mem64              [rm: 48 0f bc /r]                   X86_64
+
+BSR       reg16,reg16              [rm: 66 0f bd /r]
+BSR       reg32,reg32              [rm: 0f bd /r]
+BSR       reg64,reg64              [rm: 48 0f bd /r]                   X86_64
+BSR       reg16,mem16              [rm: 66 0f bd /r]
+BSR       reg32,mem32              [rm: 0f bd /r]
+BSR       reg64,mem64              [rm: 48 0f bd /r]                   X86_64
+
+; --- CMOVcc ----------------------------------------------------------------
+CMOVcc    reg16,reg16              [rm: 66 0f 4x /r]     (x-код условия)
+CMOVcc    reg32,reg32              [rm: 0f 4x /r]
+CMOVcc    reg64,reg64              [rm: 48 0f 4x /r]                   X86_64
+CMOVcc    reg16,mem16              [rm: 66 0f 4x /r]
+CMOVcc    reg32,mem32              [rm: 0f 4x /r]
+CMOVcc    reg64,mem64              [rm: 48 0f 4x /r]                   X86_64
+
+; (code: a/47, ae/43, b/42, be/46, c/42, e/44, g/4f, ge/4d, l/4c, le/4e,
+;  na/46, nae/42, nb/43, nbe/47, nc/43, ne/45, ng/4e, nge/4c, nl/4d,
+;  nle/4f, no/41, np/4b, ns/49, nz/45, o/40, p/4a, pe/4a, po/4b, s/48, z/44)
+
+; --- SETcc -----------------------------------------------------------------
+SETcc     reg8                     [rm: 0f 9x /r]     (x-код)
+SETcc     byte mem                 [rm: 0f 9x /r]
+
+; --- Знаковые расширения (без операндов) -----------------------------------
+CBW                                [oi: 66 98]
+CWDE                               [oi: 98]
+CDQE                               [oi: 48 98]                         X86_64
+CWD                                [oi: 66 99]
+CDQ                                [oi: 99]
+CQO                                [oi: 48 99]                         X86_64
+
+; --- Else zero operand Instructions ---------------------------------------
+SYSCALL                            [oi: 0f 05]
+RET                                [oi: c3]
+NOP                                [oi: 90]
+CLC                                [oi: f8]
+STC                                [oi: f9]
+CMC                                [oi: f5]
+CLD                                [oi: fc]
+STD                                [oi: fd]
+CLI                                [oi: fa]
+STI                                [oi: fb]
+LAHF                               [oi: 9f]
+SAHF                               [oi: 9e]
+PUSHF                              [oi: 9c]
+PUSHFQ                             [oi: 9c]
+POPF                               [oi: 9d]
+POPFQ                              [oi: 9d]
+LEAVE                              [oi: c9]
+IRET                               [oi: cf]
+IRETQ                              [oi: cf]
+CPUID                              [oi: 0f a2]
+HLT                                [oi: f4]
+WAIT                               [oi: 9b]
+FWAIT                              [oi: 9b]
+PAUSE                              [oi: f3 90]
+UD2                                [oi: 0f 0b]
+LFENCE                             [oi: 0f ae e8]
+RDTSM                              [oi: 0f 31]
+RDTSCP                             [oi: 0f 01 f9]
+RDPRU                              [oi: 0f 01 fd]
+
+; --- SSE -------------------------------------------------------------------
+MOVAPS    xmmreg,xmmreg            [rm: 0f 28 /r]                       SSE
+MOVAPS    xmmreg,mem128            [rm: 0f 28 /r]                       SSE
+MOVAPS    mem128,xmmreg            [rm: 0f 29 /r]                       SSE
+MOVUPS    xmmreg,xmmreg            [rm: 0f 10 /r]                       SSE
+MOVUPS    xmmreg,mem128            [rm: 0f 10 /r]                       SSE
+MOVUPS    mem128,xmmreg            [rm: 0f 11 /r]                       SSE
+XORPS     xmmreg,xmmreg            [rm: 0f 57 /r]                       SSE
+XORPS     xmmreg,mem128            [rm: 0f 57 /r]                       SSE
+ANDPS     xmmreg,xmmreg            [rm: 0f 54 /r]                       SSE
+ANDPS     xmmreg,mem128            [rm: 0f 54 /r]                       SSE
+ANDNPS    xmmreg,xmmreg            [rm: 0f 55 /r]                       SSE
+ANDNPS    xmmreg,mem128            [rm: 0f 55 /r]                       SSE
+ORPS      xmmreg,xmmreg            [rm: 0f 56 /r]                       SSE
+ORPS      xmmreg,mem128            [rm: 0f 56 /r]                       SSE
+ADDPS     xmmreg,xmmreg            [rm: 0f 58 /r]                       SSE
+ADDPS     xmmreg,mem128            [rm: 0f 58 /r]                       SSE
+SUBPS     xmmreg,xmmreg            [rm: 0f 5c /r]                       SSE
+SUBPS     xmmreg,mem128            [rm: 0f 5c /r]                       SSE
+MULPS     xmmreg,xmmreg            [rm: 0f 59 /r]                       SSE
+MULPS     xmmreg,mem128            [rm: 0f 59 /r]                       SSE
+DIVPS     xmmreg,xmmreg            [rm: 0f 5e /r]                       SSE
+DIVPS     xmmreg,mem128            [rm: 0f 5e /r]                       SSE
+
+; ============================================================================
+; SSE2 - Integer and Double‑Precision Instructions
+; ============================================================================
+
+; --- Data Movement ----------------------------------------------------------
+MOVDQA    xmmreg,xmmreg            [rm: 66 0f 6f /r]                    SSE2
+MOVDQA    xmmreg,mem128            [rm: 66 0f 6f /r]                    SSE2
+MOVDQA    mem128,xmmreg            [rm: 66 0f 7f /r]                    SSE2
+
+MOVDQU    xmmreg,xmmreg            [rm: f3 0f 6f /r]                    SSE2
+MOVDQU    xmmreg,mem128            [rm: f3 0f 6f /r]                    SSE2
+MOVDQU    mem128,xmmreg            [rm: f3 0f 7f /r]                    SSE2
+
+MOVQ      xmmreg,xmmreg            [rm: f3 0f 7e /r]                    SSE2
+MOVQ      xmmreg,mem64             [rm: f3 0f 7e /r]                    SSE2
+MOVQ      mem64,xmmreg             [rm: 66 0f d6 /r]                    SSE2
+MOVQ      xmmreg,reg64             [rm: 66 48 0f 6e /r]                 SSE2,X86_64
+MOVQ      reg64,xmmreg             [rm: 66 48 0f 7e /r]                 SSE2,X86_64
+
+; --- Packed Arithmetic (Integer) --------------------------------------------
+PADDB     xmmreg,xmmreg            [rm: 66 0f fc /r]                    SSE2
+PADDB     xmmreg,mem128            [rm: 66 0f fc /r]                    SSE2
+PADDW     xmmreg,xmmreg            [rm: 66 0f fd /r]                    SSE2
+PADDW     xmmreg,mem128            [rm: 66 0f fd /r]                    SSE2
+PADDD     xmmreg,xmmreg            [rm: 66 0f fe /r]                    SSE2
+PADDD     xmmreg,mem128            [rm: 66 0f fe /r]                    SSE2
+
+PSUBB     xmmreg,xmmreg            [rm: 66 0f f8 /r]                    SSE2
+PSUBB     xmmreg,mem128            [rm: 66 0f f8 /r]                    SSE2
+PSUBW     xmmreg,xmmreg            [rm: 66 0f f9 /r]                    SSE2
+PSUBW     xmmreg,mem128            [rm: 66 0f f9 /r]                    SSE2
+PSUBD     xmmreg,xmmreg            [rm: 66 0f fa /r]                    SSE2
+PSUBD     xmmreg,mem128            [rm: 66 0f fa /r]                    SSE2
+
+; --- Packed Logical ---------------------------------------------------------
+PAND      xmmreg,xmmreg            [rm: 66 0f db /r]                    SSE2
+PAND      xmmreg,mem128            [rm: 66 0f db /r]                    SSE2
+PANDN     xmmreg,xmmreg            [rm: 66 0f df /r]                    SSE2
+PANDN     xmmreg,mem128            [rm: 66 0f df /r]                    SSE2
+POR       xmmreg,xmmreg            [rm: 66 0f eb /r]                    SSE2
+POR       xmmreg,mem128            [rm: 66 0f eb /r]                    SSE2
+PXOR      xmmreg,xmmreg            [rm: 66 0f ef /r]                    SSE2
+PXOR      xmmreg,mem128            [rm: 66 0f ef /r]                    SSE2
+
+; --- Packed Comparison ------------------------------------------------------
+PCMPEQB   xmmreg,xmmreg            [rm: 66 0f 74 /r]                    SSE2
+PCMPEQB   xmmreg,mem128            [rm: 66 0f 74 /r]                    SSE2
+PCMPEQW   xmmreg,xmmreg            [rm: 66 0f 75 /r]                    SSE2
+PCMPEQW   xmmreg,mem128            [rm: 66 0f 75 /r]                    SSE2
+PCMPEQD   xmmreg,xmmreg            [rm: 66 0f 76 /r]                    SSE2
+PCMPEQD   xmmreg,mem128            [rm: 66 0f 76 /r]                    SSE2
+
+PCMPGTB   xmmreg,xmmreg            [rm: 66 0f 64 /r]                    SSE2
+PCMPGTB   xmmreg,mem128            [rm: 66 0f 64 /r]                    SSE2
+PCMPGTW   xmmreg,xmmreg            [rm: 66 0f 65 /r]                    SSE2
+PCMPGTW   xmmreg,mem128            [rm: 66 0f 65 /r]                    SSE2
+PCMPGTD   xmmreg,xmmreg            [rm: 66 0f 66 /r]                    SSE2
+PCMPGTD   xmmreg,mem128            [rm: 66 0f 66 /r]                    SSE2
+
+; --- Packed Min/Max ---------------------------------------------------------
+PMAXUB    xmmreg,xmmreg            [rm: 66 0f de /r]                    SSE2
+PMAXUB    xmmreg,mem128            [rm: 66 0f de /r]                    SSE2
+PMINUB    xmmreg,xmmreg            [rm: 66 0f da /r]                    SSE2
+PMINUB    xmmreg,mem128            [rm: 66 0f da /r]                    SSE2
+PMAXSW    xmmreg,xmmreg            [rm: 66 0f ee /r]                    SSE2
+PMAXSW    xmmreg,mem128            [rm: 66 0f ee /r]                    SSE2
+PMINSW    xmmreg,xmmreg            [rm: 66 0f ea /r]                    SSE2
+PMINSW    xmmreg,mem128            [rm: 66 0f ea /r]                    SSE2
+
+; --- Pack/Unpack ------------------------------------------------------------
+PACKSSWB  xmmreg,xmmreg            [rm: 66 0f 63 /r]                    SSE2
+PACKSSWB  xmmreg,mem128            [rm: 66 0f 63 /r]                    SSE2
+PACKUSWB  xmmreg,xmmreg            [rm: 66 0f 67 /r]                    SSE2
+PACKUSWB  xmmreg,mem128            [rm: 66 0f 67 /r]                    SSE2
+PACKSSDW  xmmreg,xmmreg            [rm: 66 0f 6b /r]                    SSE2
+PACKSSDW  xmmreg,mem128            [rm: 66 0f 6b /r]                    SSE2
+
+PUNPCKLBW xmmreg,xmmreg            [rm: 66 0f 60 /r]                    SSE2
+PUNPCKLBW xmmreg,mem128            [rm: 66 0f 60 /r]                    SSE2
+PUNPCKLWD xmmreg,xmmreg            [rm: 66 0f 61 /r]                    SSE2
+PUNPCKLWD xmmreg,mem128            [rm: 66 0f 61 /r]                    SSE2
+PUNPCKLDQ xmmreg,xmmreg            [rm: 66 0f 62 /r]                    SSE2
+PUNPCKLDQ xmmreg,mem128            [rm: 66 0f 62 /r]                    SSE2
+PUNPCKLQDQ xmmreg,xmmreg           [rm: 66 0f 6c /r]                    SSE2
+PUNPCKLQDQ xmmreg,mem128           [rm: 66 0f 6c /r]                    SSE2
+
+PUNPCKHBW xmmreg,xmmreg            [rm: 66 0f 68 /r]                    SSE2
+PUNPCKHBW xmmreg,mem128            [rm: 66 0f 68 /r]                    SSE2
+PUNPCKHWD xmmreg,xmmreg            [rm: 66 0f 69 /r]                    SSE2
+PUNPCKHWD xmmreg,mem128            [rm: 66 0f 69 /r]                    SSE2
+PUNPCKHDQ xmmreg,xmmreg            [rm: 66 0f 6a /r]                    SSE2
+PUNPCKHDQ xmmreg,mem128            [rm: 66 0f 6a /r]                    SSE2
+PUNPCKHQDQ xmmreg,xmmreg           [rm: 66 0f 6d /r]                    SSE2
+PUNPCKHQDQ xmmreg,mem128           [rm: 66 0f 6d /r]                    SSE2
+
+; --- Shift Instructions -----------------------------------------------------
+; Group 12 (shift word by imm8)
+PSLLW     xmmreg,imm8              [rmi: 66 0f 71 /6 ib]                SSE2
+PSRLW     xmmreg,imm8              [rmi: 66 0f 71 /2 ib]                SSE2
+PSRAW     xmmreg,imm8              [rmi: 66 0f 71 /4 ib]                SSE2
+
+; Group 13 (shift dword by imm8)
+PSLLD     xmmreg,imm8              [rmi: 66 0f 72 /6 ib]                SSE2
+PSRLD     xmmreg,imm8              [rmi: 66 0f 72 /2 ib]                SSE2
+PSRAD     xmmreg,imm8              [rmi: 66 0f 72 /4 ib]                SSE2
+
+; Group 14 (shift qword by imm8)
+PSLLQ     xmmreg,imm8              [rmi: 66 0f 73 /6 ib]                SSE2
+PSRLQ     xmmreg,imm8              [rmi: 66 0f 73 /2 ib]                SSE2
+PSLLDQ    xmmreg,imm8              [rmi: 66 0f 73 /7 ib]                SSE2
+PSRLDQ    xmmreg,imm8              [rmi: 66 0f 73 /3 ib]                SSE2
+
+; --- Move Byte Mask ---------------------------------------------------------
+PMOVMSKB  reg32,xmmreg             [rm: 66 0f d7 /r]                    SSE2
+PMOVMSKB  reg64,xmmreg             [rm: 66 48 0f d7 /r]                 SSE2,X86_64
+
+; ============================================================================
+; AVX / AVX2 - VEX‑encoded Instructions
+; ============================================================================
+
+; --- VADD -------------------------------------------------------------------
+VADDPS    xmmreg,xmmreg,xmmreg     [vex.nds.128.0f 58 /r]               AVX
+VADDPS    ymmreg,ymmreg,ymmreg     [vex.nds.256.0f 58 /r]               AVX
+VADDPS    xmmreg,xmmreg,mem128     [vex.nds.128.0f 58 /r]               AVX
+VADDPS    ymmreg,ymmreg,mem256     [vex.nds.256.0f 58 /r]               AVX
+
+VADDPD    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f 58 /r]            AVX
+VADDPD    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f 58 /r]            AVX
+VADDPD    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f 58 /r]            AVX
+VADDPD    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f 58 /r]            AVX
+
+VADDSD    xmmreg,xmmreg,xmmreg     [vex.nds.128.f2.0f 58 /r]            AVX
+VADDSD    xmmreg,xmmreg,mem64      [vex.nds.128.f2.0f 58 /r]            AVX
+
+VADDSS    xmmreg,xmmreg,xmmreg     [vex.nds.128.f3.0f 58 /r]            AVX
+VADDSS    xmmreg,xmmreg,mem32      [vex.nds.128.f3.0f 58 /r]            AVX
+
+; --- VSUB -------------------------------------------------------------------
+VSUBPS    xmmreg,xmmreg,xmmreg     [vex.nds.128.0f 5c /r]               AVX
+VSUBPS    ymmreg,ymmreg,ymmreg     [vex.nds.256.0f 5c /r]               AVX
+VSUBPS    xmmreg,xmmreg,mem128     [vex.nds.128.0f 5c /r]               AVX
+VSUBPS    ymmreg,ymmreg,mem256     [vex.nds.256.0f 5c /r]               AVX
+
+VSUBPD    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f 5c /r]            AVX
+VSUBPD    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f 5c /r]            AVX
+VSUBPD    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f 5c /r]            AVX
+VSUBPD    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f 5c /r]            AVX
+
+; --- VMUL -------------------------------------------------------------------
+VMULPS    xmmreg,xmmreg,xmmreg     [vex.nds.128.0f 59 /r]               AVX
+VMULPS    ymmreg,ymmreg,ymmreg     [vex.nds.256.0f 59 /r]               AVX
+VMULPS    xmmreg,xmmreg,mem128     [vex.nds.128.0f 59 /r]               AVX
+VMULPS    ymmreg,ymmreg,mem256     [vex.nds.256.0f 59 /r]               AVX
+
+VMULPD    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f 59 /r]            AVX
+VMULPD    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f 59 /r]            AVX
+VMULPD    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f 59 /r]            AVX
+VMULPD    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f 59 /r]            AVX
+
+VMULSD    xmmreg,xmmreg,xmmreg     [vex.nds.128.f2.0f 59 /r]            AVX
+VMULSD    xmmreg,xmmreg,mem64      [vex.nds.128.f2.0f 59 /r]            AVX
+
+VMULSS    xmmreg,xmmreg,xmmreg     [vex.nds.128.f3.0f 59 /r]            AVX
+VMULSS    xmmreg,xmmreg,mem32      [vex.nds.128.f3.0f 59 /r]            AVX
+
+; --- VDIV -------------------------------------------------------------------
+VDIVPS    xmmreg,xmmreg,xmmreg     [vex.nds.128.0f 5e /r]               AVX
+VDIVPS    ymmreg,ymmreg,ymmreg     [vex.nds.256.0f 5e /r]               AVX
+VDIVPS    xmmreg,xmmreg,mem128     [vex.nds.128.0f 5e /r]               AVX
+VDIVPS    ymmreg,ymmreg,mem256     [vex.nds.256.0f 5e /r]               AVX
+
+VDIVPD    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f 5e /r]            AVX
+VDIVPD    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f 5e /r]            AVX
+VDIVPD    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f 5e /r]            AVX
+VDIVPD    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f 5e /r]            AVX
+
+; --- VMIN / VMAX ------------------------------------------------------------
+VMINPS    xmmreg,xmmreg,xmmreg     [vex.nds.128.0f 5d /r]               AVX
+VMINPS    ymmreg,ymmreg,ymmreg     [vex.nds.256.0f 5d /r]               AVX
+VMINPS    xmmreg,xmmreg,mem128     [vex.nds.128.0f 5d /r]               AVX
+VMINPS    ymmreg,ymmreg,mem256     [vex.nds.256.0f 5d /r]               AVX
+
+VMINPD    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f 5d /r]            AVX
+VMINPD    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f 5d /r]            AVX
+VMINPD    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f 5d /r]            AVX
+VMINPD    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f 5d /r]            AVX
+
+VMAXPS    xmmreg,xmmreg,xmmreg     [vex.nds.128.0f 5f /r]               AVX
+VMAXPS    ymmreg,ymmreg,ymmreg     [vex.nds.256.0f 5f /r]               AVX
+VMAXPS    xmmreg,xmmreg,mem128     [vex.nds.128.0f 5f /r]               AVX
+VMAXPS    ymmreg,ymmreg,mem256     [vex.nds.256.0f 5f /r]               AVX
+
+VMAXPD    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f 5f /r]            AVX
+VMAXPD    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f 5f /r]            AVX
+VMAXPD    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f 5f /r]            AVX
+VMAXPD    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f 5f /r]            AVX
+
+; --- Logical ----------------------------------------------------------------
+VANDPS    xmmreg,xmmreg,xmmreg     [vex.nds.128.0f 54 /r]               AVX
+VANDPS    ymmreg,ymmreg,ymmreg     [vex.nds.256.0f 54 /r]               AVX
+VANDPS    xmmreg,xmmreg,mem128     [vex.nds.128.0f 54 /r]               AVX
+VANDPS    ymmreg,ymmreg,mem256     [vex.nds.256.0f 54 /r]               AVX
+
+VANDPD    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f 54 /r]            AVX
+VANDPD    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f 54 /r]            AVX
+VANDPD    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f 54 /r]            AVX
+VANDPD    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f 54 /r]            AVX
+
+VORPS     xmmreg,xmmreg,xmmreg     [vex.nds.128.0f 56 /r]               AVX
+VORPS     ymmreg,ymmreg,ymmreg     [vex.nds.256.0f 56 /r]               AVX
+VORPS     xmmreg,xmmreg,mem128     [vex.nds.128.0f 56 /r]               AVX
+VORPS     ymmreg,ymmreg,mem256     [vex.nds.256.0f 56 /r]               AVX
+
+VORPD     xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f 56 /r]            AVX
+VORPD     ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f 56 /r]            AVX
+VORPD     xmmreg,xmmreg,mem128     [vex.nds.128.66.0f 56 /r]            AVX
+VORPD     ymmreg,ymmreg,mem256     [vex.nds.256.66.0f 56 /r]            AVX
+
+VXORPS    xmmreg,xmmreg,xmmreg     [vex.nds.128.0f 57 /r]               AVX
+VXORPS    ymmreg,ymmreg,ymmreg     [vex.nds.256.0f 57 /r]               AVX
+VXORPS    xmmreg,xmmreg,mem128     [vex.nds.128.0f 57 /r]               AVX
+VXORPS    ymmreg,ymmreg,mem256     [vex.nds.256.0f 57 /r]               AVX
+
+VXORPD    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f 57 /r]            AVX
+VXORPD    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f 57 /r]            AVX
+VXORPD    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f 57 /r]            AVX
+VXORPD    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f 57 /r]            AVX
+
+; --- VSQRT ------------------------------------------------------------------
+VSQRTPS   xmmreg,xmmreg            [vex.nds.128.0f 51 /r]               AVX
+VSQRTPS   ymmreg,ymmreg            [vex.nds.256.0f 51 /r]               AVX
+VSQRTPS   xmmreg,mem128            [vex.nds.128.0f 51 /r]               AVX
+VSQRTPS   ymmreg,mem256            [vex.nds.256.0f 51 /r]               AVX
+
+VSQRTPD   xmmreg,xmmreg            [vex.nds.128.66.0f 51 /r]            AVX
+VSQRTPD   ymmreg,ymmreg            [vex.nds.256.66.0f 51 /r]            AVX
+VSQRTPD   xmmreg,mem128            [vex.nds.128.66.0f 51 /r]            AVX
+VSQRTPD   ymmreg,mem256            [vex.nds.256.66.0f 51 /r]            AVX
+
+; --- Data Movement ----------------------------------------------------------
+VMOVAPS   xmmreg,xmmreg            [vex.nds.128.0f 28 /r]               AVX
+VMOVAPS   ymmreg,ymmreg            [vex.nds.256.0f 28 /r]               AVX
+VMOVAPS   xmmreg,mem128            [vex.nds.128.0f 28 /r]               AVX
+VMOVAPS   ymmreg,mem256            [vex.nds.256.0f 28 /r]               AVX
+VMOVAPS   mem128,xmmreg            [vex.nds.128.0f 29 /r]               AVX
+VMOVAPS   mem256,ymmreg            [vex.nds.256.0f 29 /r]               AVX
+
+VMOVAPD   xmmreg,xmmreg            [vex.nds.128.66.0f 28 /r]            AVX
+VMOVAPD   ymmreg,ymmreg            [vex.nds.256.66.0f 28 /r]            AVX
+VMOVAPD   xmmreg,mem128            [vex.nds.128.66.0f 28 /r]            AVX
+VMOVAPD   ymmreg,mem256            [vex.nds.256.66.0f 28 /r]            AVX
+VMOVAPD   mem128,xmmreg            [vex.nds.128.66.0f 29 /r]            AVX
+VMOVAPD   mem256,ymmreg            [vex.nds.256.66.0f 29 /r]            AVX
+
+VMOVUPS   xmmreg,xmmreg            [vex.nds.128.0f 10 /r]               AVX
+VMOVUPS   ymmreg,ymmreg            [vex.nds.256.0f 10 /r]               AVX
+VMOVUPS   xmmreg,mem128            [vex.nds.128.0f 10 /r]               AVX
+VMOVUPS   ymmreg,mem256            [vex.nds.256.0f 10 /r]               AVX
+VMOVUPS   mem128,xmmreg            [vex.nds.128.0f 11 /r]               AVX
+VMOVUPS   mem256,ymmreg            [vex.nds.256.0f 11 /r]               AVX
+
+VMOVUPD   xmmreg,xmmreg            [vex.nds.128.66.0f 10 /r]            AVX
+VMOVUPD   ymmreg,ymmreg            [vex.nds.256.66.0f 10 /r]            AVX
+VMOVUPD   xmmreg,mem128            [vex.nds.128.66.0f 10 /r]            AVX
+VMOVUPD   ymmreg,mem256            [vex.nds.256.66.0f 10 /r]            AVX
+VMOVUPD   mem128,xmmreg            [vex.nds.128.66.0f 11 /r]            AVX
+VMOVUPD   mem256,ymmreg            [vex.nds.256.66.0f 11 /r]            AVX
+
+VMOVDQA   xmmreg,xmmreg            [vex.nds.128.66.0f 6f /r]            AVX
+VMOVDQA   ymmreg,ymmreg            [vex.nds.256.66.0f 6f /r]            AVX,AVX2
+VMOVDQA   xmmreg,mem128            [vex.nds.128.66.0f 6f /r]            AVX
+VMOVDQA   ymmreg,mem256            [vex.nds.256.66.0f 6f /r]            AVX,AVX2
+VMOVDQA   mem128,xmmreg            [vex.nds.128.66.0f 7f /r]            AVX
+VMOVDQA   mem256,ymmreg            [vex.nds.256.66.0f 7f /r]            AVX,AVX2
+
+VMOVDQU   xmmreg,xmmreg            [vex.nds.128.f3.0f 6f /r]            AVX
+VMOVDQU   ymmreg,ymmreg            [vex.nds.256.f3.0f 6f /r]            AVX
+VMOVDQU   xmmreg,mem128            [vex.nds.128.f3.0f 6f /r]            AVX
+VMOVDQU   ymmreg,mem256            [vex.nds.256.f3.0f 6f /r]            AVX
+VMOVDQU   mem128,xmmreg            [vex.nds.128.f3.0f 7f /r]            AVX
+VMOVDQU   mem256,ymmreg            [vex.nds.256.f3.0f 7f /r]            AVX
+
+; --- Conversion -------------------------------------------------------------
+VCVTDQ2PS xmmreg,xmmreg            [vex.nds.128.0f 5b /r]               AVX
+VCVTDQ2PS ymmreg,ymmreg            [vex.nds.256.0f 5b /r]               AVX
+VCVTDQ2PS xmmreg,mem128            [vex.nds.128.0f 5b /r]               AVX
+VCVTDQ2PS ymmreg,mem256            [vex.nds.256.0f 5b /r]               AVX
+
+VCVTPS2DQ xmmreg,xmmreg            [vex.nds.128.66.0f 5b /r]            AVX
+VCVTPS2DQ ymmreg,ymmreg            [vex.nds.256.66.0f 5b /r]            AVX
+VCVTPS2DQ xmmreg,mem128            [vex.nds.128.66.0f 5b /r]            AVX
+VCVTPS2DQ ymmreg,mem256            [vex.nds.256.66.0f 5b /r]            AVX
+
+VCVTPD2PS xmmreg,xmmreg            [vex.nds.128.66.0f 5a /r]            AVX
+VCVTPD2PS xmmreg,ymmreg            [vex.nds.256.66.0f 5a /r]            AVX
+VCVTPD2PS xmmreg,mem128            [vex.nds.128.66.0f 5a /r]            AVX
+VCVTPD2PS xmmreg,mem256            [vex.nds.256.66.0f 5a /r]            AVX
+
+VCVTPS2PD xmmreg,xmmreg            [vex.nds.128.0f 5a /r]               AVX
+VCVTPS2PD ymmreg,xmmreg            [vex.nds.256.0f 5a /r]               AVX
+VCVTPS2PD xmmreg,mem64             [vex.nds.128.0f 5a /r]               AVX
+VCVTPS2PD ymmreg,mem128            [vex.nds.256.0f 5a /r]               AVX
+
+VCVTTPS2DQ xmmreg,xmmreg           [vex.nds.128.f3.0f 5b /r]            AVX
+VCVTTPS2DQ ymmreg,ymmreg           [vex.nds.256.f3.0f 5b /r]            AVX
+VCVTTPS2DQ xmmreg,mem128           [vex.nds.128.f3.0f 5b /r]            AVX
+VCVTTPS2DQ ymmreg,mem256           [vex.nds.256.f3.0f 5b /r]            AVX
+
+; --- Packed Arithmetic (Integer) - AVX2 -------------------------------------
+VPADDB    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f fc /r]            AVX
+VPADDB    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f fc /r]            AVX,AVX2
+VPADDB    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f fc /r]            AVX
+VPADDB    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f fc /r]            AVX,AVX2
+
+VPADDW    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f fd /r]            AVX
+VPADDW    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f fd /r]            AVX,AVX2
+VPADDW    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f fd /r]            AVX
+VPADDW    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f fd /r]            AVX,AVX2
+
+VPADDD    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f fe /r]            AVX
+VPADDD    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f fe /r]            AVX,AVX2
+VPADDD    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f fe /r]            AVX
+VPADDD    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f fe /r]            AVX,AVX2
+
+VPADDQ    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f d4 /r]            AVX
+VPADDQ    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f d4 /r]            AVX,AVX2
+VPADDQ    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f d4 /r]            AVX
+VPADDQ    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f d4 /r]            AVX,AVX2
+
+VPSUBB    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f f8 /r]            AVX
+VPSUBB    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f f8 /r]            AVX,AVX2
+VPSUBB    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f f8 /r]            AVX
+VPSUBB    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f f8 /r]            AVX,AVX2
+
+VPSUBW    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f f9 /r]            AVX
+VPSUBW    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f f9 /r]            AVX,AVX2
+VPSUBW    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f f9 /r]            AVX
+VPSUBW    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f f9 /r]            AVX,AVX2
+
+VPSUBD    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f fa /r]            AVX
+VPSUBD    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f fa /r]            AVX,AVX2
+VPSUBD    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f fa /r]            AVX
+VPSUBD    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f fa /r]            AVX,AVX2
+
+; --- Packed Logical (Integer) - AVX2 ----------------------------------------
+VPAND     xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f db /r]            AVX
+VPAND     ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f db /r]            AVX,AVX2
+VPAND     xmmreg,xmmreg,mem128     [vex.nds.128.66.0f db /r]            AVX
+VPAND     ymmreg,ymmreg,mem256     [vex.nds.256.66.0f db /r]            AVX,AVX2
+
+VPOR      xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f eb /r]            AVX
+VPOR      ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f eb /r]            AVX,AVX2
+VPOR      xmmreg,xmmreg,mem128     [vex.nds.128.66.0f eb /r]            AVX
+VPOR      ymmreg,ymmreg,mem256     [vex.nds.256.66.0f eb /r]            AVX,AVX2
+
+VPXOR     xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f ef /r]            AVX
+VPXOR     ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f ef /r]            AVX,AVX2
+VPXOR     xmmreg,xmmreg,mem128     [vex.nds.128.66.0f ef /r]            AVX
+VPXOR     ymmreg,ymmreg,mem256     [vex.nds.256.66.0f ef /r]            AVX,AVX2
+
+; --- Packed Comparison (Integer) - AVX2 -------------------------------------
+VPCMPEQD  xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f 76 /r]            AVX
+VPCMPEQD  ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f 76 /r]            AVX,AVX2
+VPCMPEQD  xmmreg,xmmreg,mem128     [vex.nds.128.66.0f 76 /r]            AVX
+VPCMPEQD  ymmreg,ymmreg,mem256     [vex.nds.256.66.0f 76 /r]            AVX,AVX2
+
+VPCMPGTD  xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f 66 /r]            AVX
+VPCMPGTD  ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f 66 /r]            AVX,AVX2
+VPCMPGTD  xmmreg,xmmreg,mem128     [vex.nds.128.66.0f 66 /r]            AVX
+VPCMPGTD  ymmreg,ymmreg,mem256     [vex.nds.256.66.0f 66 /r]            AVX,AVX2
+
+; --- Packed Min/Max (Integer) - AVX2 ----------------------------------------
+VPMAXUB   xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f de /r]            AVX
+VPMAXUB   ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f de /r]            AVX,AVX2
+VPMAXUB   xmmreg,xmmreg,mem128     [vex.nds.128.66.0f de /r]            AVX
+VPMAXUB   ymmreg,ymmreg,mem256     [vex.nds.256.66.0f de /r]            AVX,AVX2
+
+VPMINUB   xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f da /r]            AVX
+VPMINUB   ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f da /r]            AVX,AVX2
+VPMINUB   xmmreg,xmmreg,mem128     [vex.nds.128.66.0f da /r]            AVX
+VPMINUB   ymmreg,ymmreg,mem256     [vex.nds.256.66.0f da /r]            AVX,AVX2
+
+VPMAXSW   xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f ee /r]            AVX
+VPMAXSW   ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f ee /r]            AVX,AVX2
+VPMAXSW   xmmreg,xmmreg,mem128     [vex.nds.128.66.0f ee /r]            AVX
+VPMAXSW   ymmreg,ymmreg,mem256     [vex.nds.256.66.0f ee /r]            AVX,AVX2
+
+VPMINSW   xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f ea /r]            AVX
+VPMINSW   ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f ea /r]            AVX,AVX2
+VPMINSW   xmmreg,xmmreg,mem128     [vex.nds.128.66.0f ea /r]            AVX
+VPMINSW   ymmreg,ymmreg,mem256     [vex.nds.256.66.0f ea /r]            AVX,AVX2
+
+; --- Pack/Unpack (Integer) - AVX2 -------------------------------------------
+VPACKSSWB xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f 63 /r]            AVX
+VPACKSSWB ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f 63 /r]            AVX,AVX2
+VPACKSSWB xmmreg,xmmreg,mem128     [vex.nds.128.66.0f 63 /r]            AVX
+VPACKSSWB ymmreg,ymmreg,mem256     [vex.nds.256.66.0f 63 /r]            AVX,AVX2
+
+VPACKUSWB xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f 67 /r]            AVX
+VPACKUSWB ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f 67 /r]            AVX,AVX2
+VPACKUSWB xmmreg,xmmreg,mem128     [vex.nds.128.66.0f 67 /r]            AVX
+VPACKUSWB ymmreg,ymmreg,mem256     [vex.nds.256.66.0f 67 /r]            AVX,AVX2
+
+VPACKSSDW xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f 6b /r]            AVX
+VPACKSSDW ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f 6b /r]            AVX,AVX2
+VPACKSSDW xmmreg,xmmreg,mem128     [vex.nds.128.66.0f 6b /r]            AVX
+VPACKSSDW ymmreg,ymmreg,mem256     [vex.nds.256.66.0f 6b /r]            AVX,AVX2
+
+VPUNPCKLBW xmmreg,xmmreg,xmmreg    [vex.nds.128.66.0f 60 /r]            AVX
+VPUNPCKLBW ymmreg,ymmreg,ymmreg    [vex.nds.256.66.0f 60 /r]            AVX,AVX2
+VPUNPCKLBW xmmreg,xmmreg,mem128    [vex.nds.128.66.0f 60 /r]            AVX
+VPUNPCKLBW ymmreg,ymmreg,mem256    [vex.nds.256.66.0f 60 /r]            AVX,AVX2
+
+VPUNPCKLWD xmmreg,xmmreg,xmmreg    [vex.nds.128.66.0f 61 /r]            AVX
+VPUNPCKLWD ymmreg,ymmreg,ymmreg    [vex.nds.256.66.0f 61 /r]            AVX,AVX2
+VPUNPCKLWD xmmreg,xmmreg,mem128    [vex.nds.128.66.0f 61 /r]            AVX
+VPUNPCKLWD ymmreg,ymmreg,mem256    [vex.nds.256.66.0f 61 /r]            AVX,AVX2
+
+VPUNPCKLDQ xmmreg,xmmreg,xmmreg    [vex.nds.128.66.0f 62 /r]            AVX
+VPUNPCKLDQ ymmreg,ymmreg,ymmreg    [vex.nds.256.66.0f 62 /r]            AVX,AVX2
+VPUNPCKLDQ xmmreg,xmmreg,mem128    [vex.nds.128.66.0f 62 /r]            AVX
+VPUNPCKLDQ ymmreg,ymmreg,mem256    [vex.nds.256.66.0f 62 /r]            AVX,AVX2
+
+VPUNPCKHBW xmmreg,xmmreg,xmmreg    [vex.nds.128.66.0f 68 /r]            AVX
+VPUNPCKHBW ymmreg,ymmreg,ymmreg    [vex.nds.256.66.0f 68 /r]            AVX,AVX2
+VPUNPCKHBW xmmreg,xmmreg,mem128    [vex.nds.128.66.0f 68 /r]            AVX
+VPUNPCKHBW ymmreg,ymmreg,mem256    [vex.nds.256.66.0f 68 /r]            AVX,AVX2
+
+VPUNPCKHWD xmmreg,xmmreg,xmmreg    [vex.nds.128.66.0f 69 /r]            AVX
+VPUNPCKHWD ymmreg,ymmreg,ymmreg    [vex.nds.256.66.0f 69 /r]            AVX,AVX2
+VPUNPCKHWD xmmreg,xmmreg,mem128    [vex.nds.128.66.0f 69 /r]            AVX
+VPUNPCKHWD ymmreg,ymmreg,mem256    [vex.nds.256.66.0f 69 /r]            AVX,AVX2
+
+VPUNPCKHDQ xmmreg,xmmreg,xmmreg    [vex.nds.128.66.0f 6a /r]            AVX
+VPUNPCKHDQ ymmreg,ymmreg,ymmreg    [vex.nds.256.66.0f 6a /r]            AVX,AVX2
+VPUNPCKHDQ xmmreg,xmmreg,mem128    [vex.nds.128.66.0f 6a /r]            AVX
+VPUNPCKHDQ ymmreg,ymmreg,mem256    [vex.nds.256.66.0f 6a /r]            AVX,AVX2
+
+; --- Shift (Integer) - AVX2 -------------------------------------------------
+VPSLLW    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f f1 /r]            AVX
+VPSLLW    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f f1 /r]            AVX,AVX2
+VPSLLW    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f f1 /r]            AVX
+VPSLLW    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f f1 /r]            AVX,AVX2
+
+VPSLLD    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f f2 /r]            AVX
+VPSLLD    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f f2 /r]            AVX,AVX2
+VPSLLD    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f f2 /r]            AVX
+VPSLLD    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f f2 /r]            AVX,AVX2
+
+VPSLLQ    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f f3 /r]            AVX
+VPSLLQ    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f f3 /r]            AVX,AVX2
+VPSLLQ    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f f3 /r]            AVX
+VPSLLQ    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f f3 /r]            AVX,AVX2
+
+VPSRLW    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f d1 /r]            AVX
+VPSRLW    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f d1 /r]            AVX,AVX2
+VPSRLW    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f d1 /r]            AVX
+VPSRLW    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f d1 /r]            AVX,AVX2
+
+VPSRLD    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f d2 /r]            AVX
+VPSRLD    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f d2 /r]            AVX,AVX2
+VPSRLD    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f d2 /r]            AVX
+VPSRLD    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f d2 /r]            AVX,AVX2
+
+VPSRLQ    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f d3 /r]            AVX
+VPSRLQ    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f d3 /r]            AVX,AVX2
+VPSRLQ    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f d3 /r]            AVX
+VPSRLQ    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f d3 /r]            AVX,AVX2
+
+VPSRAW    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f e1 /r]            AVX
+VPSRAW    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f e1 /r]            AVX,AVX2
+VPSRAW    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f e1 /r]            AVX
+VPSRAW    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f e1 /r]            AVX,AVX2
+
+VPSRAD    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f e2 /r]            AVX
+VPSRAD    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f e2 /r]            AVX,AVX2
+VPSRAD    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f e2 /r]            AVX
+VPSRAD    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f e2 /r]            AVX,AVX2
+
+; --- AVX-512 FP16  -------------------------
+VMAXSH    xmmreg,xmmreg,xmmreg     [evex.nds.128.f3.5c 5f /r]           AVX512VL,AVX512F
+VMAXSH    xmmreg,xmmreg,mem16      [evex.nds.128.f3.5c 5f /r]           AVX512VL,AVX512F
+VMAXSH    xmmreg{k1}{z},xmmreg,xmmreg [evex.nds.128.f3.5c 5f /r]        AVX512VL,AVX512F
+
+VMINSH    xmmreg,xmmreg,xmmreg     [evex.nds.128.f3.5c 5d /r]           AVX512VL,AVX512F
+VMINSH    xmmreg,xmmreg,mem16      [evex.nds.128.f3.5c 5d /r]           AVX512VL,AVX512F
+VMINSH    xmmreg{k1}{z},xmmreg,xmmreg [evex.nds.128.f3.5c 5d /r]        AVX512VL,AVX512F
