@@ -1122,6 +1122,9 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         else if (strcmp(cmd, "wait") == 0 || strcmp(cmd, "fwait") == 0) {machine_code[0] = 0x9B;*s = 1;}
         else if (strcmp(cmd, "pause") == 0) {machine_code[0] = 0xF3;machine_code[1] = 0x90;*s = 2;}
         else if (strcmp(cmd, "ud2") == 0) {machine_code[0] = 0x0F;machine_code[1] = 0x0B;*s = 2;}
+        else if (strcmp(cmd, "lfence") == 0){machine_code[0] = 0x0F; machine_code[1] = 0xAE; machine_code[2] = 0xE8;*s = 3;}
+        else if (strcmp(cmd, "rdtscp") == 0){machine_code[0] = 0x0F; machine_code[1] = 0x01; machine_code[2] = 0xF9;*s = 3;}
+        else if (strcmp(cmd, "rdtsc") == 0) {machine_code[0] = 0x0F;machine_code[1] = 0x31;*s = 2;}
         else if (!strcmp(cmd, "rdpru")){
             if (!rdpru_defined) {fprintf(stderr,"AmmAsm:%d: Warn: program uses RDPRU but current CPU doesn't support it (might give #UD)\n", node->line);}
             machine_code[0] = 0x0F; machine_code[1] = 0x01; machine_code[2] = 0xFD;*s = 3;
@@ -1135,11 +1138,9 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
             uint8_t reg = find_reg64_index(a->reg);
             AddrExpr *mem = &b->addr;
 
-
             node->ins.pc = *pc;
             *s = encode_inst_rm_rm(machine_code, reg, mem, 64, 0x8D, 0, 0);
             *pc += *s;
-            
         }
         
     }
@@ -1194,7 +1195,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
 
 
     // SSE XMM register instructions
-    if (!strcmp(cmd, "movaps") ||
+    else if (!strcmp(cmd, "movaps") ||
         !strcmp(cmd, "movups") ||
         !strcmp(cmd, "xorps")  ||
         !strcmp(cmd, "andps")  ||
@@ -1259,7 +1260,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
 
 
     // SSE2 XMM register instructions (old version)
-    if ((!strcmp("movdqa", cmd) || !strcmp("movdqu", cmd)) || cmd[0] == 'p'){
+    else if ((!strcmp("movdqa", cmd) || !strcmp("movdqu", cmd)) || !strcmp("movq", cmd) || cmd[0] == 'p'){
         uint8_t opcode = 0;
         uint8_t prefix = 0x66;
         uint8_t group_digit = 0;
@@ -1321,7 +1322,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         else if (!strcmp(cmd, "pmovmskb"))  opcode = 0xD7;
         else if (!strcmp(cmd, "psraw"))     {opcode = 0xE1; group_digit = 4;}
         else if (!strcmp(cmd, "psrad"))     {opcode = 0xE2; group_digit = 4;}
-        else goto skip;
+
         if(!sse2_defined) {fprintf(stderr, "AmmAsm:%d: Warn: program uses SSE2, but current CPU does't support it(might give #UD)\n", node->line);}
 
         // pmovmskb r32, xmm
@@ -1451,12 +1452,11 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
 
     }
 
-skip:
 
 
     // весь ад здесь
     // AVX1 / AVX2 / AVX-512 (Refactored version)
-    if(cmd[0] == 'v') {
+    else if(cmd[0] == 'v') {
         
         if(!avx2_defined) {fprintf(stderr, "AmmAsm:%d: Warn: program uses AVX2, but current CPU does't support it(might give #UD)\n", node->line);}
         if(!avx_defined) {fprintf(stderr, "AmmAsm:%d: Warn: program uses AVX, but current CPU does't support it(might give #UD)\n", node->line);}

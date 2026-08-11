@@ -21,7 +21,7 @@ AmmAsm is a handwritten x86-64 assembler designed for simplicity and clarity, ed
 
 ## What's New in v2.4.x
 
-1) Added new instructions: `SSE2`(45 instructions), `AVX/AVX2/AVX512`(~77 instructions), `AVX-512 FP16`(2 instructions), `bsf`, `bsr`, `cmc`, `clc`, `stc`, `cld`, `std`, `cli`, `sti`, `lahf`, `sahf`, `pushf`, `popf`, `popfq`, `iret`, `iretq`, `cpuid`, `hlt`, `wait`, `fwait`, `pause`, `ud2`, `xchg`, `movq`, `rdpru`
+1) Added new instructions: `SSE2`(45 instructions), `AVX/AVX2/AVX512`(~77 instructions), `AVX-512 FP16`(2 instructions), `bsf`, `bsr`, `cmc`, `clc`, `stc`, `cld`, `std`, `cli`, `sti`, `lahf`, `sahf`, `pushf`, `popf`, `popfq`, `iret`, `iretq`, `cpuid`, `hlt`, `wait`, `fwait`, `pause`, `ud2`, `xchg`, `movq`, `rdpru`, `rdtsc`, `rdtscp`, `lfence`
 
 2) Added Float number for `SSE1`, IEEE-754
 

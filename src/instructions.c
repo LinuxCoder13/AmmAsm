@@ -78,6 +78,7 @@ const char *CMDS[] = {
     "jz",
     "lahf",
     "lea",
+    "lfence",
     "mov",
     "movaps",
     "movdqa",
@@ -145,6 +146,8 @@ const char *CMDS[] = {
     "rcl",
     "rcr",
     "rdpru", // NASM 3.02 does not support!
+    "rdtsc",
+    "rdtscp",
     "ret",
     "rol",
     "ror",
@@ -308,9 +311,34 @@ const char *short_imm_instructions[] = {
 const int short_imm_instructions_COUNT = sizeof(short_imm_instructions) / sizeof(short_imm_instructions[0]) -1;
 
 const char *zero_operand_instructions[] = {
-    "clc", "cld", "cli", "cmc", "cpuid", "fwait", "hlt", "iret", "iretq",
-    "lahf", "nop", "pause", "popf", "popfq", "pushf", "rdpru", "ret", "sahf", "stc",
-    "std", "sti", "syscall", "ud2", "wait", NULL
+    "clc",
+    "cld",
+    "cli",
+    "cmc",
+    "cpuid",
+    "fwait",
+    "hlt",
+    "iret",
+    "iretq",
+    "lahf",
+    "lfence",
+    "nop",
+    "pause",
+    "popf",
+    "popfq",
+    "pushf",
+    "rdpru",
+    "rdtsc",
+    "rdtscp",
+    "ret",
+    "sahf",
+    "stc",
+    "std",
+    "sti",
+    "syscall",
+    "ud2",
+    "wait",
+    NULL
 };
 
 const int zero_operand_instructions_COUNT = sizeof(zero_operand_instructions) / sizeof(zero_operand_instructions[0]) -1;
