@@ -703,127 +703,256 @@ PMOVMSKB  reg32,xmmreg             [rm: 66 0f d7 /r]                    SSE2
 PMOVMSKB  reg64,xmmreg             [rm: 66 48 0f d7 /r]                 SSE2,X86_64
 
 ; ============================================================================
-; AVX / AVX2 - VEX‑encoded Instructions
+; AVX / AVX2 / AVX-512 (VEX + EVEX encoded instructions)
 ; ============================================================================
 
-; --- VADD -------------------------------------------------------------------
+; --- VADDPS -----------------------------------------------------------------
 VADDPS    xmmreg,xmmreg,xmmreg     [vex.nds.128.0f 58 /r]               AVX
 VADDPS    ymmreg,ymmreg,ymmreg     [vex.nds.256.0f 58 /r]               AVX
 VADDPS    xmmreg,xmmreg,mem128     [vex.nds.128.0f 58 /r]               AVX
 VADDPS    ymmreg,ymmreg,mem256     [vex.nds.256.0f 58 /r]               AVX
+VADDPS    zmmreg,zmmreg,zmmreg     [evex.nds.512.0f 58 /r]              AVX512F
+VADDPS    zmmreg,zmmreg,mem512     [evex.nds.512.0f 58 /r]              AVX512F
+VADDPS    zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.0f 58 /r]           AVX512F
+VADDPS    zmmreg{k1}{z},zmmreg,mem512 [evex.nds.512.0f 58 /r]           AVX512F
+VADDPS    zmmreg{k1}{z},zmmreg,zmmreg{1to16} [evex.nds.512.0f 58 /r]    AVX512F
+VADDPS    zmmreg{k1}{z},zmmreg,mem128{1to16} [evex.nds.512.0f 58 /r]    AVX512F
 
+; --- VADDPD -----------------------------------------------------------------
 VADDPD    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f 58 /r]            AVX
 VADDPD    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f 58 /r]            AVX
 VADDPD    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f 58 /r]            AVX
 VADDPD    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f 58 /r]            AVX
+VADDPD    zmmreg,zmmreg,zmmreg     [evex.nds.512.66.0f 58 /r]           AVX512F
+VADDPD    zmmreg,zmmreg,mem512     [evex.nds.512.66.0f 58 /r]           AVX512F
+VADDPD    zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f 58 /r]        AVX512F
+VADDPD    zmmreg{k1}{z},zmmreg,mem512 [evex.nds.512.66.0f 58 /r]        AVX512F
+VADDPD    zmmreg{k1}{z},zmmreg,zmmreg{1to8} [evex.nds.512.66.0f 58 /r]  AVX512F
+VADDPD    zmmreg{k1}{z},zmmreg,mem128{1to8} [evex.nds.512.66.0f 58 /r]  AVX512F
 
+; --- VADDSD -----------------------------------------------------------------
 VADDSD    xmmreg,xmmreg,xmmreg     [vex.nds.128.f2.0f 58 /r]            AVX
 VADDSD    xmmreg,xmmreg,mem64      [vex.nds.128.f2.0f 58 /r]            AVX
 
+; --- VADDSS -----------------------------------------------------------------
 VADDSS    xmmreg,xmmreg,xmmreg     [vex.nds.128.f3.0f 58 /r]            AVX
 VADDSS    xmmreg,xmmreg,mem32      [vex.nds.128.f3.0f 58 /r]            AVX
 
-; --- VSUB -------------------------------------------------------------------
+; --- VSUBPS -----------------------------------------------------------------
 VSUBPS    xmmreg,xmmreg,xmmreg     [vex.nds.128.0f 5c /r]               AVX
 VSUBPS    ymmreg,ymmreg,ymmreg     [vex.nds.256.0f 5c /r]               AVX
 VSUBPS    xmmreg,xmmreg,mem128     [vex.nds.128.0f 5c /r]               AVX
 VSUBPS    ymmreg,ymmreg,mem256     [vex.nds.256.0f 5c /r]               AVX
+VSUBPS    zmmreg,zmmreg,zmmreg     [evex.nds.512.0f 5c /r]              AVX512F
+VSUBPS    zmmreg,zmmreg,mem512     [evex.nds.512.0f 5c /r]              AVX512F
+VSUBPS    zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.0f 5c /r]           AVX512F
+VSUBPS    zmmreg{k1}{z},zmmreg,mem512 [evex.nds.512.0f 5c /r]           AVX512F
+VSUBPS    zmmreg{k1}{z},zmmreg,zmmreg{1to16} [evex.nds.512.0f 5c /r]    AVX512F
+VSUBPS    zmmreg{k1}{z},zmmreg,mem128{1to16} [evex.nds.512.0f 5c /r]    AVX512F
 
+; --- VSUBPD -----------------------------------------------------------------
 VSUBPD    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f 5c /r]            AVX
 VSUBPD    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f 5c /r]            AVX
 VSUBPD    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f 5c /r]            AVX
 VSUBPD    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f 5c /r]            AVX
+VSUBPD    zmmreg,zmmreg,zmmreg     [evex.nds.512.66.0f 5c /r]           AVX512F
+VSUBPD    zmmreg,zmmreg,mem512     [evex.nds.512.66.0f 5c /r]           AVX512F
+VSUBPD    zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f 5c /r]        AVX512F
+VSUBPD    zmmreg{k1}{z},zmmreg,mem512 [evex.nds.512.66.0f 5c /r]        AVX512F
+VSUBPD    zmmreg{k1}{z},zmmreg,zmmreg{1to8} [evex.nds.512.66.0f 5c /r]  AVX512F
+VSUBPD    zmmreg{k1}{z},zmmreg,mem128{1to8} [evex.nds.512.66.0f 5c /r]  AVX512F
 
-; --- VMUL -------------------------------------------------------------------
+; --- VMULPS -----------------------------------------------------------------
 VMULPS    xmmreg,xmmreg,xmmreg     [vex.nds.128.0f 59 /r]               AVX
 VMULPS    ymmreg,ymmreg,ymmreg     [vex.nds.256.0f 59 /r]               AVX
 VMULPS    xmmreg,xmmreg,mem128     [vex.nds.128.0f 59 /r]               AVX
 VMULPS    ymmreg,ymmreg,mem256     [vex.nds.256.0f 59 /r]               AVX
+VMULPS    zmmreg,zmmreg,zmmreg     [evex.nds.512.0f 59 /r]              AVX512F
+VMULPS    zmmreg,zmmreg,mem512     [evex.nds.512.0f 59 /r]              AVX512F
+VMULPS    zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.0f 59 /r]           AVX512F
+VMULPS    zmmreg{k1}{z},zmmreg,mem512 [evex.nds.512.0f 59 /r]           AVX512F
+VMULPS    zmmreg{k1}{z},zmmreg,zmmreg{1to16} [evex.nds.512.0f 59 /r]    AVX512F
+VMULPS    zmmreg{k1}{z},zmmreg,mem128{1to16} [evex.nds.512.0f 59 /r]    AVX512F
 
+; --- VMULPD -----------------------------------------------------------------
 VMULPD    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f 59 /r]            AVX
 VMULPD    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f 59 /r]            AVX
 VMULPD    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f 59 /r]            AVX
 VMULPD    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f 59 /r]            AVX
+VMULPD    zmmreg,zmmreg,zmmreg     [evex.nds.512.66.0f 59 /r]           AVX512F
+VMULPD    zmmreg,zmmreg,mem512     [evex.nds.512.66.0f 59 /r]           AVX512F
+VMULPD    zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f 59 /r]        AVX512F
+VMULPD    zmmreg{k1}{z},zmmreg,mem512 [evex.nds.512.66.0f 59 /r]        AVX512F
+VMULPD    zmmreg{k1}{z},zmmreg,zmmreg{1to8} [evex.nds.512.66.0f 59 /r]  AVX512F
+VMULPD    zmmreg{k1}{z},zmmreg,mem128{1to8} [evex.nds.512.66.0f 59 /r]  AVX512F
 
+; --- VMULSD -----------------------------------------------------------------
 VMULSD    xmmreg,xmmreg,xmmreg     [vex.nds.128.f2.0f 59 /r]            AVX
 VMULSD    xmmreg,xmmreg,mem64      [vex.nds.128.f2.0f 59 /r]            AVX
 
+; --- VMULSS -----------------------------------------------------------------
 VMULSS    xmmreg,xmmreg,xmmreg     [vex.nds.128.f3.0f 59 /r]            AVX
 VMULSS    xmmreg,xmmreg,mem32      [vex.nds.128.f3.0f 59 /r]            AVX
 
-; --- VDIV -------------------------------------------------------------------
+; --- VDIVPS -----------------------------------------------------------------
 VDIVPS    xmmreg,xmmreg,xmmreg     [vex.nds.128.0f 5e /r]               AVX
 VDIVPS    ymmreg,ymmreg,ymmreg     [vex.nds.256.0f 5e /r]               AVX
 VDIVPS    xmmreg,xmmreg,mem128     [vex.nds.128.0f 5e /r]               AVX
 VDIVPS    ymmreg,ymmreg,mem256     [vex.nds.256.0f 5e /r]               AVX
+VDIVPS    zmmreg,zmmreg,zmmreg     [evex.nds.512.0f 5e /r]              AVX512F
+VDIVPS    zmmreg,zmmreg,mem512     [evex.nds.512.0f 5e /r]              AVX512F
+VDIVPS    zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.0f 5e /r]           AVX512F
+VDIVPS    zmmreg{k1}{z},zmmreg,mem512 [evex.nds.512.0f 5e /r]           AVX512F
+VDIVPS    zmmreg{k1}{z},zmmreg,zmmreg{1to16} [evex.nds.512.0f 5e /r]    AVX512F
+VDIVPS    zmmreg{k1}{z},zmmreg,mem128{1to16} [evex.nds.512.0f 5e /r]    AVX512F
 
+; --- VDIVPD -----------------------------------------------------------------
 VDIVPD    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f 5e /r]            AVX
 VDIVPD    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f 5e /r]            AVX
 VDIVPD    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f 5e /r]            AVX
 VDIVPD    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f 5e /r]            AVX
+VDIVPD    zmmreg,zmmreg,zmmreg     [evex.nds.512.66.0f 5e /r]           AVX512F
+VDIVPD    zmmreg,zmmreg,mem512     [evex.nds.512.66.0f 5e /r]           AVX512F
+VDIVPD    zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f 5e /r]        AVX512F
+VDIVPD    zmmreg{k1}{z},zmmreg,mem512 [evex.nds.512.66.0f 5e /r]        AVX512F
+VDIVPD    zmmreg{k1}{z},zmmreg,zmmreg{1to8} [evex.nds.512.66.0f 5e /r]  AVX512F
+VDIVPD    zmmreg{k1}{z},zmmreg,mem128{1to8} [evex.nds.512.66.0f 5e /r]  AVX512F
 
-; --- VMIN / VMAX ------------------------------------------------------------
+; --- VMINPS -----------------------------------------------------------------
 VMINPS    xmmreg,xmmreg,xmmreg     [vex.nds.128.0f 5d /r]               AVX
 VMINPS    ymmreg,ymmreg,ymmreg     [vex.nds.256.0f 5d /r]               AVX
 VMINPS    xmmreg,xmmreg,mem128     [vex.nds.128.0f 5d /r]               AVX
 VMINPS    ymmreg,ymmreg,mem256     [vex.nds.256.0f 5d /r]               AVX
+VMINPS    zmmreg,zmmreg,zmmreg     [evex.nds.512.0f 5d /r]              AVX512F
+VMINPS    zmmreg,zmmreg,mem512     [evex.nds.512.0f 5d /r]              AVX512F
+VMINPS    zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.0f 5d /r]           AVX512F
+VMINPS    zmmreg{k1}{z},zmmreg,mem512 [evex.nds.512.0f 5d /r]           AVX512F
 
+; --- VMINPD -----------------------------------------------------------------
 VMINPD    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f 5d /r]            AVX
 VMINPD    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f 5d /r]            AVX
 VMINPD    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f 5d /r]            AVX
 VMINPD    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f 5d /r]            AVX
+VMINPD    zmmreg,zmmreg,zmmreg     [evex.nds.512.66.0f 5d /r]           AVX512F
+VMINPD    zmmreg,zmmreg,mem512     [evex.nds.512.66.0f 5d /r]           AVX512F
+VMINPD    zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f 5d /r]        AVX512F
+VMINPD    zmmreg{k1}{z},zmmreg,mem512 [evex.nds.512.66.0f 5d /r]        AVX512F
 
+; --- VMAXPS -----------------------------------------------------------------
 VMAXPS    xmmreg,xmmreg,xmmreg     [vex.nds.128.0f 5f /r]               AVX
 VMAXPS    ymmreg,ymmreg,ymmreg     [vex.nds.256.0f 5f /r]               AVX
 VMAXPS    xmmreg,xmmreg,mem128     [vex.nds.128.0f 5f /r]               AVX
 VMAXPS    ymmreg,ymmreg,mem256     [vex.nds.256.0f 5f /r]               AVX
+VMAXPS    zmmreg,zmmreg,zmmreg     [evex.nds.512.0f 5f /r]              AVX512F
+VMAXPS    zmmreg,zmmreg,mem512     [evex.nds.512.0f 5f /r]              AVX512F
+VMAXPS    zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.0f 5f /r]           AVX512F
+VMAXPS    zmmreg{k1}{z},zmmreg,mem512 [evex.nds.512.0f 5f /r]           AVX512F
 
+; --- VMAXPD -----------------------------------------------------------------
 VMAXPD    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f 5f /r]            AVX
 VMAXPD    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f 5f /r]            AVX
 VMAXPD    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f 5f /r]            AVX
 VMAXPD    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f 5f /r]            AVX
+VMAXPD    zmmreg,zmmreg,zmmreg     [evex.nds.512.66.0f 5f /r]           AVX512F
+VMAXPD    zmmreg,zmmreg,mem512     [evex.nds.512.66.0f 5f /r]           AVX512F
+VMAXPD    zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f 5f /r]        AVX512F
+VMAXPD    zmmreg{k1}{z},zmmreg,mem512 [evex.nds.512.66.0f 5f /r]        AVX512F
 
-; --- Logical ----------------------------------------------------------------
+; --- VMAXSH (AVX-512 only) --------------------------------------------------
+VMAXSH    xmmreg,xmmreg,xmmreg     [evex.nds.128.f3.5c 5f /r]           AVX512VL,AVX512F
+VMAXSH    xmmreg,xmmreg,mem16      [evex.nds.128.f3.5c 5f /r]           AVX512VL,AVX512F
+VMAXSH    xmmreg{k1}{z},xmmreg,xmmreg [evex.nds.128.f3.5c 5f /r]        AVX512VL,AVX512F
+VMAXSH    xmmreg{k1}{z},xmmreg,mem16 [evex.nds.128.f3.5c 5f /r]         AVX512VL,AVX512F
+
+; --- VMINSH (AVX-512 only) --------------------------------------------------
+VMINSH    xmmreg,xmmreg,xmmreg     [evex.nds.128.f3.5c 5d /r]           AVX512VL,AVX512F
+VMINSH    xmmreg,xmmreg,mem16      [evex.nds.128.f3.5c 5d /r]           AVX512VL,AVX512F
+VMINSH    xmmreg{k1}{z},xmmreg,xmmreg [evex.nds.128.f3.5c 5d /r]        AVX512VL,AVX512F
+VMINSH    xmmreg{k1}{z},xmmreg,mem16 [evex.nds.128.f3.5c 5d /r]         AVX512VL,AVX512F
+
+; --- VANDPS -----------------------------------------------------------------
 VANDPS    xmmreg,xmmreg,xmmreg     [vex.nds.128.0f 54 /r]               AVX
 VANDPS    ymmreg,ymmreg,ymmreg     [vex.nds.256.0f 54 /r]               AVX
 VANDPS    xmmreg,xmmreg,mem128     [vex.nds.128.0f 54 /r]               AVX
 VANDPS    ymmreg,ymmreg,mem256     [vex.nds.256.0f 54 /r]               AVX
+VANDPS    zmmreg,zmmreg,zmmreg     [evex.nds.512.0f 54 /r]              AVX512F
+VANDPS    zmmreg,zmmreg,mem512     [evex.nds.512.0f 54 /r]              AVX512F
+VANDPS    zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.0f 54 /r]           AVX512F
+VANDPS    zmmreg{k1}{z},zmmreg,mem512 [evex.nds.512.0f 54 /r]           AVX512F
 
+; --- VANDPD -----------------------------------------------------------------
 VANDPD    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f 54 /r]            AVX
 VANDPD    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f 54 /r]            AVX
 VANDPD    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f 54 /r]            AVX
 VANDPD    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f 54 /r]            AVX
+VANDPD    zmmreg,zmmreg,zmmreg     [evex.nds.512.66.0f 54 /r]           AVX512F
+VANDPD    zmmreg,zmmreg,mem512     [evex.nds.512.66.0f 54 /r]           AVX512F
+VANDPD    zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f 54 /r]        AVX512F
+VANDPD    zmmreg{k1}{z},zmmreg,mem512 [evex.nds.512.66.0f 54 /r]        AVX512F
 
+; --- VORPS ------------------------------------------------------------------
 VORPS     xmmreg,xmmreg,xmmreg     [vex.nds.128.0f 56 /r]               AVX
 VORPS     ymmreg,ymmreg,ymmreg     [vex.nds.256.0f 56 /r]               AVX
 VORPS     xmmreg,xmmreg,mem128     [vex.nds.128.0f 56 /r]               AVX
 VORPS     ymmreg,ymmreg,mem256     [vex.nds.256.0f 56 /r]               AVX
+VORPS     zmmreg,zmmreg,zmmreg     [evex.nds.512.0f 56 /r]              AVX512F
+VORPS     zmmreg,zmmreg,mem512     [evex.nds.512.0f 56 /r]              AVX512F
+VORPS     zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.0f 56 /r]           AVX512F
+VORPS     zmmreg{k1}{z},zmmreg,mem512 [evex.nds.512.0f 56 /r]           AVX512F
 
+; --- VORPD ------------------------------------------------------------------
 VORPD     xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f 56 /r]            AVX
 VORPD     ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f 56 /r]            AVX
 VORPD     xmmreg,xmmreg,mem128     [vex.nds.128.66.0f 56 /r]            AVX
 VORPD     ymmreg,ymmreg,mem256     [vex.nds.256.66.0f 56 /r]            AVX
+VORPD     zmmreg,zmmreg,zmmreg     [evex.nds.512.66.0f 56 /r]           AVX512F
+VORPD     zmmreg,zmmreg,mem512     [evex.nds.512.66.0f 56 /r]           AVX512F
+VORPD     zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f 56 /r]        AVX512F
+VORPD     zmmreg{k1}{z},zmmreg,mem512 [evex.nds.512.66.0f 56 /r]        AVX512F
 
+; --- VXORPS -----------------------------------------------------------------
 VXORPS    xmmreg,xmmreg,xmmreg     [vex.nds.128.0f 57 /r]               AVX
 VXORPS    ymmreg,ymmreg,ymmreg     [vex.nds.256.0f 57 /r]               AVX
 VXORPS    xmmreg,xmmreg,mem128     [vex.nds.128.0f 57 /r]               AVX
 VXORPS    ymmreg,ymmreg,mem256     [vex.nds.256.0f 57 /r]               AVX
+VXORPS    zmmreg,zmmreg,zmmreg     [evex.nds.512.0f 57 /r]              AVX512F
+VXORPS    zmmreg,zmmreg,mem512     [evex.nds.512.0f 57 /r]              AVX512F
+VXORPS    zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.0f 57 /r]           AVX512F
+VXORPS    zmmreg{k1}{z},zmmreg,mem512 [evex.nds.512.0f 57 /r]           AVX512F
 
+; --- VXORPD -----------------------------------------------------------------
 VXORPD    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f 57 /r]            AVX
 VXORPD    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f 57 /r]            AVX
 VXORPD    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f 57 /r]            AVX
 VXORPD    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f 57 /r]            AVX
+VXORPD    zmmreg,zmmreg,zmmreg     [evex.nds.512.66.0f 57 /r]           AVX512F
+VXORPD    zmmreg,zmmreg,mem512     [evex.nds.512.66.0f 57 /r]           AVX512F
+VXORPD    zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f 57 /r]        AVX512F
+VXORPD    zmmreg{k1}{z},zmmreg,mem512 [evex.nds.512.66.0f 57 /r]        AVX512F
 
-; --- VSQRT ------------------------------------------------------------------
+; --- VSQRTPS ----------------------------------------------------------------
 VSQRTPS   xmmreg,xmmreg            [vex.nds.128.0f 51 /r]               AVX
 VSQRTPS   ymmreg,ymmreg            [vex.nds.256.0f 51 /r]               AVX
 VSQRTPS   xmmreg,mem128            [vex.nds.128.0f 51 /r]               AVX
 VSQRTPS   ymmreg,mem256            [vex.nds.256.0f 51 /r]               AVX
+VSQRTPS   zmmreg,zmmreg            [evex.nds.512.0f 51 /r]              AVX512F
+VSQRTPS   zmmreg,mem512            [evex.nds.512.0f 51 /r]              AVX512F
+VSQRTPS   zmmreg{k1}{z},zmmreg     [evex.nds.512.0f 51 /r]              AVX512F
+VSQRTPS   zmmreg{k1}{z},mem512     [evex.nds.512.0f 51 /r]              AVX512F
+VSQRTPS   zmmreg{k1}{z},zmmreg{1to16} [evex.nds.512.0f 51 /r]           AVX512F
+VSQRTPS   zmmreg{k1}{z},mem128{1to16} [evex.nds.512.0f 51 /r]           AVX512F
 
+; --- VSQRTPD ----------------------------------------------------------------
 VSQRTPD   xmmreg,xmmreg            [vex.nds.128.66.0f 51 /r]            AVX
 VSQRTPD   ymmreg,ymmreg            [vex.nds.256.66.0f 51 /r]            AVX
 VSQRTPD   xmmreg,mem128            [vex.nds.128.66.0f 51 /r]            AVX
 VSQRTPD   ymmreg,mem256            [vex.nds.256.66.0f 51 /r]            AVX
+VSQRTPD   zmmreg,zmmreg            [evex.nds.512.66.0f 51 /r]           AVX512F
+VSQRTPD   zmmreg,mem512            [evex.nds.512.66.0f 51 /r]           AVX512F
+VSQRTPD   zmmreg{k1}{z},zmmreg     [evex.nds.512.66.0f 51 /r]           AVX512F
+VSQRTPD   zmmreg{k1}{z},mem512     [evex.nds.512.66.0f 51 /r]           AVX512F
+VSQRTPD   zmmreg{k1}{z},zmmreg{1to8} [evex.nds.512.66.0f 51 /r]         AVX512F
+VSQRTPD   zmmreg{k1}{z},mem128{1to8} [evex.nds.512.66.0f 51 /r]         AVX512F
 
 ; --- Data Movement ----------------------------------------------------------
 VMOVAPS   xmmreg,xmmreg            [vex.nds.128.0f 28 /r]               AVX
@@ -832,6 +961,9 @@ VMOVAPS   xmmreg,mem128            [vex.nds.128.0f 28 /r]               AVX
 VMOVAPS   ymmreg,mem256            [vex.nds.256.0f 28 /r]               AVX
 VMOVAPS   mem128,xmmreg            [vex.nds.128.0f 29 /r]               AVX
 VMOVAPS   mem256,ymmreg            [vex.nds.256.0f 29 /r]               AVX
+VMOVAPS   zmmreg,zmmreg            [evex.nds.512.0f 28 /r]              AVX512F
+VMOVAPS   zmmreg,mem512            [evex.nds.512.0f 28 /r]              AVX512F
+VMOVAPS   mem512,zmmreg            [evex.nds.512.0f 29 /r]              AVX512F
 
 VMOVAPD   xmmreg,xmmreg            [vex.nds.128.66.0f 28 /r]            AVX
 VMOVAPD   ymmreg,ymmreg            [vex.nds.256.66.0f 28 /r]            AVX
@@ -839,6 +971,9 @@ VMOVAPD   xmmreg,mem128            [vex.nds.128.66.0f 28 /r]            AVX
 VMOVAPD   ymmreg,mem256            [vex.nds.256.66.0f 28 /r]            AVX
 VMOVAPD   mem128,xmmreg            [vex.nds.128.66.0f 29 /r]            AVX
 VMOVAPD   mem256,ymmreg            [vex.nds.256.66.0f 29 /r]            AVX
+VMOVAPD   zmmreg,zmmreg            [evex.nds.512.66.0f 28 /r]           AVX512F
+VMOVAPD   zmmreg,mem512            [evex.nds.512.66.0f 28 /r]           AVX512F
+VMOVAPD   mem512,zmmreg            [evex.nds.512.66.0f 29 /r]           AVX512F
 
 VMOVUPS   xmmreg,xmmreg            [vex.nds.128.0f 10 /r]               AVX
 VMOVUPS   ymmreg,ymmreg            [vex.nds.256.0f 10 /r]               AVX
@@ -846,6 +981,9 @@ VMOVUPS   xmmreg,mem128            [vex.nds.128.0f 10 /r]               AVX
 VMOVUPS   ymmreg,mem256            [vex.nds.256.0f 10 /r]               AVX
 VMOVUPS   mem128,xmmreg            [vex.nds.128.0f 11 /r]               AVX
 VMOVUPS   mem256,ymmreg            [vex.nds.256.0f 11 /r]               AVX
+VMOVUPS   zmmreg,zmmreg            [evex.nds.512.0f 10 /r]              AVX512F
+VMOVUPS   zmmreg,mem512            [evex.nds.512.0f 10 /r]              AVX512F
+VMOVUPS   mem512,zmmreg            [evex.nds.512.0f 11 /r]              AVX512F
 
 VMOVUPD   xmmreg,xmmreg            [vex.nds.128.66.0f 10 /r]            AVX
 VMOVUPD   ymmreg,ymmreg            [vex.nds.256.66.0f 10 /r]            AVX
@@ -853,6 +991,9 @@ VMOVUPD   xmmreg,mem128            [vex.nds.128.66.0f 10 /r]            AVX
 VMOVUPD   ymmreg,mem256            [vex.nds.256.66.0f 10 /r]            AVX
 VMOVUPD   mem128,xmmreg            [vex.nds.128.66.0f 11 /r]            AVX
 VMOVUPD   mem256,ymmreg            [vex.nds.256.66.0f 11 /r]            AVX
+VMOVUPD   zmmreg,zmmreg            [evex.nds.512.66.0f 10 /r]           AVX512F
+VMOVUPD   zmmreg,mem512            [evex.nds.512.66.0f 10 /r]           AVX512F
+VMOVUPD   mem512,zmmreg            [evex.nds.512.66.0f 11 /r]           AVX512F
 
 VMOVDQA   xmmreg,xmmreg            [vex.nds.128.66.0f 6f /r]            AVX
 VMOVDQA   ymmreg,ymmreg            [vex.nds.256.66.0f 6f /r]            AVX,AVX2
@@ -860,6 +1001,9 @@ VMOVDQA   xmmreg,mem128            [vex.nds.128.66.0f 6f /r]            AVX
 VMOVDQA   ymmreg,mem256            [vex.nds.256.66.0f 6f /r]            AVX,AVX2
 VMOVDQA   mem128,xmmreg            [vex.nds.128.66.0f 7f /r]            AVX
 VMOVDQA   mem256,ymmreg            [vex.nds.256.66.0f 7f /r]            AVX,AVX2
+VMOVDQA   zmmreg,zmmreg            [evex.nds.512.66.0f 6f /r]           AVX512F
+VMOVDQA   zmmreg,mem512            [evex.nds.512.66.0f 6f /r]           AVX512F
+VMOVDQA   mem512,zmmreg            [evex.nds.512.66.0f 7f /r]           AVX512F
 
 VMOVDQU   xmmreg,xmmreg            [vex.nds.128.f3.0f 6f /r]            AVX
 VMOVDQU   ymmreg,ymmreg            [vex.nds.256.f3.0f 6f /r]            AVX
@@ -867,209 +1011,337 @@ VMOVDQU   xmmreg,mem128            [vex.nds.128.f3.0f 6f /r]            AVX
 VMOVDQU   ymmreg,mem256            [vex.nds.256.f3.0f 6f /r]            AVX
 VMOVDQU   mem128,xmmreg            [vex.nds.128.f3.0f 7f /r]            AVX
 VMOVDQU   mem256,ymmreg            [vex.nds.256.f3.0f 7f /r]            AVX
+VMOVDQU   zmmreg,zmmreg            [evex.nds.512.f3.0f 6f /r]           AVX512F
+VMOVDQU   zmmreg,mem512            [evex.nds.512.f3.0f 6f /r]           AVX512F
+VMOVDQU   mem512,zmmreg            [evex.nds.512.f3.0f 7f /r]           AVX512F
 
 ; --- Conversion -------------------------------------------------------------
 VCVTDQ2PS xmmreg,xmmreg            [vex.nds.128.0f 5b /r]               AVX
 VCVTDQ2PS ymmreg,ymmreg            [vex.nds.256.0f 5b /r]               AVX
 VCVTDQ2PS xmmreg,mem128            [vex.nds.128.0f 5b /r]               AVX
 VCVTDQ2PS ymmreg,mem256            [vex.nds.256.0f 5b /r]               AVX
+VCVTDQ2PS zmmreg,zmmreg            [evex.nds.512.0f 5b /r]              AVX512F
+VCVTDQ2PS zmmreg,mem512            [evex.nds.512.0f 5b /r]              AVX512F
+VCVTDQ2PS zmmreg{k1}{z},zmmreg     [evex.nds.512.0f 5b /r]              AVX512F
+VCVTDQ2PS zmmreg{k1}{z},mem512{1to16} [evex.nds.512.0f 5b /r]           AVX512F
 
 VCVTPS2DQ xmmreg,xmmreg            [vex.nds.128.66.0f 5b /r]            AVX
 VCVTPS2DQ ymmreg,ymmreg            [vex.nds.256.66.0f 5b /r]            AVX
 VCVTPS2DQ xmmreg,mem128            [vex.nds.128.66.0f 5b /r]            AVX
 VCVTPS2DQ ymmreg,mem256            [vex.nds.256.66.0f 5b /r]            AVX
+VCVTPS2DQ zmmreg,zmmreg            [evex.nds.512.66.0f 5b /r]           AVX512F
+VCVTPS2DQ zmmreg,mem512            [evex.nds.512.66.0f 5b /r]           AVX512F
+VCVTPS2DQ zmmreg{k1}{z},zmmreg     [evex.nds.512.66.0f 5b /r]           AVX512F
+VCVTPS2DQ zmmreg{k1}{z},mem512{1to16} [evex.nds.512.66.0f 5b /r]        AVX512F
 
 VCVTPD2PS xmmreg,xmmreg            [vex.nds.128.66.0f 5a /r]            AVX
 VCVTPD2PS xmmreg,ymmreg            [vex.nds.256.66.0f 5a /r]            AVX
 VCVTPD2PS xmmreg,mem128            [vex.nds.128.66.0f 5a /r]            AVX
 VCVTPD2PS xmmreg,mem256            [vex.nds.256.66.0f 5a /r]            AVX
+VCVTPD2PS ymmreg,zmmreg            [evex.nds.512.66.0f 5a /r]           AVX512F
+VCVTPD2PS ymmreg,mem512            [evex.nds.512.66.0f 5a /r]           AVX512F
+VCVTPD2PS ymmreg{k1}{z},zmmreg     [evex.nds.512.66.0f 5a /r]           AVX512F
+VCVTPD2PS ymmreg{k1}{z},mem512{1to8} [evex.nds.512.66.0f 5a /r]         AVX512F
 
 VCVTPS2PD xmmreg,xmmreg            [vex.nds.128.0f 5a /r]               AVX
 VCVTPS2PD ymmreg,xmmreg            [vex.nds.256.0f 5a /r]               AVX
 VCVTPS2PD xmmreg,mem64             [vex.nds.128.0f 5a /r]               AVX
 VCVTPS2PD ymmreg,mem128            [vex.nds.256.0f 5a /r]               AVX
+VCVTPS2PD zmmreg,ymmreg            [evex.nds.512.0f 5a /r]              AVX512F
+VCVTPS2PD zmmreg,mem256            [evex.nds.512.0f 5a /r]              AVX512F
+VCVTPS2PD zmmreg{k1}{z},ymmreg     [evex.nds.512.0f 5a /r]              AVX512F
+VCVTPS2PD zmmreg{k1}{z},mem256{1to8} [evex.nds.512.0f 5a /r]            AVX512F
 
 VCVTTPS2DQ xmmreg,xmmreg           [vex.nds.128.f3.0f 5b /r]            AVX
 VCVTTPS2DQ ymmreg,ymmreg           [vex.nds.256.f3.0f 5b /r]            AVX
 VCVTTPS2DQ xmmreg,mem128           [vex.nds.128.f3.0f 5b /r]            AVX
 VCVTTPS2DQ ymmreg,mem256           [vex.nds.256.f3.0f 5b /r]            AVX
+VCVTTPS2DQ zmmreg,zmmreg           [evex.nds.512.f3.0f 5b /r]           AVX512F
+VCVTTPS2DQ zmmreg,mem512           [evex.nds.512.f3.0f 5b /r]           AVX512F
+VCVTTPS2DQ zmmreg{k1}{z},zmmreg    [evex.nds.512.f3.0f 5b /r]           AVX512F
+VCVTTPS2DQ zmmreg{k1}{z},mem512{1to16} [evex.nds.512.f3.0f 5b /r]       AVX512F
 
-; --- Packed Arithmetic (Integer) - AVX2 -------------------------------------
+; --- VPADD (Integer) --------------------------------------------------------
 VPADDB    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f fc /r]            AVX
 VPADDB    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f fc /r]            AVX,AVX2
 VPADDB    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f fc /r]            AVX
 VPADDB    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f fc /r]            AVX,AVX2
+VPADDB    zmmreg,zmmreg,zmmreg     [evex.nds.512.66.0f fc /r]           AVX512F
+VPADDB    zmmreg,zmmreg,mem512     [evex.nds.512.66.0f fc /r]           AVX512F
+VPADDB    zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f fc /r]        AVX512F
+VPADDB    zmmreg{k1}{z},zmmreg,mem512 [evex.nds.512.66.0f fc /r]        AVX512F
 
 VPADDW    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f fd /r]            AVX
 VPADDW    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f fd /r]            AVX,AVX2
 VPADDW    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f fd /r]            AVX
 VPADDW    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f fd /r]            AVX,AVX2
+VPADDW    zmmreg,zmmreg,zmmreg     [evex.nds.512.66.0f fd /r]           AVX512F
+VPADDW    zmmreg,zmmreg,mem512     [evex.nds.512.66.0f fd /r]           AVX512F
+VPADDW    zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f fd /r]        AVX512F
+VPADDW    zmmreg{k1}{z},zmmreg,mem512 [evex.nds.512.66.0f fd /r]        AVX512F
 
 VPADDD    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f fe /r]            AVX
 VPADDD    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f fe /r]            AVX,AVX2
 VPADDD    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f fe /r]            AVX
 VPADDD    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f fe /r]            AVX,AVX2
+VPADDD    zmmreg,zmmreg,zmmreg     [evex.nds.512.66.0f fe /r]           AVX512F
+VPADDD    zmmreg,zmmreg,mem512     [evex.nds.512.66.0f fe /r]           AVX512F
+VPADDD    zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f fe /r]        AVX512F
+VPADDD    zmmreg{k1}{z},zmmreg,mem512 [evex.nds.512.66.0f fe /r]        AVX512F
 
 VPADDQ    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f d4 /r]            AVX
 VPADDQ    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f d4 /r]            AVX,AVX2
 VPADDQ    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f d4 /r]            AVX
 VPADDQ    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f d4 /r]            AVX,AVX2
+VPADDQ    zmmreg,zmmreg,zmmreg     [evex.nds.512.66.0f d4 /r]           AVX512F
+VPADDQ    zmmreg,zmmreg,mem512     [evex.nds.512.66.0f d4 /r]           AVX512F
+VPADDQ    zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f d4 /r]        AVX512F
+VPADDQ    zmmreg{k1}{z},zmmreg,mem512 [evex.nds.512.66.0f d4 /r]        AVX512F
 
+; --- VPSUB (Integer) --------------------------------------------------------
 VPSUBB    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f f8 /r]            AVX
 VPSUBB    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f f8 /r]            AVX,AVX2
 VPSUBB    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f f8 /r]            AVX
 VPSUBB    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f f8 /r]            AVX,AVX2
+VPSUBB    zmmreg,zmmreg,zmmreg     [evex.nds.512.66.0f f8 /r]           AVX512F
+VPSUBB    zmmreg,zmmreg,mem512     [evex.nds.512.66.0f f8 /r]           AVX512F
+VPSUBB    zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f f8 /r]        AVX512F
+VPSUBB    zmmreg{k1}{z},zmmreg,mem512 [evex.nds.512.66.0f f8 /r]        AVX512F
 
 VPSUBW    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f f9 /r]            AVX
 VPSUBW    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f f9 /r]            AVX,AVX2
 VPSUBW    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f f9 /r]            AVX
 VPSUBW    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f f9 /r]            AVX,AVX2
+VPSUBW    zmmreg,zmmreg,zmmreg     [evex.nds.512.66.0f f9 /r]           AVX512F
+VPSUBW    zmmreg,zmmreg,mem512     [evex.nds.512.66.0f f9 /r]           AVX512F
+VPSUBW    zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f f9 /r]        AVX512F
+VPSUBW    zmmreg{k1}{z},zmmreg,mem512 [evex.nds.512.66.0f f9 /r]        AVX512F
 
 VPSUBD    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f fa /r]            AVX
 VPSUBD    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f fa /r]            AVX,AVX2
 VPSUBD    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f fa /r]            AVX
 VPSUBD    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f fa /r]            AVX,AVX2
+VPSUBD    zmmreg,zmmreg,zmmreg     [evex.nds.512.66.0f fa /r]           AVX512F
+VPSUBD    zmmreg,zmmreg,mem512     [evex.nds.512.66.0f fa /r]           AVX512F
+VPSUBD    zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f fa /r]        AVX512F
+VPSUBD    zmmreg{k1}{z},zmmreg,mem512 [evex.nds.512.66.0f fa /r]        AVX512F
 
-; --- Packed Logical (Integer) - AVX2 ----------------------------------------
+; --- VPAND (Integer) --------------------------------------------------------
 VPAND     xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f db /r]            AVX
 VPAND     ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f db /r]            AVX,AVX2
 VPAND     xmmreg,xmmreg,mem128     [vex.nds.128.66.0f db /r]            AVX
 VPAND     ymmreg,ymmreg,mem256     [vex.nds.256.66.0f db /r]            AVX,AVX2
+VPAND     zmmreg,zmmreg,zmmreg     [evex.nds.512.66.0f db /r]           AVX512F
+VPAND     zmmreg,zmmreg,mem512     [evex.nds.512.66.0f db /r]           AVX512F
+VPAND     zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f db /r]        AVX512F
+VPAND     zmmreg{k1}{z},zmmreg,mem512 [evex.nds.512.66.0f db /r]        AVX512F
 
+; --- VPOR (Integer) ---------------------------------------------------------
 VPOR      xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f eb /r]            AVX
 VPOR      ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f eb /r]            AVX,AVX2
 VPOR      xmmreg,xmmreg,mem128     [vex.nds.128.66.0f eb /r]            AVX
 VPOR      ymmreg,ymmreg,mem256     [vex.nds.256.66.0f eb /r]            AVX,AVX2
+VPOR      zmmreg,zmmreg,zmmreg     [evex.nds.512.66.0f eb /r]           AVX512F
+VPOR      zmmreg,zmmreg,mem512     [evex.nds.512.66.0f eb /r]           AVX512F
+VPOR      zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f eb /r]        AVX512F
+VPOR      zmmreg{k1}{z},zmmreg,mem512 [evex.nds.512.66.0f eb /r]        AVX512F
 
+; --- VPXOR (Integer) --------------------------------------------------------
 VPXOR     xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f ef /r]            AVX
 VPXOR     ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f ef /r]            AVX,AVX2
 VPXOR     xmmreg,xmmreg,mem128     [vex.nds.128.66.0f ef /r]            AVX
 VPXOR     ymmreg,ymmreg,mem256     [vex.nds.256.66.0f ef /r]            AVX,AVX2
+VPXOR     zmmreg,zmmreg,zmmreg     [evex.nds.512.66.0f ef /r]           AVX512F
+VPXOR     zmmreg,zmmreg,mem512     [evex.nds.512.66.0f ef /r]           AVX512F
+VPXOR     zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f ef /r]        AVX512F
+VPXOR     zmmreg{k1}{z},zmmreg,mem512 [evex.nds.512.66.0f ef /r]        AVX512F
 
-; --- Packed Comparison (Integer) - AVX2 -------------------------------------
+; --- VPCMPEQD / VPCMPGTD ----------------------------------------------------
 VPCMPEQD  xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f 76 /r]            AVX
 VPCMPEQD  ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f 76 /r]            AVX,AVX2
 VPCMPEQD  xmmreg,xmmreg,mem128     [vex.nds.128.66.0f 76 /r]            AVX
 VPCMPEQD  ymmreg,ymmreg,mem256     [vex.nds.256.66.0f 76 /r]            AVX,AVX2
+VPCMPEQD  zmmreg,zmmreg,zmmreg     [evex.nds.512.66.0f 76 /r]           AVX512F
+VPCMPEQD  zmmreg,zmmreg,mem512     [evex.nds.512.66.0f 76 /r]           AVX512F
+VPCMPEQD  zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f 76 /r]        AVX512F
 
 VPCMPGTD  xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f 66 /r]            AVX
 VPCMPGTD  ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f 66 /r]            AVX,AVX2
 VPCMPGTD  xmmreg,xmmreg,mem128     [vex.nds.128.66.0f 66 /r]            AVX
 VPCMPGTD  ymmreg,ymmreg,mem256     [vex.nds.256.66.0f 66 /r]            AVX,AVX2
+VPCMPGTD  zmmreg,zmmreg,zmmreg     [evex.nds.512.66.0f 66 /r]           AVX512F
+VPCMPGTD  zmmreg,zmmreg,mem512     [evex.nds.512.66.0f 66 /r]           AVX512F
+VPCMPGTD  zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f 66 /r]        AVX512F
 
-; --- Packed Min/Max (Integer) - AVX2 ----------------------------------------
+; --- VPMAX / VPMIN ----------------------------------------------------------
 VPMAXUB   xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f de /r]            AVX
 VPMAXUB   ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f de /r]            AVX,AVX2
 VPMAXUB   xmmreg,xmmreg,mem128     [vex.nds.128.66.0f de /r]            AVX
 VPMAXUB   ymmreg,ymmreg,mem256     [vex.nds.256.66.0f de /r]            AVX,AVX2
+VPMAXUB   zmmreg,zmmreg,zmmreg     [evex.nds.512.66.0f de /r]           AVX512F
+VPMAXUB   zmmreg,zmmreg,mem512     [evex.nds.512.66.0f de /r]           AVX512F
+VPMAXUB   zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f de /r]        AVX512F
 
 VPMINUB   xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f da /r]            AVX
 VPMINUB   ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f da /r]            AVX,AVX2
 VPMINUB   xmmreg,xmmreg,mem128     [vex.nds.128.66.0f da /r]            AVX
 VPMINUB   ymmreg,ymmreg,mem256     [vex.nds.256.66.0f da /r]            AVX,AVX2
+VPMINUB   zmmreg,zmmreg,zmmreg     [evex.nds.512.66.0f da /r]           AVX512F
+VPMINUB   zmmreg,zmmreg,mem512     [evex.nds.512.66.0f da /r]           AVX512F
+VPMINUB   zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f da /r]        AVX512F
 
 VPMAXSW   xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f ee /r]            AVX
 VPMAXSW   ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f ee /r]            AVX,AVX2
 VPMAXSW   xmmreg,xmmreg,mem128     [vex.nds.128.66.0f ee /r]            AVX
 VPMAXSW   ymmreg,ymmreg,mem256     [vex.nds.256.66.0f ee /r]            AVX,AVX2
+VPMAXSW   zmmreg,zmmreg,zmmreg     [evex.nds.512.66.0f ee /r]           AVX512F
+VPMAXSW   zmmreg,zmmreg,mem512     [evex.nds.512.66.0f ee /r]           AVX512F
+VPMAXSW   zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f ee /r]        AVX512F
 
 VPMINSW   xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f ea /r]            AVX
 VPMINSW   ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f ea /r]            AVX,AVX2
 VPMINSW   xmmreg,xmmreg,mem128     [vex.nds.128.66.0f ea /r]            AVX
 VPMINSW   ymmreg,ymmreg,mem256     [vex.nds.256.66.0f ea /r]            AVX,AVX2
+VPMINSW   zmmreg,zmmreg,zmmreg     [evex.nds.512.66.0f ea /r]           AVX512F
+VPMINSW   zmmreg,zmmreg,mem512     [evex.nds.512.66.0f ea /r]           AVX512F
+VPMINSW   zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f ea /r]        AVX512F
 
-; --- Pack/Unpack (Integer) - AVX2 -------------------------------------------
+; --- VPACK / VPUNPCK --------------------------------------------------------
 VPACKSSWB xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f 63 /r]            AVX
 VPACKSSWB ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f 63 /r]            AVX,AVX2
 VPACKSSWB xmmreg,xmmreg,mem128     [vex.nds.128.66.0f 63 /r]            AVX
 VPACKSSWB ymmreg,ymmreg,mem256     [vex.nds.256.66.0f 63 /r]            AVX,AVX2
+VPACKSSWB zmmreg,zmmreg,zmmreg     [evex.nds.512.66.0f 63 /r]           AVX512F
+VPACKSSWB zmmreg,zmmreg,mem512     [evex.nds.512.66.0f 63 /r]           AVX512F
+VPACKSSWB zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f 63 /r]        AVX512F
 
 VPACKUSWB xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f 67 /r]            AVX
 VPACKUSWB ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f 67 /r]            AVX,AVX2
 VPACKUSWB xmmreg,xmmreg,mem128     [vex.nds.128.66.0f 67 /r]            AVX
 VPACKUSWB ymmreg,ymmreg,mem256     [vex.nds.256.66.0f 67 /r]            AVX,AVX2
+VPACKUSWB zmmreg,zmmreg,zmmreg     [evex.nds.512.66.0f 67 /r]           AVX512F
+VPACKUSWB zmmreg,zmmreg,mem512     [evex.nds.512.66.0f 67 /r]           AVX512F
+VPACKUSWB zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f 67 /r]        AVX512F
 
 VPACKSSDW xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f 6b /r]            AVX
 VPACKSSDW ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f 6b /r]            AVX,AVX2
 VPACKSSDW xmmreg,xmmreg,mem128     [vex.nds.128.66.0f 6b /r]            AVX
 VPACKSSDW ymmreg,ymmreg,mem256     [vex.nds.256.66.0f 6b /r]            AVX,AVX2
+VPACKSSDW zmmreg,zmmreg,zmmreg     [evex.nds.512.66.0f 6b /r]           AVX512F
+VPACKSSDW zmmreg,zmmreg,mem512     [evex.nds.512.66.0f 6b /r]           AVX512F
+VPACKSSDW zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f 6b /r]        AVX512F
 
 VPUNPCKLBW xmmreg,xmmreg,xmmreg    [vex.nds.128.66.0f 60 /r]            AVX
 VPUNPCKLBW ymmreg,ymmreg,ymmreg    [vex.nds.256.66.0f 60 /r]            AVX,AVX2
 VPUNPCKLBW xmmreg,xmmreg,mem128    [vex.nds.128.66.0f 60 /r]            AVX
 VPUNPCKLBW ymmreg,ymmreg,mem256    [vex.nds.256.66.0f 60 /r]            AVX,AVX2
+VPUNPCKLBW zmmreg,zmmreg,zmmreg    [evex.nds.512.66.0f 60 /r]           AVX512F
+VPUNPCKLBW zmmreg,zmmreg,mem512    [evex.nds.512.66.0f 60 /r]           AVX512F
+VPUNPCKLBW zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f 60 /r]       AVX512F
 
 VPUNPCKLWD xmmreg,xmmreg,xmmreg    [vex.nds.128.66.0f 61 /r]            AVX
 VPUNPCKLWD ymmreg,ymmreg,ymmreg    [vex.nds.256.66.0f 61 /r]            AVX,AVX2
 VPUNPCKLWD xmmreg,xmmreg,mem128    [vex.nds.128.66.0f 61 /r]            AVX
 VPUNPCKLWD ymmreg,ymmreg,mem256    [vex.nds.256.66.0f 61 /r]            AVX,AVX2
+VPUNPCKLWD zmmreg,zmmreg,zmmreg    [evex.nds.512.66.0f 61 /r]           AVX512F
+VPUNPCKLWD zmmreg,zmmreg,mem512    [evex.nds.512.66.0f 61 /r]           AVX512F
+VPUNPCKLWD zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f 61 /r]       AVX512F
 
 VPUNPCKLDQ xmmreg,xmmreg,xmmreg    [vex.nds.128.66.0f 62 /r]            AVX
 VPUNPCKLDQ ymmreg,ymmreg,ymmreg    [vex.nds.256.66.0f 62 /r]            AVX,AVX2
 VPUNPCKLDQ xmmreg,xmmreg,mem128    [vex.nds.128.66.0f 62 /r]            AVX
 VPUNPCKLDQ ymmreg,ymmreg,mem256    [vex.nds.256.66.0f 62 /r]            AVX,AVX2
+VPUNPCKLDQ zmmreg,zmmreg,zmmreg    [evex.nds.512.66.0f 62 /r]           AVX512F
+VPUNPCKLDQ zmmreg,zmmreg,mem512    [evex.nds.512.66.0f 62 /r]           AVX512F
+VPUNPCKLDQ zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f 62 /r]       AVX512F
 
 VPUNPCKHBW xmmreg,xmmreg,xmmreg    [vex.nds.128.66.0f 68 /r]            AVX
 VPUNPCKHBW ymmreg,ymmreg,ymmreg    [vex.nds.256.66.0f 68 /r]            AVX,AVX2
 VPUNPCKHBW xmmreg,xmmreg,mem128    [vex.nds.128.66.0f 68 /r]            AVX
 VPUNPCKHBW ymmreg,ymmreg,mem256    [vex.nds.256.66.0f 68 /r]            AVX,AVX2
+VPUNPCKHBW zmmreg,zmmreg,zmmreg    [evex.nds.512.66.0f 68 /r]           AVX512F
+VPUNPCKHBW zmmreg,zmmreg,mem512    [evex.nds.512.66.0f 68 /r]           AVX512F
+VPUNPCKHBW zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f 68 /r]       AVX512F
 
 VPUNPCKHWD xmmreg,xmmreg,xmmreg    [vex.nds.128.66.0f 69 /r]            AVX
 VPUNPCKHWD ymmreg,ymmreg,ymmreg    [vex.nds.256.66.0f 69 /r]            AVX,AVX2
 VPUNPCKHWD xmmreg,xmmreg,mem128    [vex.nds.128.66.0f 69 /r]            AVX
 VPUNPCKHWD ymmreg,ymmreg,mem256    [vex.nds.256.66.0f 69 /r]            AVX,AVX2
+VPUNPCKHWD zmmreg,zmmreg,zmmreg    [evex.nds.512.66.0f 69 /r]           AVX512F
+VPUNPCKHWD zmmreg,zmmreg,mem512    [evex.nds.512.66.0f 69 /r]           AVX512F
+VPUNPCKHWD zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f 69 /r]       AVX512F
 
 VPUNPCKHDQ xmmreg,xmmreg,xmmreg    [vex.nds.128.66.0f 6a /r]            AVX
 VPUNPCKHDQ ymmreg,ymmreg,ymmreg    [vex.nds.256.66.0f 6a /r]            AVX,AVX2
 VPUNPCKHDQ xmmreg,xmmreg,mem128    [vex.nds.128.66.0f 6a /r]            AVX
 VPUNPCKHDQ ymmreg,ymmreg,mem256    [vex.nds.256.66.0f 6a /r]            AVX,AVX2
+VPUNPCKHDQ zmmreg,zmmreg,zmmreg    [evex.nds.512.66.0f 6a /r]           AVX512F
+VPUNPCKHDQ zmmreg,zmmreg,mem512    [evex.nds.512.66.0f 6a /r]           AVX512F
+VPUNPCKHDQ zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f 6a /r]       AVX512F
 
-; --- Shift (Integer) - AVX2 -------------------------------------------------
+; --- VPSHIFT ----------------------------------------------------------------
 VPSLLW    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f f1 /r]            AVX
 VPSLLW    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f f1 /r]            AVX,AVX2
 VPSLLW    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f f1 /r]            AVX
 VPSLLW    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f f1 /r]            AVX,AVX2
+VPSLLW    zmmreg,zmmreg,zmmreg     [evex.nds.512.66.0f f1 /r]           AVX512F
+VPSLLW    zmmreg,zmmreg,mem512     [evex.nds.512.66.0f f1 /r]           AVX512F
+VPSLLW    zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f f1 /r]        AVX512F
 
 VPSLLD    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f f2 /r]            AVX
 VPSLLD    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f f2 /r]            AVX,AVX2
 VPSLLD    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f f2 /r]            AVX
 VPSLLD    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f f2 /r]            AVX,AVX2
+VPSLLD    zmmreg,zmmreg,zmmreg     [evex.nds.512.66.0f f2 /r]           AVX512F
+VPSLLD    zmmreg,zmmreg,mem512     [evex.nds.512.66.0f f2 /r]           AVX512F
+VPSLLD    zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f f2 /r]        AVX512F
 
 VPSLLQ    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f f3 /r]            AVX
 VPSLLQ    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f f3 /r]            AVX,AVX2
 VPSLLQ    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f f3 /r]            AVX
 VPSLLQ    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f f3 /r]            AVX,AVX2
+VPSLLQ    zmmreg,zmmreg,zmmreg     [evex.nds.512.66.0f f3 /r]           AVX512F
+VPSLLQ    zmmreg,zmmreg,mem512     [evex.nds.512.66.0f f3 /r]           AVX512F
+VPSLLQ    zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f f3 /r]        AVX512F
 
 VPSRLW    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f d1 /r]            AVX
 VPSRLW    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f d1 /r]            AVX,AVX2
 VPSRLW    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f d1 /r]            AVX
 VPSRLW    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f d1 /r]            AVX,AVX2
+VPSRLW    zmmreg,zmmreg,zmmreg     [evex.nds.512.66.0f d1 /r]           AVX512F
+VPSRLW    zmmreg,zmmreg,mem512     [evex.nds.512.66.0f d1 /r]           AVX512F
+VPSRLW    zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f d1 /r]        AVX512F
 
 VPSRLD    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f d2 /r]            AVX
 VPSRLD    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f d2 /r]            AVX,AVX2
 VPSRLD    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f d2 /r]            AVX
 VPSRLD    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f d2 /r]            AVX,AVX2
+VPSRLD    zmmreg,zmmreg,zmmreg     [evex.nds.512.66.0f d2 /r]           AVX512F
+VPSRLD    zmmreg,zmmreg,mem512     [evex.nds.512.66.0f d2 /r]           AVX512F
+VPSRLD    zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f d2 /r]        AVX512F
 
 VPSRLQ    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f d3 /r]            AVX
 VPSRLQ    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f d3 /r]            AVX,AVX2
 VPSRLQ    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f d3 /r]            AVX
 VPSRLQ    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f d3 /r]            AVX,AVX2
+VPSRLQ    zmmreg,zmmreg,zmmreg     [evex.nds.512.66.0f d3 /r]           AVX512F
+VPSRLQ    zmmreg,zmmreg,mem512     [evex.nds.512.66.0f d3 /r]           AVX512F
+VPSRLQ    zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f d3 /r]        AVX512F
 
 VPSRAW    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f e1 /r]            AVX
 VPSRAW    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f e1 /r]            AVX,AVX2
 VPSRAW    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f e1 /r]            AVX
 VPSRAW    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f e1 /r]            AVX,AVX2
+VPSRAW    zmmreg,zmmreg,zmmreg     [evex.nds.512.66.0f e1 /r]           AVX512F
+VPSRAW    zmmreg,zmmreg,mem512     [evex.nds.512.66.0f e1 /r]           AVX512F
+VPSRAW    zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f e1 /r]        AVX512F
 
 VPSRAD    xmmreg,xmmreg,xmmreg     [vex.nds.128.66.0f e2 /r]            AVX
 VPSRAD    ymmreg,ymmreg,ymmreg     [vex.nds.256.66.0f e2 /r]            AVX,AVX2
 VPSRAD    xmmreg,xmmreg,mem128     [vex.nds.128.66.0f e2 /r]            AVX
 VPSRAD    ymmreg,ymmreg,mem256     [vex.nds.256.66.0f e2 /r]            AVX,AVX2
+VPSRAD    zmmreg,zmmreg,zmmreg     [evex.nds.512.66.0f e2 /r]           AVX512F
+VPSRAD    zmmreg,zmmreg,mem512     [evex.nds.512.66.0f e2 /r]           AVX512F
+VPSRAD    zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f e2 /r]        AVX512F
 
-; --- AVX-512 FP16  -------------------------
-VMAXSH    xmmreg,xmmreg,xmmreg     [evex.nds.128.f3.5c 5f /r]           AVX512VL,AVX512FP16
-VMAXSH    xmmreg,xmmreg,mem16      [evex.nds.128.f3.5c 5f /r]           AVX512VL,AVX512FP16
-VMAXSH    xmmreg{k1}{z},xmmreg,xmmreg [evex.nds.128.f3.5c 5f /r]        AVX512VL,AVX512FP16
-
-VMINSH    xmmreg,xmmreg,xmmreg     [evex.nds.128.f3.5c 5d /r]           AVX512VL,AVX512FP16
-VMINSH    xmmreg,xmmreg,mem16      [evex.nds.128.f3.5c 5d /r]           AVX512VL,AVX512FP16
-VMINSH    xmmreg{k1}{z},xmmreg,xmmreg [evex.nds.128.f3.5c 5d /r]        AVX512VL,AVX512FP16
+note: all xmm0-31, ymm0-31, zmm0-31 registers are fully supported.

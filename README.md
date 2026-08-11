@@ -39,7 +39,7 @@ AmmAsm is a handwritten x86-64 assembler designed for simplicity and clarity, ed
 
 9) Backend refactoring
 
-9) Added Documentation for every supported instruction in AmmAsm
+10) Added Documentation for every supported instruction in AmmAsm
 
 ---
 
