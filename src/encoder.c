@@ -1018,7 +1018,7 @@ uint8_t encode_avx_reg_reg_reg(uint8_t* mash_code, uint8_t opcode, uint8_t dest,
 
 
 uint8_t encode_avx_reg_reg_mem(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, AddrExpr *expr, uint8_t L, uint8_t pp, uint8_t mmmmm){
-    uint8_t is_2byte = (expr->base >= 8);
+    uint8_t is_2byte = !(mmmmm == VEX_MAP_0F && dest < 8 && expr->base < 8);
     uint8_t vex1 = 0; 
     uint8_t vex2 = 0;
     uint8_t modrm = 0;

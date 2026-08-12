@@ -1344,4 +1344,26 @@ VPSRAD    zmmreg,zmmreg,zmmreg     [evex.nds.512.66.0f e2 /r]           AVX512F
 VPSRAD    zmmreg,zmmreg,mem512     [evex.nds.512.66.0f e2 /r]           AVX512F
 VPSRAD    zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f e2 /r]        AVX512F
 
-note: all xmm0-31, ymm0-31, zmm0-31 registers are fully supported.
+VPTEST    xmmreg,xmmreg            [vex.128.66.0f38 17 /r]              AVX
+VPTEST    ymmreg,ymmreg            [vex.256.66.0f38 17 /r]              AVX2
+VPTEST    xmmreg,mem128            [vex.128.66.0f38 17 /r]              AVX
+VPTEST    ymmreg,mem256            [vex.256.66.0f38 17 /r]              AVX2
+
+; ----------- AVX512 Bfloat16 instructions ---------------
+VCVTNE2PS2BF16  xmmreg, xmmreg*, mem128  [rvm:fv: evex.128.f2.0f38.w0 72 /r]  AVX512BF16,AVX512VL
+VCVTNE2PS2BF16  ymmreg, ymmreg*, mem256  [rvm:fv: evex.256.f2.0f38.w0 72 /r]  AVX512BF16,AVX512VL
+VCVTNE2PS2BF16  zmmreg, zmmreg*, mem512  [rvm:fv: evex.512.f2.0f38.w0 72 /r]  AVX512BF16
+
+VCVTNEPS2BF16   xmmreg, xmmrm128         [rm:fv: evex.128.f3.0f38.w0 72 /r]    AVX512BF16,AVX512VL
+VCVTNEPS2BF16   xmmreg, ymmrm256         [rm:fv: evex.256.f3.0f38.w0 72 /r]    AVX512BF16,AVX512VL
+VCVTNEPS2BF16   ymmreg, zmmrm512         [rm:fv: evex.512.f3.0f38.w0 72 /r]    AVX512BF16
+
+VCVTNEPS2BF16   xmmreg, mem128           [rm:fv: evex.128.f3.0f38.w0 72 /r]    AVX512BF16,AVX512VL
+VCVTNEPS2BF16   xmmreg, mem256           [rm:fv: evex.256.f3.0f38.w0 72 /r]    AVX512BF16,AVX512VL
+VCVTNEPS2BF16   ymmreg, mem512           [rm:fv: evex.512.f3.0f38.w0 72 /r]    AVX512BF16
+
+note #1: all xmm0-31, ymm0-31, zmm0-31 registers are fully supported.
+Note #2: Aasm may generate invalid machine code if an AVX instruction(that not support AVX-512 features)
+is used with AVX-512-only features such as extended vector registers
+(xmm16-31, ymm16-31, zmm0-31), opmask registers (k0-k7), or other
+AVX-512-specific operands.
