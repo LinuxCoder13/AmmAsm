@@ -81,7 +81,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         // ========================================================================
         
         // MOV R64, IMM64
-        if (a->type == O_REG64 && IS_EXPR_OR_IMM_OR_PC(*b)) {
+        if (a->type == O_REG64 && IS_EXPR_OR_IMM_OR_PC(*b) && c->type == O_NONE) {
 
             uint8_t reg_idx = find_reg64_index(a->reg);
             uint64_t imm = b->imm;
@@ -93,7 +93,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         }
 
         // MOV R32, IMM32
-        else if (a->type == O_REG32 && IS_EXPR_OR_IMM_OR_PC(*b)) {
+        else if (a->type == O_REG32 && IS_EXPR_OR_IMM_OR_PC(*b) && c->type == O_NONE) {
 
             uint8_t reg_idx = find_reg32_index(a->reg);
             uint32_t imm = (uint32_t)(b->imm);
@@ -105,7 +105,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         }
 
         // MOV R16, IMM16
-        else if (a->type == O_REG16 && b->type == O_IMM) {
+        else if (a->type == O_REG16 && b->type == O_IMM && c->type == O_NONE) {
 
             uint8_t reg_idx = find_reg16_index(a->reg);
             uint16_t imm = (uint16_t)(b->imm);
@@ -117,7 +117,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         }
 
         // MOV R8, IMM8/CHAR
-        else if (a->type == O_REG8 && (b->type == O_IMM || b->type == O_CHAR)) {
+        else if (a->type == O_REG8 && (b->type == O_IMM || b->type == O_CHAR) && c->type == O_NONE) {
 
             uint8_t c = b->c;
             uint8_t reg_idx = find_reg8_index(a->reg);
@@ -135,7 +135,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         // ========================================================================
 
         // MOV R64, R64
-        else if (a->type == O_REG64 && b->type == O_REG64) {
+        else if (a->type == O_REG64 && b->type == O_REG64 && c->type == O_NONE) {
         
             uint8_t rm = find_reg64_index(a->reg);
             uint8_t reg = find_reg64_index(b->reg);
@@ -147,7 +147,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         }
 
         // MOV R32, R32
-        else if (a->type == O_REG32 && b->type == O_REG32) {
+        else if (a->type == O_REG32 && b->type == O_REG32 && c->type == O_NONE) {
         
             uint8_t rm = find_reg32_index(a->reg);
             uint8_t reg = find_reg32_index(b->reg);
@@ -159,7 +159,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         }
 
         // MOV R16, R16
-        else if (a->type == O_REG16 && b->type == O_REG16) {
+        else if (a->type == O_REG16 && b->type == O_REG16 && c->type == O_NONE) {
         
             uint8_t rm = find_reg16_index(a->reg);
             uint8_t reg = find_reg16_index(b->reg);
@@ -171,7 +171,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         }
 
         // MOV R8, R8
-        else if (a->type == O_REG8 && b->type == O_REG8) {
+        else if (a->type == O_REG8 && b->type == O_REG8 && c->type == O_NONE) {
         
             uint8_t rm = find_reg8_index(a->reg);
             uint8_t reg = find_reg8_index(b->reg);
@@ -189,7 +189,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
 
 
         // MOV R64, [ADDR]
-        else if (a->type == O_REG64 && b->type == O_MEM) {
+        else if (a->type == O_REG64 && b->type == O_MEM && c->type == O_NONE) {
             uint8_t reg = find_reg64_index(a->reg);
             AddrExpr *mem = &b->addr;
 
@@ -200,7 +200,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         }
 
         // MOV R32, [ADDR]
-        else if (a->type == O_REG32 && b->type == O_MEM) {
+        else if (a->type == O_REG32 && b->type == O_MEM && c->type == O_NONE) {
             uint8_t reg = find_reg32_index(a->reg);
             AddrExpr *mem = &b->addr;
 
@@ -211,7 +211,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         }
 
         // MOV R16, [ADDR]
-        else if (a->type == O_REG16 && b->type == O_MEM) {
+        else if (a->type == O_REG16 && b->type == O_MEM && c->type == O_NONE) {
             uint8_t reg = find_reg16_index(a->reg);
             AddrExpr *mem = &b->addr;
 
@@ -222,7 +222,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         }
 
         // MOV R8, [ADDR]
-        else if (a->type == O_REG8 && b->type == O_MEM) {
+        else if (a->type == O_REG8 && b->type == O_MEM && c->type == O_NONE) {
             uint8_t reg = find_reg8_index(a->reg);
             AddrExpr *mem = &b->addr;
 
@@ -238,7 +238,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
 
 
         // MOV [ADDR], R64
-        else if (a->type == O_MEM && b->type == O_REG64) {
+        else if (a->type == O_MEM && b->type == O_REG64 && c->type == O_NONE) {
             uint8_t reg = find_reg64_index(b->reg);
             AddrExpr *mem = &a->addr;
 
@@ -249,7 +249,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         }
 
         // MOV [ADDR], R32
-        else if (a->type == O_MEM && b->type == O_REG32) {
+        else if (a->type == O_MEM && b->type == O_REG32 && c->type == O_NONE) {
             uint8_t reg = find_reg32_index(b->reg);
             AddrExpr *mem = &a->addr;
 
@@ -260,7 +260,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         }
 
         // MOV [ADDR], R16
-        else if (a->type == O_MEM && b->type == O_REG16) {
+        else if (a->type == O_MEM && b->type == O_REG16 && c->type == O_NONE)  {
             uint8_t reg = find_reg16_index(b->reg);
             AddrExpr *mem = &a->addr;
 
@@ -271,7 +271,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         }
 
         // MOV [ADDR], R8
-        else if (a->type == O_MEM && b->type == O_REG8) {
+        else if (a->type == O_MEM && b->type == O_REG8 && c->type == O_NONE) {
             uint8_t reg = find_reg8_index(b->reg);
             AddrExpr *mem = &a->addr;
 
@@ -282,7 +282,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         }
 
 
-        else if (a->type == O_MEM && (IS_EXPR_OR_IMM_OR_PC(*b) || b->type == O_CHAR)){
+        else if (a->type == O_MEM && (IS_EXPR_OR_IMM_OR_PC(*b) || b->type == O_CHAR) && c->type == O_NONE){
             AddrExpr *mem = &a->addr;
             
             node->ins.pc = *pc;
@@ -322,7 +322,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
 
         const Group1Insn *insn = &group1_table[find_ins_idx(cmd, sizeof(group1_table) / sizeof(group1_table[0]), group1_table)];
 
-        if ((a->type == O_REG64 || a->type == O_REG32 || a->type == O_REG16 || a->type == O_REG8) && (IS_EXPR_OR_IMM_OR_PC(*b) || b->type == O_CHAR)) {
+        if ((a->type == O_REG64 || a->type == O_REG32 || a->type == O_REG16 || a->type == O_REG8) && (IS_EXPR_OR_IMM_OR_PC(*b) || b->type == O_CHAR) && c->type == O_NONE) {
             int reg = reg_index(a);
             int sz  = operand_bits(a);
 
@@ -331,10 +331,10 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
             *pc += *s;
         }
 
-        else if ((a->type == O_REG64 && b->type == O_REG64) ||
+        else if (((a->type == O_REG64 && b->type == O_REG64) ||
                 (a->type == O_REG32 && b->type == O_REG32) ||
                 (a->type == O_REG16 && b->type == O_REG16) ||
-                (a->type == O_REG8  && b->type == O_REG8)) {
+                (a->type == O_REG8  && b->type == O_REG8)) && b->type == O_NONE) {
 
             int dest = reg_index(a);
             int src  = reg_index(b);
@@ -346,7 +346,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
             *pc += *s;
         }
 
-        else if ((a->type == O_REG64 || a->type == O_REG32 || a->type == O_REG16 || a->type == O_REG8) && b->type == O_MEM) {
+        else if ((a->type == O_REG64 || a->type == O_REG32 || a->type == O_REG16 || a->type == O_REG8) && b->type == O_MEM && c->type == O_NONE) {
 
             int reg = reg_index(a);
             int sz  = operand_bits(a);
@@ -362,7 +362,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         }
 
         else if (a->type == O_MEM &&
-                (b->type == O_REG64 || b->type == O_REG32 || b->type == O_REG16 || b->type == O_REG8)) {
+                (b->type == O_REG64 || b->type == O_REG32 || b->type == O_REG16 || b->type == O_REG8) && c->type == O_NONE) {
 
             int reg = reg_index(b);
             int sz  = operand_bits(b);
@@ -375,7 +375,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
             *pc += *s;
         }
 
-        else if (a->type == O_MEM && (IS_EXPR_OR_IMM_OR_PC(*b) || b->type == O_CHAR) && node->ins.operands[1].imm_sz) {
+        else if (a->type == O_MEM && (IS_EXPR_OR_IMM_OR_PC(*b) || b->type == O_CHAR) && node->ins.operands[1].imm_sz && c->type == O_NONE) {
 
             int sz = node->ins.operands[1].imm_sz * 8;
 
@@ -417,7 +417,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         int sz;
         uint8_t reg;
 
-        if (b->type == O_REG8 && strcmp(b->reg, "cl") == 0) {
+        if (b->type == O_REG8 && strcmp(b->reg, "cl") == 0 && c->type == O_NONE) {
             if (a->type == O_MEM) {
                 sz = node->ins.operands[1].imm_sz;
 
@@ -426,7 +426,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
                 *pc += *s;
             }
 
-            else if (a->type == O_REG8 || a->type == O_REG16 || a->type == O_REG32 || a->type == O_REG64) {
+            else if ((a->type == O_REG8 || a->type == O_REG16 || a->type == O_REG32 || a->type == O_REG64) && c->type == O_NONE) {
 
                 sz = operand_bits(a);
                 reg = reg_index(a);
@@ -437,7 +437,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
             }
         }   
         // reg, imm/char
-        else if ((b->type == O_IMM || b->type == O_CHAR) && (a->type == O_REG8 || a->type == O_REG16 || a->type == O_REG32 || a->type == O_REG64)) {
+        else if ((b->type == O_IMM || b->type == O_CHAR) && (a->type == O_REG8 || a->type == O_REG16 || a->type == O_REG32 || a->type == O_REG64) && c->type == O_NONE) {
 
             uint8_t imm = b->type == O_IMM ? (uint8_t)b->imm : b->c;
             sz = operand_bits(a);
@@ -451,7 +451,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
             *pc += *s;
         }
         // mem, imm/char
-        else if ((b->type == O_IMM || b->type == O_CHAR) && (a->type == O_MEM) && node->ins.operands[1].imm_sz) {
+        else if ((b->type == O_IMM || b->type == O_CHAR) && (a->type == O_MEM) && node->ins.operands[1].imm_sz && c->type == O_NONE) {
 
             uint8_t imm = b->type == O_IMM ? b->imm : b->c;
             sz = node->ins.operands[1].imm_sz;
@@ -482,8 +482,8 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
 
         const Group3Insn *insn = &group3_table[find_ins_idx(cmd, sizeof(group3_table) / sizeof(group3_table[0]), group3_table)];
 
-        if (a->type == O_REG64 || a->type == O_REG32 ||
-            a->type == O_REG16 || a->type == O_REG8) {
+        if ((a->type == O_REG64 || a->type == O_REG32 ||
+            a->type == O_REG16 || a->type == O_REG8) && b->type == O_NONE) {
 
             int reg = reg_index(a);
             int sz = operand_bits(a);
@@ -493,7 +493,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
             *pc += *s;
         }
 
-        else if (a->type == O_MEM) {
+        else if (a->type == O_MEM && b->type == O_NONE) {
             AddrExpr *mem = &a->addr;
             node->ins.pc = *pc;
 
@@ -535,7 +535,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
 
         else if ((a->type == O_REG64 || a->type == O_REG32 ||
                 a->type == O_REG16 || a->type == O_REG8) &&
-                IS_EXPR_OR_IMM_OR_PC(*b)) {
+                IS_EXPR_OR_IMM_OR_PC(*b) && c->type == O_NONE) {
 
             int reg = reg_index(a);
             int sz = operand_bits(a);
@@ -547,7 +547,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
 
         else if ((a->type == O_REG64 || a->type == O_REG32 ||
                 a->type == O_REG16 || a->type == O_REG8) &&
-                b->type == O_MEM) {
+                b->type == O_MEM && c->type == O_NONE) {
 
             int reg = reg_index(a);
             int sz = operand_bits(a);
@@ -560,7 +560,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
 
         else if (a->type == O_MEM &&
                 (b->type == O_REG64 || b->type == O_REG32 ||
-                b->type == O_REG16 || b->type == O_REG8)) {
+                b->type == O_REG16 || b->type == O_REG8) && c->type == O_NONE) {
 
             int reg = reg_index(b);
             int sz = operand_bits(b);
@@ -571,7 +571,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
             *pc += *s;
         }
 
-        else if (a->type == O_MEM && (IS_EXPR_OR_IMM_OR_PC(*b) || b->type == O_CHAR)){
+        else if (a->type == O_MEM && (IS_EXPR_OR_IMM_OR_PC(*b) || b->type == O_CHAR) && c->type == O_NONE){
             AddrExpr *mem = &a->addr;
             
             node->ins.pc = *pc;
@@ -602,8 +602,8 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
                 *pc += *s;
             }
 
-            else if (b->type == O_REG64 || b->type == O_REG32 ||
-                    b->type == O_REG16 || b->type == O_REG8) {
+            else if ((b->type == O_REG64 || b->type == O_REG32 ||
+                    b->type == O_REG16 || b->type == O_REG8)) {
 
                 int src = reg_index(b);
 
@@ -1100,6 +1100,8 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
     }
 
     else if(is2arrin(zero_operand_instructions, zero_operand_instructions_COUNT, (char*)cmd)){
+        if(a->type != O_NONE) goto erorr;
+
 
         if(!strcmp(node->cmd, "syscall")){  machine_code[0] = 0x0F; machine_code[1] = 0x05; *s = 2;}
         else if(!strcmp(cmd, "ret")){machine_code[0] = 0xC3;*s = 1;}
@@ -1328,13 +1330,13 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         // pmovmskb r32, xmm
         if (!strcmp(cmd, "pmovmskb")) {
 
-            if (a->type == O_REG32 && b->type == O_XMM) {
+            if (a->type == O_REG32 && b->type == O_XMM && c->type == O_NONE) {
                 node->ins.pc = *pc;
                 *s = encode_two_byte_opcode_reg( machine_code, 0xD7, find_reg32_index(a->reg), find_xmm_index(b->reg),     32, 0x66);
                 *pc += *s;
             }
 
-            if (a->type == O_REG64 && b->type == O_XMM) {
+            if (a->type == O_REG64 && b->type == O_XMM && c->type == O_NONE) {
                 node->ins.pc = *pc;
                 *s = encode_two_byte_opcode_reg( machine_code, 0xD7, find_reg64_index(a->reg),   find_xmm_index(b->reg), 32, 0x66);
                 *pc += *s;
@@ -1346,21 +1348,21 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
                 !strcmp(cmd, "movdqu")) {
 
             // xmm, xmm
-            if (a->type == O_XMM && b->type == O_XMM) {
+            if (a->type == O_XMM && b->type == O_XMM && c->type == O_NONE) {
                 node->ins.pc = *pc;
                 *s = encode_two_byte_opcode_reg( machine_code, opcode, find_xmm_index(a->reg), find_xmm_index(b->reg), 128, prefix);
                 *pc += *s;
             }
 
             // xmm, [mem]
-            else if (a->type == O_XMM && b->type == O_MEM) {
+            else if (a->type == O_XMM && b->type == O_MEM && c->type == O_NONE) {
                 node->ins.pc = *pc;
                 *s = encode_inst_reg_rm2( machine_code, opcode, find_xmm_index(a->reg), &b->addr, 128, prefix);
                 *pc += *s;
             }
 
             // [mem], xmm
-            else if (a->type == O_MEM && b->type == O_XMM) {
+            else if (a->type == O_MEM && b->type == O_XMM && c->type == O_NONE) {
                 node->ins.pc = *pc;
                 *s = encode_inst_reg_rm2( machine_code, opcode + 0x10, find_xmm_index(b->reg), &a->addr, 128, prefix);
                 *pc += *s;
@@ -1369,7 +1371,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
 
         // xmm, imm8 (group 12)
         else if((!strcmp(cmd, "psrlw") || !strcmp(cmd, "psraw") || 
-                 !strcmp(cmd, "psllw")) && b->type == O_IMM){
+                 !strcmp(cmd, "psllw")) && b->type == O_IMM && c->type == O_NONE){
             
             // pack you intel, what is this? I done, I switch to ARM!
             node->ins.pc = *pc;
@@ -1379,7 +1381,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
 
         // xmm, imm8 (group 13)
         else if((!strcmp(cmd, "psrld") || !strcmp(cmd, "psrad") || 
-                 !strcmp(cmd, "pslld")) && b->type == O_IMM){
+                 !strcmp(cmd, "pslld")) && b->type == O_IMM && c->type == O_NONE){
             
             // pack you intel, what is this? I done, I switch to ARM!
             node->ins.pc = *pc;
@@ -1389,7 +1391,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
 
         // xmm, imm8 (group 14)
         else if((!strcmp(cmd, "psrlq") || !strcmp(cmd, "psrldq") || 
-                 !strcmp(cmd, "psllq") || !strcmp(cmd, "pslldq")) && b->type == O_IMM){
+                 !strcmp(cmd, "psllq") || !strcmp(cmd, "pslldq")) && b->type == O_IMM && c->type == O_NONE){
             
             // pack you intel, what is this? I done, I switch to ARM!
             node->ins.pc = *pc;
@@ -1398,14 +1400,14 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         }
 
         // xmm, xmm
-        else if (a->type == O_XMM && b->type == O_XMM) {
+        else if (a->type == O_XMM && b->type == O_XMM && c->type == O_NONE) {
             node->ins.pc = *pc;
             *s = encode_two_byte_opcode_reg( machine_code, opcode, find_xmm_index(a->reg), find_xmm_index(b->reg), 128, prefix);
             *pc += *s;
         }
 
         // xmm, [mem]
-        else if (a->type == O_XMM && b->type == O_MEM) {
+        else if (a->type == O_XMM && b->type == O_MEM && c->type == O_NONE) {
 
             node->ins.pc = *pc;
             *s = encode_inst_reg_rm2( machine_code, opcode, find_xmm_index(a->reg), &b->addr, 128, prefix);
@@ -1415,35 +1417,35 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         else if (!strcmp(cmd, "movq")) {
 
             // xmm, xmm
-            if (a->type == O_XMM && b->type == O_XMM) {
+            if (a->type == O_XMM && b->type == O_XMM && c->type == O_NONE) {
                 node->ins.pc = *pc;
                 *s = encode_two_byte_opcode_reg(machine_code, 0x7E, find_xmm_index(a->reg), find_xmm_index(b->reg), 128, 0xF3);
                 *pc += *s;
             }
 
             // xmm, [mem]
-            if (a->type == O_XMM && b->type == O_MEM) {
+            if (a->type == O_XMM && b->type == O_MEM && c->type == O_NONE) {
                 node->ins.pc = *pc;
                 *s = encode_inst_reg_rm2(machine_code, 0x7E, find_xmm_index(a->reg), &b->addr, 128, 0xF3);
                 *pc += *s;
             }
 
             // [mem], xmm
-            if (a->type == O_MEM && b->type == O_XMM) {
+            if (a->type == O_MEM && b->type == O_XMM && c->type == O_NONE) {
                 node->ins.pc = *pc;
                 *s = encode_inst_reg_rm2(machine_code, 0xD6, find_xmm_index(b->reg), &a->addr, 128, 0x66);
                 *pc += *s;
             }
 
             // xmm, r64
-            if (a->type == O_XMM && b->type == O_REG64) {
+            if (a->type == O_XMM && b->type == O_REG64 && c->type == O_NONE) {
                 node->ins.pc = *pc;
                 *s = encode_xmm_or_r64__xmm_or_r64(machine_code, find_xmm_index(a->reg), find_reg64_index(b->reg), 0);
                 *pc += *s;
             }
 
             // r64, xmm
-            if (a->type == O_REG64 && b->type == O_XMM) {
+            if (a->type == O_REG64 && b->type == O_XMM && c->type == O_NONE) {
                 node->ins.pc = *pc;
                 *s = encode_xmm_or_r64__xmm_or_r64(machine_code, find_reg64_index(a->reg), find_xmm_index(b->reg), 1);
                 *pc += *s;
@@ -1582,9 +1584,9 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
 
             else if(!strcmp(cmd, "vcvtneps2bf16")){
                 // reg, reg
-                if((a->type == O_XMM && b->type == O_XMM)||
+                if(((a->type == O_XMM && b->type == O_XMM)||
                    (a->type == O_XMM && b->type == O_YMM)||
-                   (a->type == O_YMM && b->type == O_ZMM)){
+                   (a->type == O_YMM && b->type == O_ZMM))&& c->type == O_NONE){
                     if(!avx512vl_defined) {fprintf(stderr, "AmmAsm:%d: Warn: program uses AVX-512_vl, but current CPU does't support it(might give #UD)\n", node->line);}
                     node->ins.pc = *pc;
                     *s = encode_avx512_reg_reg_reg(machine_code, opcode, 
@@ -1600,10 +1602,10 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
                 }
                 
                 // reg, mem 
-                else if((a->type == O_XMM && b->type == O_MEM)||
+                else if(((a->type == O_XMM && b->type == O_MEM)||
                         (a->type == O_XMM && b->type == O_MEM)||
                         (a->type == O_YMM && b->type == O_MEM)||
-                        (a->type == O_ZMM && b->type == O_MEM)){
+                        (a->type == O_ZMM && b->type == O_MEM)) && c->type == O_NONE){
                     node->ins.pc = *pc;
                     AddrExpr *mem = &b->addr; 
                     *s = encode_avx512_reg_reg_rm( machine_code, opcode, 
