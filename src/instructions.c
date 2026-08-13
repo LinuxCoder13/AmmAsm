@@ -207,6 +207,7 @@ const char *CMDS[] = {
     "vcvtpd2ps",
     "vcvtps2dq",
     "vcvtps2pd",
+    "vcvtps2ph",
     "vcvttps2dq",
     "vdivpd",
     "vdivps",
@@ -359,6 +360,7 @@ const char *AVX512[] = {
     "vcvtpd2ps",
     "vcvtps2dq",
     "vcvtps2pd",
+    "vcvtps2ph",
     "vcvttps2dq",
     "vdivpd",
     "vdivps",
@@ -431,6 +433,6 @@ const char *AVX512[] = {
 
 const int AVX512_COUNT = sizeof(AVX512) / sizeof(AVX512[0]) -1;
 
-const char* AVX512_that_not_suppots_broatcast[] = {"vmaxsh", "vminsh", NULL};
+const char* AVX512_that_not_suppots_broatcast[] = {"vcvtps2ph", "vmaxsh", "vminsh", NULL};
 const int AVX512_that_not_suppots_broatcast_COUNT = sizeof(AVX512_that_not_suppots_broatcast) / sizeof(AVX512_that_not_suppots_broatcast[0]) -1;
 

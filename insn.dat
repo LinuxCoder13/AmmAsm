@@ -858,13 +858,12 @@ VMAXPD    zmmreg,zmmreg,mem512     [evex.nds.512.66.0f 5f /r]           AVX512F
 VMAXPD    zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f 5f /r]        AVX512F
 VMAXPD    zmmreg{k1}{z},zmmreg,mem512 [evex.nds.512.66.0f 5f /r]        AVX512F
 
-; --- VMAXSH (AVX-512 only) --------------------------------------------------
+; --- VMAXSH / VMINSH (AVX-512 only) --------------------------------------------------
 VMAXSH    xmmreg,xmmreg,xmmreg     [evex.nds.128.f3.5c 5f /r]           AVX512VL,AVX512F
 VMAXSH    xmmreg,xmmreg,mem16      [evex.nds.128.f3.5c 5f /r]           AVX512VL,AVX512F
 VMAXSH    xmmreg{k1}{z},xmmreg,xmmreg [evex.nds.128.f3.5c 5f /r]        AVX512VL,AVX512F
 VMAXSH    xmmreg{k1}{z},xmmreg,mem16 [evex.nds.128.f3.5c 5f /r]         AVX512VL,AVX512F
 
-; --- VMINSH (AVX-512 only) --------------------------------------------------
 VMINSH    xmmreg,xmmreg,xmmreg     [evex.nds.128.f3.5c 5d /r]           AVX512VL,AVX512F
 VMINSH    xmmreg,xmmreg,mem16      [evex.nds.128.f3.5c 5d /r]           AVX512VL,AVX512F
 VMINSH    xmmreg{k1}{z},xmmreg,xmmreg [evex.nds.128.f3.5c 5d /r]        AVX512VL,AVX512F
@@ -1051,6 +1050,15 @@ VCVTPS2PD zmmreg,ymmreg            [evex.nds.512.0f 5a /r]              AVX512F
 VCVTPS2PD zmmreg,mem256            [evex.nds.512.0f 5a /r]              AVX512F
 VCVTPS2PD zmmreg{k1}{z},ymmreg     [evex.nds.512.0f 5a /r]              AVX512F
 VCVTPS2PD zmmreg{k1}{z},mem256{1to8} [evex.nds.512.0f 5a /r]            AVX512F
+
+VCVTPS2PH xmmreg, ymmreg, imm8         [vex.256.66.0f3a.w0. 1d /r ib]       F16C
+VCVTPS2PH xmmreg, xmmreg, imm8         [vex.128.66.0f3a.w0. 1d /r ib]       F16C
+VCVTPS2PH xmmreg, xmmreg, imm8         [evex.128.66.0f3a.w0. 1d /r ib]      AVX512VL,AVX512
+VCVTPS2PH xmmreg, ymmreg, imm8         [evex.256.66.0f3a.w0. 1d /r ib]      AVX512VL,AVX512
+VCVTPS2PH ymmreg, zmmreg, imm8         [evex.512.66.0f3a.w0. 1d /r ib]      AVX512
+VCVTPS2PH mem{k1}{z}, xmmreg, imm8     [evex.128.66.0f3a.w0. 1d /r ib]      AVX512VL,AVX512
+VCVTPS2PH mem{k1}{z}, ymmreg, imm8     [evex.256.66.0f3a.w0. 1d /r ib]      AVX512VL,AVX512
+VCVTPS2PH mem{k1}{z}, zmmreg, imm8     [evex.512.66.0f3a.w0. 1d /r ib]      AVX512
 
 VCVTTPS2DQ xmmreg,xmmreg           [vex.nds.128.f3.0f 5b /r]            AVX
 VCVTTPS2DQ ymmreg,ymmreg           [vex.nds.256.f3.0f 5b /r]            AVX

@@ -21,7 +21,7 @@ AmmAsm is a handwritten x86-64 assembler designed for simplicity and clarity, ed
 
 ## What's New in v2.4.x
 
-1) Added new instructions: `SSE2`(45 instructions), `AVX/AVX2/AVX512`(~79 instructions), `AVX-512 FP16`(2 instructions) `AVX-512 BF16`(2 instructions), `bsf`, `bsr`, `cmc`, `clc`, `stc`, `cld`, `std`, `cli`, `sti`, `lahf`, `sahf`, `pushf`, `popf`, `popfq`, `iret`, `iretq`, `cpuid`, `hlt`, `wait`, `fwait`, `pause`, `ud2`, `xchg`, `movq`, `rdpru`, `rdtsc`, `rdtscp`, `lfence`
+1) Added new instructions: `SSE2`(45 instructions), `AVX/AVX2/AVX512`(~80 instructions), `AVX-512 FP16`(3 instructions) `AVX-512 BF16`(2 instructions), `bsf`, `bsr`, `cmc`, `clc`, `stc`, `cld`, `std`, `cli`, `sti`, `lahf`, `sahf`, `pushf`, `popf`, `popfq`, `iret`, `iretq`, `cpuid`, `hlt`, `wait`, `fwait`, `pause`, `ud2`, `xchg`, `movq`, `rdpru`, `rdtsc`, `rdtscp`, `lfence`
 
 2) Added Float number for `SSE1`, IEEE-754
 
@@ -149,9 +149,11 @@ gcc hello.o -o hello
 
 ---
 
-## Honor Feature
+## Honor Features
 
-AmmAsm supports RDPRU, an AMD-specific instruction currently not supported by NASM 3.02. (August 10 2026)
+- AmmAsm supports RDPRU, an AMD-specific instruction currently not supported by NASM 3.02. (August 10 2026)
+
+- AmmAsm supports all form of `vcvtps2ph` instruction while NASM 3.02 does not
 
 ---
 

@@ -1463,7 +1463,6 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         if(!avx2_defined) {fprintf(stderr, "AmmAsm:%d: Warn: program uses AVX2, but current CPU does't support it(might give #UD)\n", node->line);}
         if(!avx_defined) {fprintf(stderr, "AmmAsm:%d: Warn: program uses AVX, but current CPU does't support it(might give #UD)\n", node->line);}
 
-
         static const AvxInsn avx_table[] = {
             {"vaddpd",  0x58, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 1, TUPLE_FULL, 0},
             {"vaddps",  0x58, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
@@ -1477,6 +1476,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
             {"vcvtpd2ps",  0x5A, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 2, 1, TUPLE_HALF, 0},
             {"vcvtps2dq",  0x5B, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 2, 0, TUPLE_HALF, 0},
             {"vcvtps2pd",  0x5A, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 2, 0, TUPLE_HALF, 0},
+            {"vcvtps2ph", 0x1D, VEX_PP_66, VEX_MAP_0F3A, EVEX_PP_66, EVEX_MAP_0F3A, 3, 0, TUPLE_HALF, 0},
             {"vcvttps2dq", 0x5B, VEX_PP_F3,  VEX_MAP_0F, VEX_PP_F3,  VEX_MAP_0F, 2, 0, TUPLE_HALF, 0},
             {"vdivpd",  0x5E, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 1, TUPLE_FULL, 0},
             {"vdivps",  0x5E, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
@@ -1585,8 +1585,8 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
             else if(!strcmp(cmd, "vcvtneps2bf16")){
                 // reg, reg
                 if(((a->type == O_XMM && b->type == O_XMM)||
-                   (a->type == O_XMM && b->type == O_YMM)||
-                   (a->type == O_YMM && b->type == O_ZMM))&& c->type == O_NONE){
+                    (a->type == O_XMM && b->type == O_YMM)||
+                    (a->type == O_YMM && b->type == O_ZMM))&& c->type == O_NONE){
                     if(!avx512vl_defined) {fprintf(stderr, "AmmAsm:%d: Warn: program uses AVX-512_vl, but current CPU does't support it(might give #UD)\n", node->line);}
                     node->ins.pc = *pc;
                     *s = encode_avx512_reg_reg_reg(machine_code, opcode, 
@@ -1698,6 +1698,41 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
                 *pc += *s;
             }
 
+            else if(((a->type == O_XMM && b->type == O_XMM)||
+                    (a->type == O_XMM && b->type == O_YMM)||
+                    (a->type == O_YMM && b->type == O_ZMM))&& c->type == O_IMM){
+                if(!avx512vl_defined) {fprintf(stderr, "AmmAsm:%d: Warn: program uses AVX-512_vl, but current CPU does't support it(might give #UD)\n", node->line);}
+                node->ins.pc = *pc;
+                *s = encode_avx512_reg_reg_reg(machine_code, opcode, 
+                    find_xmm_index(b->reg),
+                    0, 
+                    find_xmm_index(a->reg),
+                    evex_map,
+                    b->type == O_XMM ? EVEX_XMM : 
+                    b->type == O_YMM ? EVEX_YMM : 
+                                       EVEX_ZMM, 
+                    evex_pp, W, evex_aaa, evex_z);
+                machine_code[(*s)++] = (uint8_t)c->imm;
+                *pc += *s;
+            }
+
+            else if((a->type == O_MEM && b->type == O_XMM && c->type == O_IMM) ||
+                    (a->type == O_MEM && b->type == O_YMM && c->type == O_IMM) ||
+                    (a->type == O_MEM && b->type == O_ZMM && c->type == O_IMM)){
+                node->ins.pc = *pc;
+                AddrExpr *mem = &a->addr; 
+                *s = encode_avx512_reg_reg_rm( machine_code, opcode, 
+                    find_xmm_index(b->reg), 
+                    0, 
+                    mem,
+                    evex_map, 
+                    b->type == O_XMM ? EVEX_XMM : 
+                    b->type == O_YMM ? EVEX_YMM : 
+                                       EVEX_ZMM,
+                    evex_pp, W, evex_aaa, evex_z, eff_typle, broatcast);
+                machine_code[(*s)++] = (uint8_t)c->imm;
+                *pc += *s;
+            }
         }
 
         // hibrid version
@@ -1707,7 +1742,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
             if(((a->type == O_YMM && find_xmm_index(a->reg) >= 16)) || ((b->type == O_YMM && find_xmm_index(b->reg) >= 16)) || ((c->type == O_YMM && find_xmm_index(c->reg) >= 16))) {fprintf(stderr, "AmmAsm:%d: AVX/AVX2 can use only ymm0-ymm15 registers\n", node->line);exit(1);}
             
             if((a->type == O_XMM && b->type == O_XMM && (operands == 2 || c->type == O_XMM)) ||
-               (a->type == O_YMM && b->type == O_YMM && (operands == 2 || c->type == O_YMM))||
+               (a->type == O_YMM && b->type == O_YMM && (operands == 2 || c->type == O_YMM)) ||
                (a->type == O_ZMM && b->type == O_ZMM && (operands == 2 || c->type == O_ZMM))){
                 node->ins.pc = *pc;
                 *s = encode_avx_reg_reg_reg(machine_code, opcode, 
@@ -1734,6 +1769,38 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
                     vex_pp, vex_map);
                 *pc += *s;
             }
+
+            else if(((a->type == O_XMM && b->type == O_XMM)||
+                    (a->type == O_XMM && b->type == O_YMM)||
+                    (a->type == O_YMM && b->type == O_ZMM))&& c->type == O_IMM){
+                node->ins.pc = *pc;
+                *s = encode_avx_reg_reg_reg(machine_code, opcode, 
+                    find_xmm_index(a->reg), 
+                    0, 
+                    find_xmm_index(b->reg),
+                    b->type == O_XMM ? VEX_XMM : 
+                    b->type == O_YMM ? VEX_YMM : 0,
+                    vex_pp, vex_map);
+                machine_code[(*s)++] = (uint8_t)c->imm;
+                *pc += *s;
+            }
+
+            else if(((a->type == O_MEM && b->type == O_XMM && c->type == O_IMM)||
+                     (a->type == O_MEM && b->type == O_YMM && c->type == O_IMM))){
+
+                node->ins.pc = *pc;
+                AddrExpr *mem = &a->addr; 
+                *s = encode_avx_reg_reg_mem(machine_code, opcode, 
+                    find_xmm_index(b->reg), 
+                    0, 
+                    mem,
+                    b->type == O_XMM ? VEX_XMM : 
+                    b->type == O_YMM ? VEX_YMM : 0,
+                    vex_pp, vex_map);
+                machine_code[(*s)++] = (uint8_t)c->imm;
+                *pc += *s;
+            }
+
         }
     }
 
