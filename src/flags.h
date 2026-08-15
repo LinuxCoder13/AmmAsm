@@ -14,3 +14,4 @@ extern uint8_t avx512_fp16_defined;
 extern uint8_t avx512f_defined;
 extern uint8_t avx512vl_defined;
 extern uint8_t rdpru_defined;
+extern uint8_t isnt_erorr;

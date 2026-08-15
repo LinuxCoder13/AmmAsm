@@ -90,7 +90,8 @@ AST* PARSE(){
                 } 
 
                 else if(toks[pos].type == T_BYTE || toks[pos].type == T_WORD ||
-                        toks[pos].type == T_DWORD|| toks[pos].type == T_QWORD ){
+                        toks[pos].type == T_DWORD|| toks[pos].type == T_QWORD ||
+                        toks[pos].type == T_XWORD || toks[pos].type == T_YWORD  || toks[pos].type == T_ZWORD){
                     
                     if(node.ins.operands[1].imm_sz > 0) fprintf(stderr, "AmmAsm:%d: Size of operand is already defined, useing last one\n", node.line);
                     int imm_size = toks[pos++].type;
@@ -99,6 +100,9 @@ AST* PARSE(){
                         case T_WORD:  node.ins.operands[1].imm_sz = 2; break;
                         case T_DWORD: node.ins.operands[1].imm_sz = 4; break;
                         case T_QWORD: node.ins.operands[1].imm_sz = 8; break;
+                        case T_XWORD: node.ins.operands[1].imm_sz = 16; break;
+                        case T_YWORD: node.ins.operands[1].imm_sz = 32; break;
+                        case T_ZWORD: node.ins.operands[1].imm_sz = 64; break;
                     }      
                     continue; 
                 }

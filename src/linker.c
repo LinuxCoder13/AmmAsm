@@ -195,6 +195,7 @@ void resolve_labels() {
             int32_t rel32;
             if(addr == (uint64_t)-2) rel32 = 0x0; 
             else rel32 = (int32_t)(addr - (node->ins.pc + node->machine_code_len));
+            printf("%x", addr); // 0
             *(uint32_t*)(node->machine_code + node->machine_code_len - 4) = rel32;
         }
 
@@ -320,6 +321,6 @@ uint64_t resolve_expr(Expr expr, uint64_t pc, int line){
             }
         }
     }
-    
+
     return (uint64_t)eval_expr(buffer);
 }

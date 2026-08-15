@@ -978,7 +978,7 @@ void emit_vex(VEX *vex){
 
     else{ // C4
         vex1 |= VEX_R(vex->dest >= 8);
-        vex1 |= VEX_X(vex->x);
+        vex1 |= VEX_X(vex->x >= 8);
         vex1 |= VEX_B(vex->src2 >= 8);
         vex1 |= VEX_MMMMM(vex->mmmmm);
 

@@ -5,7 +5,7 @@
 AmmAsm - Assembler that sucks less.
 
 ![GitHub last commit](https://img.shields.io/github/last-commit/LinuxCoder13/AmmAsm)
-![Version](https://img.shields.io/badge/version-v2.4.8-blue)
+![Version](https://img.shields.io/badge/version-v2.4.9-blue)
 ![Platform](https://img.shields.io/badge/platform-Linux_x86--64-success)
 
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -21,7 +21,7 @@ AmmAsm is a handwritten x86-64 assembler designed for simplicity and clarity, ed
 
 ## What's New in v2.4.x
 
-1) Added new instructions: `SSE2`(45 instructions), `AVX/AVX2/AVX512`(~80 instructions), `AVX-512 FP16`(3 instructions) `AVX-512 BF16`(2 instructions), `bsf`, `bsr`, `cmc`, `clc`, `stc`, `cld`, `std`, `cli`, `sti`, `lahf`, `sahf`, `pushf`, `popf`, `popfq`, `iret`, `iretq`, `cpuid`, `hlt`, `wait`, `fwait`, `pause`, `ud2`, `xchg`, `movq`, `rdpru`, `rdtsc`, `rdtscp`, `lfence`
+1) Added new instructions: `SSE2`(45 instructions), `AVX/AVX2/AVX512`(~90 instructions), `AVX-512 FP16`(3 instructions) `AVX-512 BF16`(2 instructions), `bsf`, `bsr`, `cmc`, `clc`, `stc`, `cld`, `std`, `cli`, `sti`, `lahf`, `sahf`, `pushf`, `popf`, `popfq`, `iret`, `iretq`, `cpuid`, `hlt`, `wait`, `fwait`, `pause`, `ud2`, `xchg`, `movq`, `rdpru`, `rdtsc`, `rdtscp`, `lfence`
 
 2) Added Float number for `SSE1`, IEEE-754
 
@@ -40,6 +40,10 @@ AmmAsm is a handwritten x86-64 assembler designed for simplicity and clarity, ed
 9) Backend refactoring
 
 10) Added Documentation for every supported instruction in AmmAsm
+
+11) added `xword`, `yword`, `zword` key-words
+
+12) 900 more reasons not to release v2.5
 
 ---
 
@@ -64,6 +68,8 @@ _start:
     ; 512-bit vector add with masking {k1}, zeroing {z}, SIB-addressing, 
     ; and embedded 1-to-16 DWORD broadcast {b} enabled!
     vaddps zmm20{k1}{z}, zmm10, [b=rbp, i=rcx, s=1, d=64]{b}
+    vcvtneps2bf16 xmm15, yword [b=rax, i=rcx]{b}
+    vcvtneps2bf16 xmm15, yword [b=rax, i=rcx] ; useing short form via VEX
 ```
 
 also check tests/General/
@@ -76,6 +82,8 @@ Code generated directly by AmmAsm and disassembled using standard Linux `objdump
 0000000000000000 <_start>:
    0:	62 e1 2c d9 58 64 0d 	vaddps zmm20{k1}{z},zmm10,DWORD BCST [rbp+rcx*1+0x40]
    7:	10 
+   8:	62 72 7e 38 72 3c 08 	vcvtneps2bf16 xmm15,DWORD BCST [rax+rcx*1]{1to8}
+   f:	c4 62 7e 72 3c 08    	{vex} vcvtneps2bf16 xmm15,YMMWORD PTR [rax+rcx*1]
 ```
 
 
@@ -151,8 +159,7 @@ gcc hello.o -o hello
 
 ## Honor Features
 
-- AmmAsm supports RDPRU, an AMD-specific instruction currently not supported by NASM 3.02. (August 10 2026)
-
+- AmmAsm supports RDPRU, an AMD-specific instruction currently not supported by NASM 3.02.
 - AmmAsm supports all form of `vcvtps2ph` instruction while NASM 3.02 does not
 
 ---

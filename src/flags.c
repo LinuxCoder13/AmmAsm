@@ -13,3 +13,4 @@ uint8_t avx512_fp16_defined = 0;
 uint8_t avx512f_defined = 0;
 uint8_t avx512vl_defined = 0;
 uint8_t rdpru_defined = 0;
+uint8_t isnt_erorr = 0;

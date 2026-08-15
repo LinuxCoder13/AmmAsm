@@ -462,8 +462,8 @@ uint8_t vector_reg_bigger_than_15(int a, int b, int c){
 }
 
 // intel pack you
-uint8_t is_avx512(uint8_t uses_zmm, uint8_t has_b, uint8_t has_maskreg, uint8_t b_t_16){
-    if(uses_zmm || has_b || has_maskreg || b_t_16) return 1;
+uint8_t is_avx512(uint8_t uses_zmm, uint8_t has_b, uint8_t has_maskreg, uint8_t b_t_16, uint8_t uses_zword){
+    if(uses_zmm || has_b || has_maskreg || b_t_16 || uses_zword == 64) return 1;
     return 0;
 }
 

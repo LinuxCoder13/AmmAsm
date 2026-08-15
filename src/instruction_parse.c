@@ -788,7 +788,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
     
     // legacy code
     else if(!strcmp(cmd, "jmp") || !strcmp(cmd, "call")) {
-
+        if(b->type != O_NONE) goto erorr;
         uint8_t group_digit = !strcmp(cmd, "jmp") ? 4 : 2;
 
         // =========================
@@ -879,6 +879,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
     // jbe	CF == 1
 
     else if (is2arrin(JCC, JCC_COUNT, node->cmd)) {
+        if(b->type != O_NONE) goto erorr;
 
         int pos = 0;
         uint8_t opcode2 = 0;
@@ -1470,9 +1471,16 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
             {"vaddss",  0x58, VEX_PP_F3,  VEX_MAP_0F, VEX_PP_F3,  VEX_MAP_0F, 3, 0, TUPLE_T1,   0},
             {"vandpd",  0x54, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 1, TUPLE_FULL, 0},
             {"vandps",  0x54, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vbcstnebf162ps", 0xB1, VEX_PP_F3, VEX_MAP_0F38, 0, 0, 2, 0, 0},
+            {"vbcstnebf16ps", 0xB1, VEX_PP_F3, VEX_MAP_0F38, 0, 0, 2, 0, 0},
+            {"vbcstnesh2ps", 0xB1, VEX_PP_66, VEX_MAP_0F38, 0, 0, 2, 0, 0},
             {"vcvtdq2ps",  0x5B, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 2, 0, TUPLE_HALF, 0},
             {"vcvtne2ps2bf16", 0x72, 0, 0, EVEX_PP_F2, EVEX_MAP_0F38, 3, 0, TUPLE_FULL, 1},
-            {"vcvtneps2bf16", 0x72, 0, 0, EVEX_PP_F3, EVEX_MAP_0F38, 2, 0, TUPLE_T1, 1},
+            {"vcvtneebf162ps", 0xB0, VEX_PP_F3, VEX_MAP_0F38, 0, 0, 2, 0, 0},
+            {"vcvtneeph2ps", 0xB0, VEX_PP_66, VEX_MAP_0F38, 0, 0, 2, 0, 0},
+            {"vcvtneobf162ps", 0xB0, VEX_PP_F2, VEX_MAP_0F38, 0, 0, 2, 0, 0},
+            {"vcvtneoph2ps", 0xB0, VEX_PP_NONE, VEX_MAP_0F38, 0, 0, 2, 0, 0},
+            {"vcvtneps2bf16", 0x72, VEX_PP_F3, VEX_MAP_0F38, EVEX_PP_F3, EVEX_MAP_0F38, 2, 0, TUPLE_T1, 0},
             {"vcvtpd2ps",  0x5A, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 2, 1, TUPLE_HALF, 0},
             {"vcvtps2dq",  0x5B, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 2, 0, TUPLE_HALF, 0},
             {"vcvtps2pd",  0x5A, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 2, 0, TUPLE_HALF, 0},
@@ -1569,7 +1577,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         uint8_t rb = (b->type == O_XMM || b->type == O_YMM || b->type == O_ZMM) ? find_xmm_index(b->reg) : 0;
         uint8_t rc = (c->type == O_XMM || c->type == O_YMM || c->type == O_ZMM) ? find_xmm_index(c->reg) : 0;
 
-        need_evex = need_evex ? need_evex : is_avx512( inst_uses_zmm(a->reg, b->reg, c->reg), broatcast, a->mask_reg, vector_reg_bigger_than_15(ra, rb, operands == 2 ? 0 : rc));
+        need_evex = need_evex ? need_evex : is_avx512( inst_uses_zmm(a->reg, b->reg, c->reg), broatcast, a->mask_reg, vector_reg_bigger_than_15(ra, rb, operands == 2 ? 0 : rc), node->ins.operands[1].imm_sz);
         // ============
 
         uint8_t eff_typle = (broatcast && typle != TUPLE_T1) ? TUPLE_T1 : typle;
@@ -1691,6 +1699,9 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
                     (operands == 2) ? 0 : find_xmm_index(b->reg), 
                     mem,
                     evex_map, 
+                    node->ins.operands[1].imm_sz == 16 ? EVEX_XMM :
+                    node->ins.operands[1].imm_sz == 32 ? EVEX_YMM :
+                    node->ins.operands[1].imm_sz == 64 ? EVEX_ZMM :
                     a->type == O_XMM ? EVEX_XMM : 
                     a->type == O_YMM ? EVEX_YMM : 
                                        EVEX_ZMM,
@@ -1755,15 +1766,16 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
                 *pc += *s;
             }
 
-            else if((a->type == O_XMM && ((operands == 2 && b->type == O_MEM) || (operands == 3 && b->type == O_XMM && c->type == O_MEM))) ||
-                    (a->type == O_YMM && ((operands == 2 && b->type == O_MEM) || (operands == 3 && b->type == O_YMM && c->type == O_MEM)))){
-
+            else if(((a->type == O_XMM && ((operands == 2 && b->type == O_MEM && c->type == O_NONE) || (operands == 3 && b->type == O_XMM && c->type == O_MEM))) ||
+                     (a->type == O_YMM && ((operands == 2 && b->type == O_MEM && c->type == O_NONE) || (operands == 3 && b->type == O_YMM && c->type == O_MEM))))){
                 node->ins.pc = *pc;
                 AddrExpr *mem = (operands == 2) ? &b->addr : &c->addr; 
                 *s = encode_avx_reg_reg_mem(machine_code, opcode, 
                     find_xmm_index(a->reg), 
                     (operands == 2) ? 0 : find_xmm_index(b->reg), 
                     mem,
+                    node->ins.operands[1].imm_sz == 16 ? VEX_XMM :
+                    node->ins.operands[1].imm_sz == 32 ? VEX_YMM :
                     a->type == O_XMM ? VEX_XMM : 
                     a->type == O_YMM ? VEX_YMM : 0,
                     vex_pp, vex_map);
@@ -1807,6 +1819,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
 
 erorr:
     if(*s == 0){
+        isnt_erorr = 1;
         printf("AmmAsm: Debug: !Instruction did\'t compile, operands:\n");
         printf("AmmAsm:%d: %s ", node->line, cmd);
         for (int i = 0; i < 3; i++) {

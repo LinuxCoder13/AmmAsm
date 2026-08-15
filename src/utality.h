@@ -43,7 +43,7 @@ extern uint8_t find_xmm_index(const char* r) ;
 extern void check_cpu();
 extern uint8_t inst_uses_zmm(uint8_t* a, uint8_t* b, uint8_t* c);
 extern uint8_t vector_reg_bigger_than_15(int a, int b, int c);
-extern uint8_t is_avx512(uint8_t uses_zmm, uint8_t has_b, uint8_t has_maskreg, uint8_t _t_16);
+extern uint8_t is_avx512(uint8_t uses_zmm, uint8_t has_b, uint8_t has_maskreg, uint8_t _t_16,uint8_t uses_zword);
 extern int reg_index(Operand *op);
 extern int operand_bits(Operand *op);
 

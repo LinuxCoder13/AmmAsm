@@ -1357,18 +1357,31 @@ VPTEST    ymmreg,ymmreg            [vex.256.66.0f38 17 /r]              AVX2
 VPTEST    xmmreg,mem128            [vex.128.66.0f38 17 /r]              AVX
 VPTEST    ymmreg,mem256            [vex.256.66.0f38 17 /r]              AVX2
 
-; ----------- AVX512 Bfloat16 instructions ---------------
-VCVTNE2PS2BF16  xmmreg, xmmreg*, mem128  [rvm:fv: evex.128.f2.0f38.w0 72 /r]  AVX512BF16,AVX512VL
-VCVTNE2PS2BF16  ymmreg, ymmreg*, mem256  [rvm:fv: evex.256.f2.0f38.w0 72 /r]  AVX512BF16,AVX512VL
-VCVTNE2PS2BF16  zmmreg, zmmreg*, mem512  [rvm:fv: evex.512.f2.0f38.w0 72 /r]  AVX512BF16
+;# AVX no exception conversions
+; AmmAsm uses the AVX-512 encoding when AVX-512 features are used
+VBCSTNEBF16PS	xmmreg,mem16				[rm:	vex.128.f3.0f38.w0 b1 /r]	AVXNECONVERT,SW
+VBCSTNEBF16PS	ymmreg,mem16				[rm:	vex.256.f3.0f38.w0 b1 /r]	AVXNECONVERT,SW
+VBCSTNEBF162PS	xmmreg,mem16				[rm:	vex.128.f3.0f38.w0 b1 /r]	AVXNECONVERT,SW
+VBCSTNEBF162PS	ymmreg,mem16				[rm:	vex.256.f3.0f38.w0 b1 /r]	AVXNECONVERT,SW
+VBCSTNESH2PS	xmmreg,mem16				[rm:	vex.128.66.0f38.w0 b1 /r]	AVXNECONVERT,SW
+VBCSTNESH2PS	ymmreg,mem16				[rm:	vex.256.66.0f38.w0 b1 /r]	AVXNECONVERT,SW
+VCVTNEEBF162PS	xmmreg,mem128				[rm:	vex.128.f3.0f38.w0 b0 /r]	AVXNECONVERT,SO
+VCVTNEEBF162PS	ymmreg,mem256				[rm:	vex.256.f3.0f38.w0 b0 /r]	AVXNECONVERT,SY
+VCVTNEEPH2PS	xmmreg,mem128				[rm:	vex.128.66.0f38.w0 b0 /r]	AVXNECONVERT,SO
+VCVTNEEPH2PS	ymmreg,mem256				[rm:	vex.256.66.0f38.w0 b0 /r]	AVXNECONVERT,SY
+VCVTNEOBF162PS	xmmreg,mem128				[rm:	vex.128.f2.0f38.w0 b0 /r]	AVXNECONVERT,SO
+VCVTNEOBF162PS	ymmreg,mem256				[rm:	vex.256.f2.0f38.w0 b0 /r]	AVXNECONVERT,SY
+VCVTNEOPH2PS	xmmreg,mem128				[rm:	vex.128.np.0f38.w0 b0 /r]	AVXNECONVERT,SO
+VCVTNEOPH2PS	ymmreg,mem256				[rm:	vex.256.np.0f38.w0 b0 /r]	AVXNECONVERT,SY
+VCVTNEPS2BF16	xmmreg, xword mem128		[rm:	vex.128.f3.0f38.w0 72 /r]	AVXNECONVERT,LATEVEX,SO
+VCVTNEPS2BF16	xmmreg, yword mem256		[rm:	vex.256.f3.0f38.w0 72 /r]	AVXNECONVERT,LATEVEX,SY
+VCVTNEPS2BF16   ymmreg, zword mem512        [rm:fv: evex.512.f3.0f38.w0 72 /r]    AVX512BF16
+VCVTNE2PS2BF16  xmmreg, xmmreg*, mem128     [rvm:fv: evex.128.f2.0f38.w0 72 /r]  AVX512BF16,AVX512VL
+VCVTNE2PS2BF16  ymmreg, ymmreg*, mem256     [rvm:fv: evex.256.f2.0f38.w0 72 /r]  AVX512BF16,AVX512VL
+VCVTNE2PS2BF16  zmmreg, zmmreg*, mem512     [rvm:fv: evex.512.f2.0f38.w0 72 /r]  AVX512BF16
+VCVTNEPS2BF16   xmmreg, xword mem128        [rm:fv: evex.128.f3.0f38.w0 72 /r]    AVX512BF16,AVX512VL
+VCVTNEPS2BF16   xmmreg, yword mem256        [rm:fv: evex.256.f3.0f38.w0 72 /r]    AVX512BF16,AVX512VL
 
-VCVTNEPS2BF16   xmmreg, xmmrm128         [rm:fv: evex.128.f3.0f38.w0 72 /r]    AVX512BF16,AVX512VL
-VCVTNEPS2BF16   xmmreg, ymmrm256         [rm:fv: evex.256.f3.0f38.w0 72 /r]    AVX512BF16,AVX512VL
-VCVTNEPS2BF16   ymmreg, zmmrm512         [rm:fv: evex.512.f3.0f38.w0 72 /r]    AVX512BF16
-
-VCVTNEPS2BF16   xmmreg, mem128           [rm:fv: evex.128.f3.0f38.w0 72 /r]    AVX512BF16,AVX512VL
-VCVTNEPS2BF16   xmmreg, mem256           [rm:fv: evex.256.f3.0f38.w0 72 /r]    AVX512BF16,AVX512VL
-VCVTNEPS2BF16   ymmreg, mem512           [rm:fv: evex.512.f3.0f38.w0 72 /r]    AVX512BF16
 
 note #1: all xmm0-31, ymm0-31, zmm0-31 registers are fully supported.
 Note #2: Aasm may generate invalid machine code if an AVX instruction(that not support AVX-512 features)

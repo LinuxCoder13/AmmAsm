@@ -171,6 +171,10 @@ int LEXER(FILE* fl) {
                 else if(strcasecmp(buf, "dword") == 0) { add_token(T_DWORD, "dword", line); continue;}
                 else if(strcasecmp(buf, "qword") == 0) { add_token(T_QWORD, "qword", line); continue;}
 
+                else if(strcasecmp(buf, "xword") == 0) { add_token(T_XWORD,  "xword", line);   continue;}
+                else if(strcasecmp(buf, "yword") == 0) { add_token(T_YWORD, "yword", line); continue;}
+                else if(strcasecmp(buf, "zword") == 0) { add_token(T_ZWORD, "zword", line); continue;}                
+
                 else if(strcasecmp(buf, "resb") == 0) { add_token(T_RESB, "resb", line);   continue;}
                 else if(strcasecmp(buf, "resw") == 0) { add_token(T_RESW, "resw", line);   continue;}
                 else if(strcasecmp(buf, "resd") == 0) { add_token(T_RESD, "resd", line); continue;}
