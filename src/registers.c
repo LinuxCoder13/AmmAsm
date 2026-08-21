@@ -12,6 +12,13 @@ const char* regs8GP[] = {
     NULL
 };
 
+// 8-bit APX(Advanced performance extension)
+const char* regs8APX[] = {
+    "r16b", "r17b", "r18b", "r19b", "r20b", 
+    "r21b", "r22b", "r23b", "r24b", "r25b", 
+    "r26b", "r27b", "r28b", "r29b",  "r30b", "r31b", NULL
+};
+
 // 16-bit registers
 const char* regs16[] = {
     "ax", "bp", "bx", "cx", "di", "dx", "si", "sp",
@@ -22,6 +29,13 @@ const char* regs16[] = {
 const char* regs16GP[] = {
     "r10w", "r11w", "r12w", "r13w", "r14w", "r15w", "r8w", "r9w",
     NULL
+};
+
+// 16-bit APX(Advanced performance extension)
+const char* regs16APX[] = {
+    "r16w", "r17w", "r18w", "r19w", "r20w", 
+    "r21w", "r22w", "r23w", "r24w", "r25w", 
+    "r26w", "r27w", "r28w", "r29w",  "r30w", "r31w", NULL
 };
 
 // 32-bit registers
@@ -36,6 +50,13 @@ const char* regs32GP[] = {
     NULL
 };
 
+// 32-bit APX(Advanced performance extension)
+const char* regs32APX[] = {
+    "r16d", "r17d", "r18d", "r19d", "r20d", 
+    "r21d", "r22d", "r23d", "r24d", "r25d", 
+    "r26d", "r27d", "r28d", "r29d", "r30d", "r31d", NULL
+};
+
 // 64-bit registers
 const char* regs64[] = {
     "rax", "rbp", "rbx", "rcx", "rdi", "rdx", "rsi", "rsp",
@@ -47,6 +68,14 @@ const char* regs64GP[] = {
     "r10", "r11", "r12", "r13", "r14", "r15", "r8", "r9",
     NULL
 };
+
+// 64-bit APX(Advanced performance extension)
+const char* regs64APX[] = {
+    "r16", "r17", "r18", "r19", "r20", 
+    "r21", "r22", "r23", "r24", "r25", 
+    "r26", "r27", "r28", "r29", "r30", "r31", NULL
+};
+
 
 // XMM registers (0–31) in lexicographic order
 const char* Xmmregs[] = {

@@ -8,6 +8,7 @@ _start:
     ;========================
 
     vsqrtps xmm0, xmm19
+    vsqrtps zmm0, zmm19{rz-sae}
     vsqrtps xmm16{k2}, [b=rax]{b}
     vsqrtps ymm7, [b=rbx, d=32]
     vsqrtps zmm20, [b=rcx]{b}
@@ -19,6 +20,7 @@ _start:
 
     vsqrtpd xmm3, [b=r10]
     vsqrtpd ymm14, ymm15
+    vsqrtpd ymm14, ymm15{rn-sae}
     vsqrtpd zmm16, [b=r11]{b}
     vsqrtpd zmm31{k5}, [b=r12, d=128]{b}
 
@@ -27,6 +29,7 @@ _start:
     ;========================
 
     vaddps xmm0, xmm1, xmm2
+    vaddps zmm0, zmm1, zmm2{rd-sae}
     vaddps ymm5, ymm6, [b=rax]
     vaddps zmm20, zmm21, [b=rbx]{b}
     vaddps zmm31{k2}{z}, zmm30, [b=rcx, i=rdx, s=8, d=32]{b}

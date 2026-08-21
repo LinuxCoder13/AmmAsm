@@ -1119,7 +1119,7 @@ uint8_t encode_group14_xmm_imm(uint8_t* mash_code, uint8_t dest, uint8_t imm, ui
     return pos;
 }
 
-uint8_t encode_avx512_reg_reg_reg(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, uint8_t src2, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W, uint8_t aaa, uint8_t z){
+uint8_t encode_avx512_reg_reg_reg(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, uint8_t src2, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W, uint8_t aaa, uint8_t z, uint8_t b){
     uint8_t prefix = 0x62; // AmmAsm is imortal
     uint8_t P0 = 0;
     uint8_t P1 = 0;
@@ -1127,10 +1127,10 @@ uint8_t encode_avx512_reg_reg_reg(uint8_t* mash_code, uint8_t opcode, uint8_t de
     uint8_t modrm = 0;
     int pos = 0;
 
-    P0 |= EVEX_R((dest >= 8 && dest <= 16));
+    P0 |= EVEX_R((dest >> 3) & 1);
     P0 |= EVEX_B((src2 >> 3) & 1);
     P0 |= EVEX_X((src2 >> 4) & 1);
-    P0 |= EVEX_ER(dest >= 16);
+    P0 |= EVEX_ER((dest >> 4) & 1);
     // ZERO
     P0 |= EVEX_MMM(mmm);
     
@@ -1139,12 +1139,26 @@ uint8_t encode_avx512_reg_reg_reg(uint8_t* mash_code, uint8_t opcode, uint8_t de
     P1 |= EVEX_INITP1_ONE;
     P1 |= EVEX_PP(PP);
 
-    P2 |= EVEX_Z(z); // ! hard-coded for now
+    P2 |= EVEX_Z(z);
     
-    P2 |= EVEX_LL(LL);
-    P2 |= EVEX_BRODCAST(0); // // ! hard-coded for now
+    /*
+        == 5 bit flag(first 3 are reserved) ==
+        0  0  0  0  0  0  0  0
+                 ^  ^  ^  ^  ^  
+                 |  |  |  |  |
+                rz ru rd rn sae 
+    */
+
+    switch (b){
+        case 0:                  P2 |= EVEX_LL(LL); P2 |= EVEX_BRODCAST(0); break;
+        case 1: case 1 << 1:     P2 |= EVEX_LL(0b00); P2 |= EVEX_BRODCAST(1); break; // rn-sae == sae
+        case 1 << 2:             P2 |= EVEX_LL(0b01); P2 |= EVEX_BRODCAST(1); break; 
+        case 1 << 3:             P2 |= EVEX_LL(0b10); P2 |= EVEX_BRODCAST(1); break;
+        case 1 << 4:             P2 |= EVEX_LL(0b11); P2 |= EVEX_BRODCAST(1); break;
+    }
+
     P2 |= EVEX_EV(!(src1 >= 16)); 
-    P2 |= EVEX_A(aaa); // ! hard-coded for now
+    P2 |= EVEX_A(aaa);
 
     modrm = emit_modrm(0b11, dest, src2);
 
@@ -1169,8 +1183,7 @@ uint8_t encode_avx512_reg_reg_rm(uint8_t* mash_code, uint8_t opcode,
     uint8_t prefix = 0x62;
     uint8_t P0 = 0, P1 = 0, P2 = 0;
     int pos = 0;
-    
-    // FFUUUUCK YOU INTEL... FUUUCK
+
     int disp_scale = 1; 
     switch (TypleType) {
         case TUPLE_FULL:
@@ -1235,4 +1248,43 @@ uint8_t encode_avx512_reg_reg_rm(uint8_t* mash_code, uint8_t opcode,
     }
     
     return pos;
+}
+
+uint8_t encode_NDD_APX_reg_reg_reg(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, uint8_t src2, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W, uint8_t aaa, uint8_t z, uint8_t b){
+    uint8_t prefix = 0x62; // AmmAsm is imortal
+    uint8_t P0 = 0;
+    uint8_t P1 = 0;
+    uint8_t P2 = 0;
+    uint8_t modrm = 0;
+    int pos = 0;
+
+
+    P0 |= EVEX_R((dest >> 3) & 1);
+    P0 |= EVEX_X(0);
+    P0 |= EVEX_B((src2 >> 3) & 1);
+    P0 |= EVEX_ER((dest >> 4) & 1);
+    P0 |= EVEX_B4((src2 >> 4) & 1);
+    P0 |= EVEX_MMM(mmm);
+    
+    P1 |= EVEX_W(W);
+    P1 |= EVEX_VVVV(src1);
+    P1 |= EVEX_X4(0);
+    P1 |= EVEX_PP(PP);
+
+    P2 |= EVEX_Z(z);
+    P2 |= EVEX_LL(LL); 
+    P2 |= EVEX_BRODCAST(1);
+    P2 |= EVEX_EV(!(src1 >= 16)); 
+    P2 |= EVEX_A(aaa);
+
+    modrm = emit_modrm(0b11, dest, src2);
+
+    mash_code[pos++] = prefix;
+    mash_code[pos++] = P0;
+    mash_code[pos++] = P1;
+    mash_code[pos++] = P2;
+    mash_code[pos++] = opcode;
+    mash_code[pos++] = modrm;
+    return pos;
+
 }

@@ -5,7 +5,7 @@
 AmmAsm - Assembler that sucks less.
 
 ![GitHub last commit](https://img.shields.io/github/last-commit/LinuxCoder13/AmmAsm)
-![Version](https://img.shields.io/badge/version-v2.4.9-blue)
+![Version](https://img.shields.io/badge/version-v2.4.10-blue)
 ![Platform](https://img.shields.io/badge/platform-Linux_x86--64-success)
 
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -21,9 +21,9 @@ AmmAsm is a handwritten x86-64 assembler designed for simplicity and clarity, ed
 
 ## What's New in v2.4.x
 
-1) Added new instructions: `SSE2`(45 instructions), `AVX/AVX2/AVX512`(~90 instructions), `AVX-512 FP16`(3 instructions) `AVX-512 BF16`(2 instructions), `bsf`, `bsr`, `cmc`, `clc`, `stc`, `cld`, `std`, `cli`, `sti`, `lahf`, `sahf`, `pushf`, `popf`, `popfq`, `iret`, `iretq`, `cpuid`, `hlt`, `wait`, `fwait`, `pause`, `ud2`, `xchg`, `movq`, `rdpru`, `rdtsc`, `rdtscp`, `lfence`
+1) Added new instructions: `SSE2`(45 instructions), `AVX/AVX2/AVX512/AVX10.1`(~90 instructions), `bsf`, `bsr`, `cmc`, `clc`, `stc`, `cld`, `std`, `cli`, `sti`, `lahf`, `sahf`, `pushf`, `popf`, `popfq`, `iret`, `iretq`, `cpuid`, `hlt`, `wait`, `fwait`, `pause`, `ud2`, `xchg`, `movq`, `rdpru`, `rdtsc`, `rdtscp`, `lfence`
 
-2) Added Float number for `SSE1`, IEEE-754
+2) Added floating-point number support for SSE1 (IEEE-754)
 
 3) `align` symbol: `align <scale>, <8 bit number>: align 16, 0`
 
@@ -35,7 +35,7 @@ AmmAsm is a handwritten x86-64 assembler designed for simplicity and clarity, ed
 
 7) Hardware check for the presence of SIMD instructions via `cpuid`
 
-8) Full VEX/EVEX support (mask registers k0-k7, z, broatcast, ect.)
+8) Full VEX/EVEX support (mask registers k0-k7, z, broatcast, sae, etc.)
 
 9) Backend refactoring
 
@@ -43,7 +43,13 @@ AmmAsm is a handwritten x86-64 assembler designed for simplicity and clarity, ed
 
 11) added `xword`, `yword`, `zword` key-words
 
-12) 900 more reasons not to release v2.5
+12) Massive AVX* refactoring(fixed bugs) & added {sae} and {*-sae} decorator 
+
+13) Initial APX(Advanced Performance Extensions) support via EVEX engine (only NDD for `foo reg64, reg64, reg64`). See the `./insn.dat`
+
+14) Added the `r16-r31` registers for APX, and reserved in parser `r16d-r31d`, `r16w-r31w`, `r16b-r31b` for future updates
+
+15) 898 more reasons not to release v2.5
 
 ---
 
@@ -58,6 +64,7 @@ AmmAsm includes a fully handwritten, high-performance **EVEX prefix encoder** wi
 * **Zeroing Masking:** Optional conditional zeroing via the `{z}` modifier.
 * **Embedded Broadcast:** Built-in `{b}` flag support for memory operands (e.g., `DWORD BCST`).
 * **Compressed Displacement:** Automatic scale matching (disp8 times N) based on data type, broadcast state, and vector size.
+* **SAE Decorator:** Support for reg-to-reg operations, mainly for `ZMM` but also supports for `XMM` if instruction is scalar
 
 ### Syntax Example
 
@@ -141,7 +148,8 @@ gcc hello.o -o hello
 
 ## Features
 
-- Basic SSE/SSE2/AVX1/AVX2/AVX-512 support(VEX/EVEX fullsuport)
+- Basic SSE/SSE2/AVX1/AVX2/AVX-512 support(VEX/EVEX full suport)
+- Basic APX(Advanced Performance Extensions) support
 - Macro system (v2.2.0)
 - Compatible with GNU ld and GCC object-file linking
 - Direct x86-64 encoding - No NASM/GAS dependencies
@@ -320,6 +328,9 @@ Intel, what were you smoking when you designed VEX?
 ```
 ```
 Intel... after implementing EVEX, I no longer want to know. :)
+```
+```
+Daaamn... APX is hell...
 ```
 
 ---

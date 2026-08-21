@@ -5,7 +5,7 @@
 
 
 #include "main.h"
-#define VERSION "2.4.9"
+#define VERSION "2.4.10"
 
 void compiler(uint8_t *text, int *textsize, uint64_t *e_entry) {
     if (!text) return;
@@ -20,7 +20,7 @@ void compiler(uint8_t *text, int *textsize, uint64_t *e_entry) {
         else if(ast[i].type == AST_U8 || ast[i].type == AST_U16 || ast[i].type == AST_U32 || ast[i].type == AST_U64 || ast[i].type == AST_BSS_RES) parse_size_directives(&ast[i], &pc);
     }
 
-    if(isnt_erorr)exit(1);
+    if(isnt_error)exit(2);
 
     expand_local_labels();
     *e_entry = collect_labels_sections();

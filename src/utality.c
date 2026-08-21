@@ -171,6 +171,16 @@ uint8_t find_reg64_index(const char *r) {
 
     // r10..r15
     if (b == '1') return 10 + (c - '0');
+
+    // r20..r29
+    if (b == '2') {
+        return 20 + (c - '0');
+    }
+
+    // r30.. r31
+    if (b == '3') {
+        return 30 + (c - '0');
+    }
     
     // r8, r9
     if (b >= '8' && b <= '9') return b - '0';
@@ -207,6 +217,16 @@ uint8_t find_reg32_index(const char *r) {
         return 10 + (c - '0');
     }
 
+    // r20d..r29d
+    if (b == '2') {
+        return 20 + (c - '0');
+    }
+
+    // r30d.. r31d
+    if (b == '3') {
+        return 30 + (c - '0');
+    }
+
     // r8d, r9d
     if (b >= '8' && b <= '9') {
         return b - '0';
@@ -241,6 +261,16 @@ uint8_t find_reg16_index(const char* r) {
         return 10 + (c - '0');
     }
 
+    // r20w..r29w
+    if (b == '2') {
+        return 20 + (c - '0');
+    }
+
+    // r30w.. r31w
+    if (b == '3') {
+        return 30 + (c - '0');
+    }
+
     // r8w, r9w
     if (b >= '8' && b <= '9') {
         return b - '0';
@@ -273,6 +303,16 @@ uint8_t find_reg8_index(const char* r) {
     // r10b..r15b
     if (b == '1') {
         return 10 + (c - '0');
+    }
+
+    // r20b..r29b
+    if (b == '2') {
+        return 20 + (c - '0');
+    }
+
+    // r30b.. r31b
+    if (b == '3') {
+        return 30 + (c - '0');
     }
 
     // r8b, r9b
@@ -462,9 +502,57 @@ uint8_t vector_reg_bigger_than_15(int a, int b, int c){
 }
 
 // intel pack you
-uint8_t is_avx512(uint8_t uses_zmm, uint8_t has_b, uint8_t has_maskreg, uint8_t b_t_16, uint8_t uses_zword){
-    if(uses_zmm || has_b || has_maskreg || b_t_16 || uses_zword == 64) return 1;
+uint8_t is_avx512(uint8_t uses_zmm, uint8_t has_b, uint8_t has_maskreg, uint8_t b_t_16, uint8_t uses_zword, uint8_t sae){
+    if(uses_zmm || has_b || has_maskreg || b_t_16 || uses_zword == 64 || sae) return 1;
     return 0;
+}
+
+uint8_t isNDD_APXinstruction64(Operand a, Operand b, Operand c){
+    return (a.type == O_REG64 && b.type == O_REG64 && c.type == O_REG64) ? 1 :
+           (a.type == O_APX_REG64 && b.type == O_REG64 && c.type == O_REG64) ? 1 :
+           (a.type == O_APX_REG64 && b.type == O_APX_REG64 && c.type == O_REG64) ? 1 :
+           (a.type == O_APX_REG64 && b.type == O_APX_REG64 && c.type == O_APX_REG64) ? 1 :
+           (a.type == O_REG64 && b.type == O_REG64 && c.type == O_APX_REG64) ? 1 :
+           (a.type == O_REG64 && b.type == O_APX_REG64 && c.type == O_APX_REG64) ? 1:
+           (a.type == O_REG64 && b.type == O_APX_REG64 && c.type == O_REG64) ? 1 :
+           (a.type == O_APX_REG64 && b.type == O_REG64 && c.type == O_APX_REG64) ? 1 :
+           0;
+}
+
+uint8_t isNDD_APXinstruction32(Operand a, Operand b, Operand c){
+    return (a.type == O_REG32 && b.type == O_REG32 && c.type == O_REG32) ? 1 :
+           (a.type == O_APX_REG32 && b.type == O_REG32 && c.type == O_REG32) ? 1 :
+           (a.type == O_APX_REG32 && b.type == O_APX_REG32 && c.type == O_REG32) ? 1 :
+           (a.type == O_APX_REG32 && b.type == O_APX_REG32 && c.type == O_APX_REG32) ? 1 :
+           (a.type == O_REG32 && b.type == O_REG32 && c.type == O_APX_REG32) ? 1 :
+           (a.type == O_REG32 && b.type == O_APX_REG32 && c.type == O_APX_REG32) ? 1:
+           (a.type == O_REG32 && b.type == O_APX_REG32 && c.type == O_REG32) ? 1 :
+           (a.type == O_APX_REG32 && b.type == O_REG32 && c.type == O_APX_REG32) ? 1 :
+           0;
+}
+
+uint8_t isNDD_APXinstruction16(Operand a, Operand b, Operand c){
+    return (a.type == O_REG16 && b.type == O_REG16 && c.type == O_REG16) ? 1 :
+           (a.type == O_APX_REG16 && b.type == O_REG16 && c.type == O_REG16) ? 1 :
+           (a.type == O_APX_REG16 && b.type == O_APX_REG16 && c.type == O_REG16) ? 1 :
+           (a.type == O_APX_REG16 && b.type == O_APX_REG16 && c.type == O_APX_REG16) ? 1 :
+           (a.type == O_REG16 && b.type == O_REG16 && c.type == O_APX_REG16) ? 1 :
+           (a.type == O_REG16 && b.type == O_APX_REG16 && c.type == O_APX_REG16) ? 1:
+           (a.type == O_REG16 && b.type == O_APX_REG16 && c.type == O_REG16) ? 1 :
+           (a.type == O_APX_REG16 && b.type == O_REG16 && c.type == O_APX_REG16) ? 1 :
+           0;
+}
+
+uint8_t isNDD_APXinstruction8(Operand a, Operand b, Operand c){
+    return (a.type == O_REG8 && b.type == O_REG8 && c.type == O_REG8) ? 1 :
+           (a.type == O_APX_REG8 && b.type == O_REG8 && c.type == O_REG8) ? 1 :
+           (a.type == O_APX_REG8 && b.type == O_APX_REG8 && c.type == O_REG8) ? 1 :
+           (a.type == O_APX_REG8 && b.type == O_APX_REG8 && c.type == O_APX_REG8) ? 1 :
+           (a.type == O_REG8 && b.type == O_REG8 && c.type == O_APX_REG8) ? 1 :
+           (a.type == O_REG8 && b.type == O_APX_REG8 && c.type == O_APX_REG8) ? 1:
+           (a.type == O_REG8 && b.type == O_APX_REG8 && c.type == O_REG8) ? 1 :
+           (a.type == O_APX_REG8 && b.type == O_REG8 && c.type == O_APX_REG8) ? 1 :
+           0;
 }
 
 long eval_expr(const uint8_t *str) {

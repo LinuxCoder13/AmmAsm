@@ -19,7 +19,6 @@ AST* PARSE(){
         if (tok->type == T_INS) {
             node.type = AST_INS;
             node.ins.oper_count = 0;
-            int pos2 = 0;
             strncpy(node.cmd, toks[pos].value, sizeof node.cmd);
             pos++;
 
@@ -71,8 +70,41 @@ AST* PARSE(){
                     pos+=2;
                 }
 
-                else if(toks[pos].type == T_REG8 || toks[pos].type == T_REG16 ||
-                        toks[pos].type == T_REG32 || toks[pos].type == T_REG64 || 
+                // avx512 {*-sae}
+                else if(toks[pos].type == T_OSHPPRANT       && 
+                        (!strcasecmp(toks[pos+1].value, "sae") || 
+                         (((!strcasecmp(toks[pos+1].value, "rn") || 
+                            !strcasecmp(toks[pos+1].value, "rd") || 
+                            !strcasecmp(toks[pos+1].value, "ru") || 
+                            !strcasecmp(toks[pos+1].value, "rz")) && 
+                            toks[pos+2].value[0] == '-' && 
+                            !strcasecmp(toks[pos+3].value, "sae"))) || 
+                          
+                            !strcasecmp(toks[pos+1].value, "rz-sae"))){
+                    if(node.ins.oper_count != 2 && node.ins.oper_count != 3) {fprintf(stderr, "AmmAsm:%d: %s only can be used either second or third operand\n", node.line, node.cmd);exit(1);}
+
+                    /*
+                     == 5 bit flag(first 3 are reserved) ==
+                        0  0  0  0  0  0  0  0
+                                 ^  ^  ^  ^  ^  
+                                 |  |  |  |  |
+                                rz ru rd rn sae 
+                    */
+
+                    if     (!strcasecmp(toks[pos+1].value, "sae"))   {node.ins.operands[1].sae = 1 << 0;pos+=2;}
+                    else if(!strcasecmp(toks[pos+1].value, "rn"))    {node.ins.operands[1].sae = 1 << 1;pos+=4;}
+                    else if(!strcasecmp(toks[pos+1].value, "rd"))    {node.ins.operands[1].sae = 1 << 2;pos+=4;}
+                    else if(!strcasecmp(toks[pos+1].value, "ru"))    {node.ins.operands[1].sae = 1 << 3;pos+=4;}
+                    else if(!strcasecmp(toks[pos+1].value, "rz"))    {node.ins.operands[1].sae = 1 << 4;pos+=4;}
+                    
+                    if(toks[pos].type == T_CSHPPRANT) pos++;
+                    else {fprintf(stderr, "AmmAsm:%d: unterminated braces\n", node.line); exit(1);} 
+                }
+
+                else if(toks[pos].type == T_REG8  || toks[pos].type == T_REG16 || 
+                        toks[pos].type == T_REG32  || toks[pos].type == T_REG64 || 
+                        toks[pos].type == T_APX_REG8 || toks[pos].type == T_APX_REG16 ||
+                        toks[pos].type == T_APX_REG32 || toks[pos].type == T_APX_REG64 || 
                         toks[pos].type == T_XMM || toks[pos].type == T_YMM  || toks[pos].type == T_ZMM){
                     int tt = toks[pos].type;
                     strncpy(node.ins.operands[node.ins.oper_count].reg, toks[pos++].value, sizeof node.ins.operands[node.ins.oper_count].reg);
@@ -82,6 +114,10 @@ AST* PARSE(){
                         case T_REG16: node.ins.operands[node.ins.oper_count++].type = O_REG16; break;
                         case T_REG32: node.ins.operands[node.ins.oper_count++].type = O_REG32; break;
                         case T_REG64: node.ins.operands[node.ins.oper_count++].type = O_REG64; break;
+                        case T_APX_REG8:  node.ins.operands[node.ins.oper_count++].type = O_APX_REG8;  break;
+                        case T_APX_REG16: node.ins.operands[node.ins.oper_count++].type = O_APX_REG16; break;
+                        case T_APX_REG32: node.ins.operands[node.ins.oper_count++].type = O_APX_REG32; break;
+                        case T_APX_REG64: node.ins.operands[node.ins.oper_count++].type = O_APX_REG64; break;
                         case T_XMM: node.ins.operands[node.ins.oper_count++].type = O_XMM;     break;  // yeah, we did it!!!!!!!
                         case T_YMM: node.ins.operands[node.ins.oper_count++].type = O_YMM;     break;  // yeah, we did it!!!!!!!
                         case T_ZMM: node.ins.operands[node.ins.oper_count++].type = O_ZMM;     break;  // ...
@@ -196,7 +232,6 @@ AST* PARSE(){
                     exit(1); 
                 }
 
-                pos2++;
             }
 
 

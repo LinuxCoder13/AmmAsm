@@ -334,12 +334,11 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         else if (((a->type == O_REG64 && b->type == O_REG64) ||
                 (a->type == O_REG32 && b->type == O_REG32) ||
                 (a->type == O_REG16 && b->type == O_REG16) ||
-                (a->type == O_REG8  && b->type == O_REG8)) && b->type == O_NONE) {
+                (a->type == O_REG8  && b->type == O_REG8)) && c->type == O_NONE) {
 
             int dest = reg_index(a);
             int src  = reg_index(b);
             int sz   = operand_bits(a);
-
             node->ins.pc = *pc;
             *s = encode_group1_reg_reg( machine_code, dest, src, sz, a->type == O_REG8 ? insn->op_reg8_reg8 : insn->op_reg_reg);
 
@@ -387,6 +386,20 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
                 sz == 8 ? 0x80 : 0x81,
                 sz == 8 ? 1 : (sz == 64 ? 4 : sz / 8),
                 imm);
+            *pc += *s;
+        }
+
+        // APX
+        else if(isNDD_APXinstruction64(*a, *b, *c)){
+            if(!strcmp(cmd, "cmp")) goto error; // does not support NDD
+            node->ins.pc = *pc;
+            *s = encode_NDD_APX_reg_reg_reg(machine_code, insn->op_reg_reg, 
+            find_reg64_index(b->reg),
+            find_reg64_index(a->reg),
+            find_reg64_index(c->reg),
+            EVEX_MAP_APX,
+            0,
+            EVEX_PP_NONE, 1, EVEX_K0, EVEX_Z0, 1);
             *pc += *s;
         }
     }
@@ -788,7 +801,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
     
     // legacy code
     else if(!strcmp(cmd, "jmp") || !strcmp(cmd, "call")) {
-        if(b->type != O_NONE) goto erorr;
+        if(b->type != O_NONE) goto error;
         uint8_t group_digit = !strcmp(cmd, "jmp") ? 4 : 2;
 
         // =========================
@@ -879,7 +892,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
     // jbe	CF == 1
 
     else if (is2arrin(JCC, JCC_COUNT, node->cmd)) {
-        if(b->type != O_NONE) goto erorr;
+        if(b->type != O_NONE) goto error;
 
         int pos = 0;
         uint8_t opcode2 = 0;
@@ -1101,7 +1114,7 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
     }
 
     else if(is2arrin(zero_operand_instructions, zero_operand_instructions_COUNT, (char*)cmd)){
-        if(a->type != O_NONE) goto erorr;
+        if(a->type != O_NONE) goto error;
 
 
         if(!strcmp(node->cmd, "syscall")){  machine_code[0] = 0x0F; machine_code[1] = 0x05; *s = 2;}
@@ -1458,96 +1471,96 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
 
 
     // весь ад здесь
-    // AVX1 / AVX2 / AVX-512 (Refactored version)
+    // AVX1 / AVX2 / AVX-512 / AVX10.1 (Refactored version)
     else if(cmd[0] == 'v') {
         
         if(!avx2_defined) {fprintf(stderr, "AmmAsm:%d: Warn: program uses AVX2, but current CPU does't support it(might give #UD)\n", node->line);}
         if(!avx_defined) {fprintf(stderr, "AmmAsm:%d: Warn: program uses AVX, but current CPU does't support it(might give #UD)\n", node->line);}
 
         static const AvxInsn avx_table[] = {
-            {"vaddpd",  0x58, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 1, TUPLE_FULL, 0},
-            {"vaddps",  0x58, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
-            {"vaddsd",  0x58, VEX_PP_F2,  VEX_MAP_0F, VEX_PP_F2,  VEX_MAP_0F, 3, 1, TUPLE_T1,   0},
-            {"vaddss",  0x58, VEX_PP_F3,  VEX_MAP_0F, VEX_PP_F3,  VEX_MAP_0F, 3, 0, TUPLE_T1,   0},
-            {"vandpd",  0x54, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 1, TUPLE_FULL, 0},
-            {"vandps",  0x54, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
-            {"vbcstnebf162ps", 0xB1, VEX_PP_F3, VEX_MAP_0F38, 0, 0, 2, 0, 0},
-            {"vbcstnebf16ps", 0xB1, VEX_PP_F3, VEX_MAP_0F38, 0, 0, 2, 0, 0},
-            {"vbcstnesh2ps", 0xB1, VEX_PP_66, VEX_MAP_0F38, 0, 0, 2, 0, 0},
-            {"vcvtdq2ps",  0x5B, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 2, 0, TUPLE_HALF, 0},
-            {"vcvtne2ps2bf16", 0x72, 0, 0, EVEX_PP_F2, EVEX_MAP_0F38, 3, 0, TUPLE_FULL, 1},
-            {"vcvtneebf162ps", 0xB0, VEX_PP_F3, VEX_MAP_0F38, 0, 0, 2, 0, 0},
-            {"vcvtneeph2ps", 0xB0, VEX_PP_66, VEX_MAP_0F38, 0, 0, 2, 0, 0},
-            {"vcvtneobf162ps", 0xB0, VEX_PP_F2, VEX_MAP_0F38, 0, 0, 2, 0, 0},
-            {"vcvtneoph2ps", 0xB0, VEX_PP_NONE, VEX_MAP_0F38, 0, 0, 2, 0, 0},
-            {"vcvtneps2bf16", 0x72, VEX_PP_F3, VEX_MAP_0F38, EVEX_PP_F3, EVEX_MAP_0F38, 2, 0, TUPLE_T1, 0},
-            {"vcvtpd2ps",  0x5A, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 2, 1, TUPLE_HALF, 0},
-            {"vcvtps2dq",  0x5B, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 2, 0, TUPLE_HALF, 0},
-            {"vcvtps2pd",  0x5A, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 2, 0, TUPLE_HALF, 0},
-            {"vcvtps2ph", 0x1D, VEX_PP_66, VEX_MAP_0F3A, EVEX_PP_66, EVEX_MAP_0F3A, 3, 0, TUPLE_HALF, 0},
-            {"vcvttps2dq", 0x5B, VEX_PP_F3,  VEX_MAP_0F, VEX_PP_F3,  VEX_MAP_0F, 2, 0, TUPLE_HALF, 0},
-            {"vdivpd",  0x5E, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 1, TUPLE_FULL, 0},
-            {"vdivps",  0x5E, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
-            {"vmaxpd",  0x5F, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 1, TUPLE_FULL, 0},
-            {"vmaxps",  0x5F, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
-            {"vmaxsh",  0x5F, 0, 0, EVEX_PP_F3, EVEX_MAP_UNNAMED5, 3, 0, TUPLE_T1, 1},
-            {"vminpd",  0x5D, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 1, TUPLE_FULL, 0},
-            {"vminps",  0x5D, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
-            {"vminsh",  0x5D, 0, 0, EVEX_PP_F3, EVEX_MAP_UNNAMED5, 3, 0, TUPLE_T1, 1},
-            {"vmovapd", 0x28, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 2, 1, TUPLE_FULL, 0},
-            {"vmovaps", 0x28, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 2, 0, TUPLE_FULL, 0},
-            {"vmovdqa", 0x6F, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 2, 1, TUPLE_FULL, 0},
-            {"vmovdqu", 0x6F, VEX_PP_F3,  VEX_MAP_0F, VEX_PP_F3,  VEX_MAP_0F, 2, 0, TUPLE_FULL, 0},
-            {"vmovupd", 0x10, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 2, 1, TUPLE_FULL, 0},
-            {"vmovups", 0x10, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 2, 0, TUPLE_FULL, 0},
-            {"vmulpd",  0x59, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 1, TUPLE_FULL, 0},
-            {"vmulps",  0x59, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
-            {"vmulsd",  0x59, VEX_PP_F2,  VEX_MAP_0F, VEX_PP_F2,  VEX_MAP_0F, 3, 1, TUPLE_T1,   0},
-            {"vmulss",  0x59, VEX_PP_F3,  VEX_MAP_0F, VEX_PP_F3,  VEX_MAP_0F, 3, 0, TUPLE_T1,   0},
-            {"vorpd",   0x56, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 1, TUPLE_FULL, 0},
-            {"vorps",   0x56, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
-            {"vpackssdw", 0x6B, VEX_PP_66, VEX_MAP_0F, VEX_PP_66, VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
-            {"vpacksswb", 0x63, VEX_PP_66, VEX_MAP_0F, VEX_PP_66, VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
-            {"vpackuswb", 0x67, VEX_PP_66, VEX_MAP_0F, VEX_PP_66, VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
-            {"vpaddb",  0xFC, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
-            {"vpaddd",  0xFE, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
-            {"vpaddq",  0xD4, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 1, TUPLE_FULL, 0},
-            {"vpaddw",  0xFD, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
-            {"vpand",   0xDB, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
-            {"vpcmpeqd",0x76, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
-            {"vpcmpgtd",0x66, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
-            {"vpmaxsw", 0xEE, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
-            {"vpmaxub", 0xDE, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
-            {"vpminsw", 0xEA, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
-            {"vpminub", 0xDA, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
-            {"vpor",    0xEB, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
-            {"vpslld",  0xF2, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
-            {"vpsllq",  0xF3, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 1, TUPLE_FULL, 0},
-            {"vpsllw",  0xF1, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
-            {"vpsrad",  0xE2, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
-            {"vpsraw",  0xE1, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
-            {"vpsrld",  0xD2, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
-            {"vpsrlq",  0xD3, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 1, TUPLE_FULL, 0},
-            {"vpsrlw",  0xD1, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
-            {"vpsubb",  0xF8, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
-            {"vpsubd",  0xFA, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
-            {"vpsubw",  0xF9, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
-            {"vptest",  0x17, VEX_PP_66, VEX_MAP_0F38, VEX_PP_66, VEX_MAP_0F38, 2, 0, TUPLE_FULL, 0}, 
-            {"vpunpckhbw", 0x68, VEX_PP_66, VEX_MAP_0F, VEX_PP_66, VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
-            {"vpunpckhdq", 0x6A, VEX_PP_66, VEX_MAP_0F, VEX_PP_66, VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
-            {"vpunpckhwd", 0x69, VEX_PP_66, VEX_MAP_0F, VEX_PP_66, VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
-            {"vpunpcklbw", 0x60, VEX_PP_66, VEX_MAP_0F, VEX_PP_66, VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
-            {"vpunpckldq", 0x62, VEX_PP_66, VEX_MAP_0F, VEX_PP_66, VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
-            {"vpunpcklwd", 0x61, VEX_PP_66, VEX_MAP_0F, VEX_PP_66, VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
-            {"vpxor",   0xEF, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
-            {"vsqrtpd", 0x51, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 2, 1, TUPLE_FULL, 0},
-            {"vsqrtps", 0x51, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 2, 0, TUPLE_FULL, 0},
-            {"vsubpd",  0x5C, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 1, TUPLE_FULL, 0},
-            {"vsubps",  0x5C, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
-            {"vxorpd",  0x57, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 1, TUPLE_FULL, 0},
-            {"vxorps",  0x57, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 3, 0, TUPLE_FULL, 0},
+            {"vaddpd",  0x58, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 1, TUPLE_FULL, 0, 0, FORM_RRR | FORM_RRM, .sae = ER},
+            {"vaddps",  0x58, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 3, 0, TUPLE_FULL, 0, 0, FORM_RRR | FORM_RRM, .sae = ER},
+            {"vaddsd",  0x58, VEX_PP_F2,  VEX_MAP_0F, VEX_PP_F2,  VEX_MAP_0F, 3, 1, TUPLE_T1,   0, 0, FORM_RRR | FORM_RRM,              FORM_SCALAR, ER},
+            {"vaddss",  0x58, VEX_PP_F3,  VEX_MAP_0F, VEX_PP_F3,  VEX_MAP_0F, 3, 0, TUPLE_T1,   0, 0, FORM_RRR | FORM_RRM32 | FORM_RRM, FORM_SCALAR, ER},
+            {"vandpd",  0x54, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 1, TUPLE_FULL, 0, 0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
+            {"vandps",  0x54, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 3, 0, TUPLE_FULL, 0, 0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
+            {"vbcstnebf162ps", 0xB1, VEX_PP_F3, VEX_MAP_0F38, 0, 0, 2, 0, 0, 0, 1, FORM_RM16, .sae = NO_DECORATOR},
+            {"vbcstnebf16ps",  0xB1, VEX_PP_F3, VEX_MAP_0F38, 0, 0, 2, 0, 0, 0, 1, FORM_RM16, .sae = NO_DECORATOR},
+            {"vbcstnesh2ps",   0xB1, VEX_PP_66, VEX_MAP_0F38, 0, 0, 2, 0, 0, 0, 1, FORM_RM16, .sae = NO_DECORATOR},
+            {"vcvtdq2ps",  0x5B, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 2, 0, TUPLE_HALF, 0, 0, FORM_RR | FORM_RM, .sae = ER},
+            {"vcvtne2ps2bf16", 0x72, 0, 0, EVEX_PP_F2, EVEX_MAP_0F38, 3, 0, TUPLE_FULL, 1, 0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
+            {"vcvtneebf162ps", 0xB0, VEX_PP_F3, VEX_MAP_0F38, 0, 0, 2, 0, 0, 0, 1, FORM_RM, .sae = NO_DECORATOR},
+            {"vcvtneeph2ps", 0xB0, VEX_PP_66, VEX_MAP_0F38,   0, 0, 2, 0, 0, 0, 1, FORM_RM, .sae = NO_DECORATOR},
+            {"vcvtneobf162ps", 0xB0, VEX_PP_F2, VEX_MAP_0F38, 0, 0, 2, 0, 0, 0, 1, FORM_RM, .sae = NO_DECORATOR},
+            {"vcvtneoph2ps", 0xB0, VEX_PP_NONE, VEX_MAP_0F38, 0, 0, 2, 0, 0, 0, 1, FORM_RM, .sae = NO_DECORATOR},
+            {"vcvtneps2bf16", 0x72, VEX_PP_F3, VEX_MAP_0F38, EVEX_PP_F3, EVEX_MAP_0F38, 2, 0, TUPLE_T1, 0, 0,FORM_RM | FORM_RR, .sae = NO_DECORATOR},
+            {"vcvtpd2ps",  0x5A, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 2, 1, TUPLE_HALF, 0, 0,FORM_RR | FORM_RM, .sae = ER},
+            {"vcvtps2dq",  0x5B, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 2, 0, TUPLE_HALF, 0, 0,FORM_RR | FORM_RM, .sae = ER},
+            {"vcvtps2pd",  0x5A, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 2, 0, TUPLE_HALF, 0, 0,FORM_RR | FORM_RM, .sae = SAE},
+            {"vcvtps2ph", 0x1D, VEX_PP_66, VEX_MAP_0F3A, EVEX_PP_66, EVEX_MAP_0F3A, 3, 0, TUPLE_HALF, 0, 0, FORM_RRI | FORM_MRI, .sae = SAE},
+            {"vcvtps2phx", 0x1D, 0, 0, EVEX_PP_66, EVEX_MAP_UNNAMED5, 2, 0, TUPLE_FULL, 1, 0,            FORM_RR | FORM_RM, .sae = ER},
+            {"vcvttps2dq", 0x5B, VEX_PP_F3,  VEX_MAP_0F, VEX_PP_F3,  VEX_MAP_0F, 2, 0, TUPLE_HALF,0,0, FORM_RR | FORM_RM, .sae = SAE},
+            {"vdivpd",  0x5E, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 1, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM, .sae = ER},
+            {"vdivps",  0x5E, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 3, 0, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM, .sae = ER},
+            {"vmaxpd",  0x5F, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 1, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM, .sae = SAE},
+            {"vmaxps",  0x5F, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 3, 0, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM, .sae = SAE},
+            {"vmaxsh",  0x5F, 0, 0, EVEX_PP_F3, EVEX_MAP_UNNAMED5, 3, 0, TUPLE_T1,              1,  0, FORM_RRR | FORM_RRM16 | FORM_RRM, FORM_SCALAR, SAE},
+            {"vminpd",  0x5D, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 1, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM, .sae = SAE},
+            {"vminps",  0x5D, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 3, 0, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM, .sae = SAE},
+            {"vminsh",  0x5D, 0, 0, EVEX_PP_F3, EVEX_MAP_UNNAMED5, 3, 0, TUPLE_T1,              1,  0, FORM_RRR | FORM_RRM16 | FORM_RRM, FORM_SCALAR, SAE},
+            {"vmovapd", 0x28, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 2, 1, TUPLE_FULL, 0,  0, FORM_RR | FORM_RM | FORM_MR, .sae = NO_DECORATOR},
+            {"vmovaps", 0x28, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 2, 0, TUPLE_FULL, 0,  0, FORM_RR | FORM_RM | FORM_MR, .sae = NO_DECORATOR},
+            {"vmovdqa", 0x6F, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 2, 1, TUPLE_FULL, 0,  0, FORM_RR | FORM_RM | FORM_MR, .sae = NO_DECORATOR},
+            {"vmovdqu", 0x6F, VEX_PP_F3,  VEX_MAP_0F, VEX_PP_F3,  VEX_MAP_0F, 2, 0, TUPLE_FULL, 0,  0, FORM_RR | FORM_RM | FORM_MR, .sae = NO_DECORATOR},
+            {"vmovupd", 0x10, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 2, 1, TUPLE_FULL, 0,  0, FORM_RR | FORM_RM | FORM_MR, .sae = NO_DECORATOR},
+            {"vmovups", 0x10, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 2, 0, TUPLE_FULL, 0,  0, FORM_RR | FORM_RM | FORM_MR, .sae = NO_DECORATOR},
+            {"vmulpd",  0x59, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 1, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM, .sae = ER},
+            {"vmulps",  0x59, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 3, 0, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM, .sae = ER},
+            {"vmulsd",  0x59, VEX_PP_F2,  VEX_MAP_0F, VEX_PP_F2,  VEX_MAP_0F, 3, 1, TUPLE_T1,   0,  0, FORM_RRR | FORM_RRM, FORM_SCALAR, ER},
+            {"vmulss",  0x59, VEX_PP_F3,  VEX_MAP_0F, VEX_PP_F3,  VEX_MAP_0F, 3, 0, TUPLE_T1,   0,  0, FORM_RRR | FORM_RRM32 | FORM_RRM, FORM_SCALAR, ER},
+            {"vorpd",   0x56, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 1, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
+            {"vorps",   0x56, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 3, 0, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
+            {"vpackssdw", 0x6B, VEX_PP_66, VEX_MAP_0F, VEX_PP_66, VEX_MAP_0F, 3, 0, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
+            {"vpacksswb", 0x63, VEX_PP_66, VEX_MAP_0F, VEX_PP_66, VEX_MAP_0F, 3, 0, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
+            {"vpackuswb", 0x67, VEX_PP_66, VEX_MAP_0F, VEX_PP_66, VEX_MAP_0F, 3, 0, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
+            {"vpaddb",  0xFC, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
+            {"vpaddd",  0xFE, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
+            {"vpaddq",  0xD4, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 1, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
+            {"vpaddw",  0xFD, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
+            {"vpand",   0xDB, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
+            {"vpcmpeqd",0x76, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
+            {"vpcmpgtd",0x66, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
+            {"vpmaxsw", 0xEE, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
+            {"vpmaxub", 0xDE, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
+            {"vpminsw", 0xEA, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
+            {"vpminub", 0xDA, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
+            {"vpor",    0xEB, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
+            {"vpslld",  0xF2, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
+            {"vpsllq",  0xF3, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 1, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
+            {"vpsllw",  0xF1, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
+            {"vpsrad",  0xE2, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
+            {"vpsraw",  0xE1, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
+            {"vpsrld",  0xD2, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
+            {"vpsrlq",  0xD3, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 1, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
+            {"vpsrlw",  0xD1, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
+            {"vpsubb",  0xF8, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
+            {"vpsubd",  0xFA, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
+            {"vpsubw",  0xF9, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
+            {"vptest",  0x17, VEX_PP_66, VEX_MAP_0F38, 0,                  0, 2, 0, TUPLE_FULL,0, 1,   FORM_RR  | FORM_RM , .sae = NO_DECORATOR}, 
+            {"vpunpckhbw", 0x68, VEX_PP_66, VEX_MAP_0F, VEX_PP_66, VEX_MAP_0F, 3, 0, TUPLE_FULL, 0, 0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
+            {"vpunpckhdq", 0x6A, VEX_PP_66, VEX_MAP_0F, VEX_PP_66, VEX_MAP_0F, 3, 0, TUPLE_FULL, 0, 0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
+            {"vpunpckhwd", 0x69, VEX_PP_66, VEX_MAP_0F, VEX_PP_66, VEX_MAP_0F, 3, 0, TUPLE_FULL, 0, 0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
+            {"vpunpcklbw", 0x60, VEX_PP_66, VEX_MAP_0F, VEX_PP_66, VEX_MAP_0F, 3, 0, TUPLE_FULL, 0, 0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
+            {"vpunpckldq", 0x62, VEX_PP_66, VEX_MAP_0F, VEX_PP_66, VEX_MAP_0F, 3, 0, TUPLE_FULL, 0, 0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
+            {"vpunpcklwd", 0x61, VEX_PP_66, VEX_MAP_0F, VEX_PP_66, VEX_MAP_0F, 3, 0, TUPLE_FULL, 0, 0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
+            {"vpxor",   0xEF, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 0, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
+            {"vsqrtpd", 0x51, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 2, 1, TUPLE_FULL, 0,  0, FORM_RR  | FORM_RM, .sae = ER },
+            {"vsqrtps", 0x51, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 2, 0, TUPLE_FULL, 0,  0, FORM_RR  | FORM_RM, .sae = ER },
+            {"vsubpd",  0x5C, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 1, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM,.sae = ER},
+            {"vsubps",  0x5C, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 3, 0, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM,.sae = ER},
+            {"vxorpd",  0x57, VEX_PP_66,  VEX_MAP_0F, VEX_PP_66,  VEX_MAP_0F, 3, 1, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
+            {"vxorps",  0x57, VEX_PP_NONE,VEX_MAP_0F, VEX_PP_NONE,VEX_MAP_0F, 3, 0, TUPLE_FULL, 0,  0, FORM_RRR | FORM_RRM, .sae = NO_DECORATOR},
         };
-
 
         const AvxInsn *insn = &avx_table[find_ins_idx(cmd, sizeof(avx_table) / sizeof(avx_table[0]), avx_table)];
 
@@ -1572,164 +1585,193 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         
         uint8_t typle = insn->tuple;
 
+        uint8_t only_can_be_vex = insn->vex_only;
+
+        uint16_t form = insn->form;
+
+        uint8_t sae = b->sae;
+
+        uint8_t special_format = broatcast | sae;
+
         // ============
         uint8_t ra = (a->type == O_XMM || a->type == O_YMM || a->type == O_ZMM) ? find_xmm_index(a->reg) : 0;
         uint8_t rb = (b->type == O_XMM || b->type == O_YMM || b->type == O_ZMM) ? find_xmm_index(b->reg) : 0;
         uint8_t rc = (c->type == O_XMM || c->type == O_YMM || c->type == O_ZMM) ? find_xmm_index(c->reg) : 0;
 
-        need_evex = need_evex ? need_evex : is_avx512( inst_uses_zmm(a->reg, b->reg, c->reg), broatcast, a->mask_reg, vector_reg_bigger_than_15(ra, rb, operands == 2 ? 0 : rc), node->ins.operands[1].imm_sz);
+        need_evex = need_evex ? need_evex : is_avx512( inst_uses_zmm(a->reg, b->reg, c->reg), broatcast, a->mask_reg, vector_reg_bigger_than_15(ra, rb, operands == 2 ? 0 : rc), node->ins.operands[1].imm_sz, sae);
         // ============
+        if((only_can_be_evex && only_can_be_vex) || (need_evex && only_can_be_vex)) goto error;
 
         uint8_t eff_typle = (broatcast && typle != TUPLE_T1) ? TUPLE_T1 : typle;
 
         // Fuck you intel...
         if(only_can_be_evex){
-            if((!strcmp(cmd, "vminsh") || !strcmp(cmd, "vmaxsh")))
-            {
-                if(!avx512_fp16_defined) {fprintf(stderr, "AmmAsm:%d: Warn: program uses AVX-512_fp16, but current CPU does't support it(might give #UD)\n", node->line);}   
-                if(a->type != O_XMM)fprintf(stderr, "AmmAsm:%d: '%s' supports only xmm registers\n", node->line, node->cmd); exit(1);
-            }
+            if((insn->vector_form & FORM_SCALAR) && (a->type != O_XMM || b->type != O_XMM  || c->type != O_XMM)) goto error;
+            if(insn->sae == SAE && (sae & 0b00011110)) goto error; /* Look src/encoder.c line 1145*/
+            if(insn->sae == ER && (sae & 0b00000001)) goto error;
+            if(insn->sae == NO_DECORATOR && sae) goto error;
+            
 
-            else if(!strcmp(cmd, "vcvtneps2bf16")){
-                // reg, reg
-                if(((a->type == O_XMM && b->type == O_XMM)||
-                    (a->type == O_XMM && b->type == O_YMM)||
-                    (a->type == O_YMM && b->type == O_ZMM))&& c->type == O_NONE){
-                    if(!avx512vl_defined) {fprintf(stderr, "AmmAsm:%d: Warn: program uses AVX-512_vl, but current CPU does't support it(might give #UD)\n", node->line);}
-                    node->ins.pc = *pc;
-                    *s = encode_avx512_reg_reg_reg(machine_code, opcode, 
-                        find_xmm_index(a->reg), 
-                        0,
-                        find_xmm_index(b->reg),
-                        evex_map,
-                        b->type == O_XMM ? EVEX_XMM : 
-                        b->type == O_YMM ? EVEX_YMM : 
-                                        EVEX_ZMM, 
-                        evex_pp, W, evex_aaa, evex_z);
-                    *pc += *s;
-                }
-                
-                // reg, mem 
-                else if(((a->type == O_XMM && b->type == O_MEM)||
-                        (a->type == O_XMM && b->type == O_MEM)||
-                        (a->type == O_YMM && b->type == O_MEM)||
-                        (a->type == O_ZMM && b->type == O_MEM)) && c->type == O_NONE){
-                    node->ins.pc = *pc;
-                    AddrExpr *mem = &b->addr; 
-                    *s = encode_avx512_reg_reg_rm( machine_code, opcode, 
-                        find_xmm_index(a->reg), 
-                        0, // 1111  
-                        mem,
-                        evex_map, 
-                        a->type == O_XMM ? EVEX_XMM : 
-                        a->type == O_YMM ? EVEX_YMM : 
-                                        EVEX_ZMM,
-                        evex_pp, W, evex_aaa, evex_z, eff_typle, broatcast);
-                    *pc += *s;
-                }
-            }
+            // reg, reg, reg
+            if(form & FORM_RRR && ((a->type == O_XMM && b->type == O_XMM && c->type == O_XMM) || (a->type == O_YMM && b->type == O_YMM && c->type == O_YMM) || (a->type == O_ZMM && b->type == O_ZMM && c->type == O_ZMM))){
 
-            // reg, reg, reg/none
-            else if((a->type == O_XMM && b->type == O_XMM && (operands == 2 || c->type == O_XMM)) ||
-              (a->type == O_YMM && b->type == O_YMM && (operands == 2 || c->type == O_YMM))||
-              (a->type == O_ZMM && b->type == O_ZMM && (operands == 2 || c->type == O_ZMM))){
                 if(!avx512vl_defined) {fprintf(stderr, "AmmAsm:%d: Warn: program uses AVX-512_vl, but current CPU does't support it(might give #UD)\n", node->line);}
                 node->ins.pc = *pc;
-                *s = encode_avx512_reg_reg_reg(machine_code, opcode, 
-                    find_xmm_index(a->reg), 
-                    (operands == 2) ?  0 : find_xmm_index(b->reg), 
-                    (operands == 2) ?  find_xmm_index(b->reg) : find_xmm_index(c->reg),
-                    evex_map,
-                    a->type == O_XMM ? EVEX_XMM : 
-                    a->type == O_YMM ? EVEX_YMM : 
-                                       EVEX_ZMM, 
-                    evex_pp, W, evex_aaa, evex_z);
+                *s = encode_avx512_reg_reg_reg(machine_code, opcode, find_xmm_index(a->reg), find_xmm_index(b->reg), find_xmm_index(c->reg),evex_map,
+                    b->type == O_XMM ? EVEX_XMM : 
+                    b->type == O_YMM ? EVEX_YMM : EVEX_ZMM,evex_pp, W, evex_aaa, evex_z, sae);
                 *pc += *s;
             }
-            
-             // reg, reg/none, mem 
-            else if((a->type == O_XMM && ((operands == 2 && b->type == O_MEM) || (operands == 3 && b->type == O_XMM && c->type == O_MEM))) ||
-                    (a->type == O_YMM && ((operands == 2 && b->type == O_MEM) || (operands == 3 && b->type == O_YMM && c->type == O_MEM))) ||
-                    (a->type == O_ZMM && ((operands == 2 && b->type == O_MEM) || (operands == 3 && b->type == O_ZMM && c->type == O_MEM)))){
+
+             // reg, reg, mem 
+            else if(form & FORM_RRM && ((a->type == O_XMM && b->type == O_XMM) || (a->type == O_YMM && b->type == O_YMM) || (a->type == O_ZMM && b->type == O_ZMM)) && c->type == O_MEM){
                 node->ins.pc = *pc;
-                AddrExpr *mem = (operands == 2) ? &b->addr : &c->addr; 
-                *s = encode_avx512_reg_reg_rm( machine_code, opcode, 
-                    find_xmm_index(a->reg), 
-                    (operands == 2) ? 0 : find_xmm_index(b->reg), 
-                    mem,
-                    evex_map, 
+                AddrExpr *mem = &c->addr; 
+                *s = encode_avx512_reg_reg_rm( machine_code, opcode, find_xmm_index(a->reg), find_xmm_index(b->reg), mem,evex_map, 
                     a->type == O_XMM ? EVEX_XMM : 
-                    a->type == O_YMM ? EVEX_YMM : 
-                                       EVEX_ZMM,
-                    evex_pp, W, evex_aaa, evex_z, eff_typle, broatcast);
+                    a->type == O_YMM ? EVEX_YMM : EVEX_ZMM, evex_pp, W, evex_aaa, evex_z, eff_typle, broatcast);
                 *pc += *s;
+            }            
+
+                // reg, reg
+            else if(form & FORM_RR && ((a->type == O_XMM && b->type == O_XMM) || (a->type == O_XMM && b->type == O_YMM) || (a->type == O_YMM && b->type == O_ZMM)) && c->type == O_NONE){
+                if(!avx512vl_defined) {fprintf(stderr, "AmmAsm:%d: Warn: program uses AVX-512_vl, but current CPU does't support it(might give #UD)\n", node->line);}
+                node->ins.pc = *pc;
+                *s = encode_avx512_reg_reg_reg(machine_code, opcode,  find_xmm_index(a->reg),  0, find_xmm_index(b->reg), evex_map,
+                    b->type == O_XMM ? EVEX_XMM : 
+                    b->type == O_YMM ? EVEX_YMM : EVEX_ZMM, 
+                    evex_pp, W, evex_aaa, evex_z, sae);
+                *pc += *s;
+            }
+                
+            // reg, mem 
+            else if(form & FORM_RM && ((a->type == O_XMM || a->type == O_YMM) && b->type == O_MEM)){
+                    node->ins.pc = *pc;
+                    AddrExpr *mem = &b->addr;
+                    switch(node->ins.operands[1].imm_sz){
+                        case 0: fprintf(stderr, "AmmAsm:%d: '%s' requires addres size such as `xword', `yword', or `zword'\n", node->line, cmd); exit(1); break; // safe code
+                        case 1: case 2: case 4: case 8: fprintf(stderr, "AmmAsm:%d: impossible combination of address sizes\n", node->line); exit(1); break;
+                        case 16: case 32: if(a->type == O_ZMM){fprintf(stderr, "AmmAsm:%d: impossible combination of address sizes\n", node->line); exit(1);} break;
+                        case 64: if(a->type == O_XMM){fprintf(stderr, "AmmAsm:%d: impossible combination of address sizes\n", node->line); exit(1);} break;
+                        default: break;
+                    }
+                    *s = encode_avx512_reg_reg_rm( machine_code, opcode, find_xmm_index(a->reg), 0, mem,evex_map, 
+                        node->ins.operands[1].imm_sz == 16 ? EVEX_XMM :
+                        node->ins.operands[1].imm_sz == 32 ? EVEX_YMM :
+                        EVEX_ZMM,
+                        evex_pp, W, evex_aaa, evex_z, eff_typle, broatcast);
+                    *pc += *s;
             }
 
         }
 
+        else if(only_can_be_vex){
+
+            // mem, reg
+            if((form & FORM_RM || form & FORM_RM16) && ((a->type == O_XMM || a->type == O_YMM) && b->type == O_MEM)){
+                node->ins.pc = *pc;
+                switch(node->ins.operands[1].imm_sz){ // mainly auto but we will check for user's shit input
+                    case 0:  break; // AUTO
+                    case 1:  case 4: case 8: {fprintf(stderr, "AmmAsm:%d: impossible combination of address sizes\n", node->line); exit(1);} break;
+                    case 2:  if(!(form & FORM_RM16)){fprintf(stderr, "AmmAsm:%d: impossible combination of address sizes\n", node->line); exit(1);} break;
+                    case 16: if(a->type != O_XMM || form & FORM_RM16){fprintf(stderr, "AmmAsm:%d: impossible combination of address sizes\n", node->line); exit(1);} break;
+                    case 32: if(a->type != O_YMM || form & FORM_RM16){fprintf(stderr, "AmmAsm:%d: impossible combination of address sizes\n", node->line); exit(1);} break;
+                }
+                AddrExpr *mem = &b->addr; 
+                *s = encode_avx_reg_reg_mem(machine_code, opcode, 
+                    find_xmm_index(a->reg), 
+                    0,
+                    mem,
+                    a->type == O_XMM ? VEX_XMM : 
+                    a->type == O_YMM ? VEX_YMM : 0,
+                    vex_pp, vex_map);
+                *pc += *s;
+            }
+        }
+
         else if(need_evex){
             if(!avx512f_defined) {fprintf(stderr, "AmmAsm:%d: Warn: program uses general AVX-512, but current CPU does't support it(might give #UD)\n", node->line);}
+            if((insn->vector_form & FORM_SCALAR) && (a->type != O_XMM || b->type != O_XMM  || c->type != O_XMM)) goto error;
+            if(insn->sae == SAE && (sae & 0b00011110)) goto error;
+            if(insn->sae == ER && (sae & 1)) goto error;
+            if(insn->sae == NO_DECORATOR && sae) goto error;
 
-            // reg, reg, reg/none
-            if((a->type == O_XMM && b->type == O_XMM && (operands == 2 || c->type == O_XMM)) ||
-              (a->type == O_YMM && b->type == O_YMM && (operands == 2 || c->type == O_YMM))||
-              (a->type == O_ZMM && b->type == O_ZMM && (operands == 2 || c->type == O_ZMM))){
-                if(!avx512vl_defined) {fprintf(stderr, "AmmAsm:%d: Warn: program uses AVX-512_vl, but current CPU does't support it(might give #UD)\n", node->line);}
-                node->ins.pc = *pc;
-                *s = encode_avx512_reg_reg_reg(machine_code, opcode, 
-                    find_xmm_index(a->reg), 
-                    (operands == 2) ?  0 : find_xmm_index(b->reg), 
-                    (operands == 2) ?  find_xmm_index(b->reg) : find_xmm_index(c->reg),
-                    evex_map,
-                    a->type == O_XMM ? EVEX_XMM : 
-                    a->type == O_YMM ? EVEX_YMM : 
-                                       EVEX_ZMM, 
-                    evex_pp, W, evex_aaa, evex_z);
-                *pc += *s;
-            }
+            // reg, reg, reg
+            if ((form & FORM_RRR) &&
+                ((a->type == O_XMM && b->type == O_XMM && c->type == O_XMM) ||
+                (a->type == O_YMM && b->type == O_YMM && c->type == O_YMM) ||
+                (a->type == O_ZMM && b->type == O_ZMM && c->type == O_ZMM))) {
 
-            // reg, reg/none, mem 
-            else if((a->type == O_XMM && ((operands == 2 && b->type == O_MEM) || (operands == 3 && b->type == O_XMM && c->type == O_MEM))) ||
-                    (a->type == O_YMM && ((operands == 2 && b->type == O_MEM) || (operands == 3 && b->type == O_YMM && c->type == O_MEM))) ||
-                    (a->type == O_ZMM && ((operands == 2 && b->type == O_MEM) || (operands == 3 && b->type == O_ZMM && c->type == O_MEM)))){
+                if (!avx512vl_defined) fprintf(stderr, "AmmAsm:%d: Warn: program uses AVX-512_vl, but current CPU doesn't support it (might give #UD)\n", node->line);
                 node->ins.pc = *pc;
-                AddrExpr *mem = (operands == 2) ? &b->addr : &c->addr; 
-                *s = encode_avx512_reg_reg_rm( machine_code, opcode, 
-                    find_xmm_index(a->reg), 
-                    (operands == 2) ? 0 : find_xmm_index(b->reg), 
-                    mem,
-                    evex_map, 
-                    node->ins.operands[1].imm_sz == 16 ? EVEX_XMM :
-                    node->ins.operands[1].imm_sz == 32 ? EVEX_YMM :
-                    node->ins.operands[1].imm_sz == 64 ? EVEX_ZMM :
-                    a->type == O_XMM ? EVEX_XMM : 
-                    a->type == O_YMM ? EVEX_YMM : 
-                                       EVEX_ZMM,
-                    evex_pp, W, evex_aaa, evex_z, eff_typle, broatcast);
-                *pc += *s;
-            }
 
-            else if(((a->type == O_XMM && b->type == O_XMM)||
-                    (a->type == O_XMM && b->type == O_YMM)||
-                    (a->type == O_YMM && b->type == O_ZMM))&& c->type == O_IMM){
-                if(!avx512vl_defined) {fprintf(stderr, "AmmAsm:%d: Warn: program uses AVX-512_vl, but current CPU does't support it(might give #UD)\n", node->line);}
-                node->ins.pc = *pc;
-                *s = encode_avx512_reg_reg_reg(machine_code, opcode, 
-                    find_xmm_index(b->reg),
-                    0, 
+                *s = encode_avx512_reg_reg_reg(machine_code,opcode,
                     find_xmm_index(a->reg),
+                    find_xmm_index(b->reg),
+                    find_xmm_index(c->reg),
                     evex_map,
-                    b->type == O_XMM ? EVEX_XMM : 
-                    b->type == O_YMM ? EVEX_YMM : 
-                                       EVEX_ZMM, 
-                    evex_pp, W, evex_aaa, evex_z);
-                machine_code[(*s)++] = (uint8_t)c->imm;
+                    a->type == O_XMM ? EVEX_XMM :
+                    a->type == O_YMM ? EVEX_YMM : EVEX_ZMM,
+                    evex_pp, W, evex_aaa, evex_z, sae
+                );
+
                 *pc += *s;
             }
 
-            else if((a->type == O_MEM && b->type == O_XMM && c->type == O_IMM) ||
-                    (a->type == O_MEM && b->type == O_YMM && c->type == O_IMM) ||
-                    (a->type == O_MEM && b->type == O_ZMM && c->type == O_IMM)){
+            // reg, reg, imm
+            else if ((form & FORM_RRI) &&
+                    ((a->type == O_XMM && b->type == O_XMM && c->type == O_IMM) ||
+                    (a->type == O_YMM && b->type == O_YMM && c->type == O_IMM) ||
+                    (a->type == O_ZMM && b->type == O_ZMM && c->type == O_IMM))) {
+
+                if (!avx512vl_defined) fprintf(stderr, "AmmAsm:%d: Warn: program uses AVX-512_vl, but current CPU doesn't support it (might give #UD)\n", node->line);
+                node->ins.pc = *pc;
+
+                *s = encode_avx512_reg_reg_reg(machine_code,opcode,
+                    find_xmm_index(a->reg),
+                    find_xmm_index(b->reg),
+                    0,
+                    evex_map,
+                    a->type == O_XMM ? EVEX_XMM :
+                    a->type == O_YMM ? EVEX_YMM : EVEX_ZMM,
+                    evex_pp,W,evex_aaa,evex_z,sae
+                );
+                *pc += *s;
+                machine_code[(*s)++] = (uint8_t)c->imm;
+            }
+
+            // reg, reg
+            else if(form & FORM_RR &&((a->type == O_XMM && b->type == O_XMM)|| // I have 130 iq :)
+                                      (a->type == O_YMM && b->type == O_YMM)||
+                                      (a->type == O_ZMM && b->type == O_ZMM)||
+                                      (a->type == O_XMM && b->type == O_YMM)||
+                                      (a->type == O_YMM && b->type == O_ZMM)) && c->type == O_NONE){
+                if(!avx512vl_defined) {fprintf(stderr, "AmmAsm:%d: Warn: program uses AVX-512_vl, but current CPU does't support it(might give #UD)\n", node->line);}
+                node->ins.pc = *pc;
+                *s = encode_avx512_reg_reg_reg(machine_code, opcode, find_xmm_index(a->reg), 0, find_xmm_index(b->reg),evex_map,
+                    b->type == O_XMM ? EVEX_XMM : 
+                    b->type == O_YMM ? EVEX_YMM : EVEX_ZMM, 
+                    evex_pp, W, evex_aaa, evex_z, sae);
+                *pc += *s;
+            }
+
+             // reg, reg, mem 
+            else if(form & FORM_RRM && ((a->type == O_XMM && b->type == O_XMM) || (a->type == O_YMM && b->type == O_YMM) || (a->type == O_ZMM && b->type == O_ZMM)) && c->type == O_MEM){
+                node->ins.pc = *pc;
+                AddrExpr *mem = &c->addr; 
+                *s = encode_avx512_reg_reg_rm( machine_code, opcode, find_xmm_index(a->reg), find_xmm_index(b->reg), mem,evex_map, 
+                    a->type == O_XMM ? EVEX_XMM : 
+                    a->type == O_YMM ? EVEX_YMM : EVEX_ZMM, evex_pp, W, evex_aaa, evex_z, eff_typle, broatcast);
+                *pc += *s;
+            } 
+
+
+            // mem, reg, imm
+            else if((form & FORM_MRI) && ( a->type == O_MEM &&((b->type == O_XMM && c->type == O_IMM) ||
+                                                               (b->type == O_YMM && c->type == O_IMM) ||
+                                                               (b->type == O_ZMM && c->type == O_IMM)))){
+                if(sae){fprintf(stderr, "AmmAsm:%d: SAE is only valid for register-to-register form\n", node->line); exit(1);}
+                if(evex_z) {fprintf(stderr, "AmmAsm:%d: Can't use zero mask for '%s' instruction\n", node->line, cmd); exit(1);}
                 node->ins.pc = *pc;
                 AddrExpr *mem = &a->addr; 
                 *s = encode_avx512_reg_reg_rm( machine_code, opcode, 
@@ -1738,41 +1780,71 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
                     mem,
                     evex_map, 
                     b->type == O_XMM ? EVEX_XMM : 
-                    b->type == O_YMM ? EVEX_YMM : 
-                                       EVEX_ZMM,
-                    evex_pp, W, evex_aaa, evex_z, eff_typle, broatcast);
+                    b->type == O_YMM ? EVEX_YMM : EVEX_ZMM,
+                    evex_pp, W, evex_aaa, evex_z, eff_typle, 0);
                 machine_code[(*s)++] = (uint8_t)c->imm;
                 *pc += *s;
             }
+
+            // reg, mem 
+            else if(form & FORM_RM && ((a->type == O_XMM || a->type == O_YMM || a->type == O_ZMM) && b->type == O_MEM)){
+                    node->ins.pc = *pc;
+                    AddrExpr *mem = &b->addr;
+                    *s = encode_avx512_reg_reg_rm( machine_code, opcode, find_xmm_index(a->reg), 0, mem,evex_map, 
+                        node->ins.operands[1].imm_sz == 16 ? EVEX_XMM :
+                        node->ins.operands[1].imm_sz == 32 ? EVEX_YMM :
+                        a->type == O_XMM ? EVEX_XMM : 
+                        a->type == O_YMM ? EVEX_YMM : EVEX_ZMM,
+                        evex_pp, W, evex_aaa, evex_z, eff_typle, broatcast);
+                    *pc += *s;
+            }
+            
         }
 
-        // hibrid version
         else{ // AVX
-            // xmm/ymm, xmm/ymm, xmm/ymm
-            if(((a->type == O_XMM && find_xmm_index(a->reg) >= 16)) || ((b->type == O_XMM && find_xmm_index(b->reg) >= 16)) || ((c->type == O_XMM && find_xmm_index(c->reg) >= 16))) {fprintf(stderr, "AmmAsm:%d: AVX/AVX2 can use only xmm0-xmm15 registers\n", node->line);exit(1);}
-            if(((a->type == O_YMM && find_xmm_index(a->reg) >= 16)) || ((b->type == O_YMM && find_xmm_index(b->reg) >= 16)) || ((c->type == O_YMM && find_xmm_index(c->reg) >= 16))) {fprintf(stderr, "AmmAsm:%d: AVX/AVX2 can use only ymm0-ymm15 registers\n", node->line);exit(1);}
-            
-            if((a->type == O_XMM && b->type == O_XMM && (operands == 2 || c->type == O_XMM)) ||
-               (a->type == O_YMM && b->type == O_YMM && (operands == 2 || c->type == O_YMM)) ||
-               (a->type == O_ZMM && b->type == O_ZMM && (operands == 2 || c->type == O_ZMM))){
+            if((insn->vector_form & FORM_SCALAR) && (a->type != O_XMM || b->type != O_XMM  || c->type != O_XMM)) goto error;
+            if(sae)goto error;
+            // reg, reg, reg
+            if(form & FORM_RRR && (a->type == O_XMM && b->type == O_XMM &&  c->type == O_XMM) ||
+                                  (a->type == O_YMM && b->type == O_YMM &&  c->type == O_YMM)){
                 node->ins.pc = *pc;
                 *s = encode_avx_reg_reg_reg(machine_code, opcode, 
                     find_xmm_index(a->reg), 
-                    (operands == 2) ?  0 : find_xmm_index(b->reg), 
-                    (operands == 2) ?  find_xmm_index(b->reg) : find_xmm_index(c->reg),
+                    find_xmm_index(b->reg), 
+                    find_xmm_index(c->reg),
                     a->type == O_XMM ? VEX_XMM : 
                     a->type == O_YMM ? VEX_YMM : 0,
                     vex_pp, vex_map);
                 *pc += *s;
             }
 
-            else if(((a->type == O_XMM && ((operands == 2 && b->type == O_MEM && c->type == O_NONE) || (operands == 3 && b->type == O_XMM && c->type == O_MEM))) ||
-                     (a->type == O_YMM && ((operands == 2 && b->type == O_MEM && c->type == O_NONE) || (operands == 3 && b->type == O_YMM && c->type == O_MEM))))){
+
+            // reg, reg
+            else if(form & FORM_RR && (a->type == O_XMM && b->type == O_XMM &&  c->type == O_NONE) ||
+                                      (a->type == O_YMM && b->type == O_YMM &&  c->type == O_NONE) ||
+                                      (a->type == O_XMM && b->type == O_YMM &&  c->type == O_NONE) ||
+                                      (a->type == O_YMM && b->type == O_XMM &&  c->type == O_NONE)){
                 node->ins.pc = *pc;
-                AddrExpr *mem = (operands == 2) ? &b->addr : &c->addr; 
+                *s = encode_avx_reg_reg_reg(machine_code, opcode, 
+                    find_xmm_index(a->reg), 
+                    0, 
+                    find_xmm_index(b->reg), 
+                    a->type == O_YMM && b->type == O_XMM ? VEX_YMM :
+                    b->type == O_XMM ? VEX_XMM : 
+                    b->type == O_YMM ? VEX_YMM : 0,
+                    vex_pp, vex_map);
+                *pc += *s;
+            }
+
+
+            // reg, mem
+            else if(form & FORM_RM && ((a->type == O_XMM && b->type == O_MEM && c->type == O_NONE) ||
+                                       (a->type == O_YMM && b->type == O_MEM && c->type == O_NONE))){
+                node->ins.pc = *pc;
+                AddrExpr *mem = &b->addr; 
                 *s = encode_avx_reg_reg_mem(machine_code, opcode, 
                     find_xmm_index(a->reg), 
-                    (operands == 2) ? 0 : find_xmm_index(b->reg), 
+                    0,
                     mem,
                     node->ins.operands[1].imm_sz == 16 ? VEX_XMM :
                     node->ins.operands[1].imm_sz == 32 ? VEX_YMM :
@@ -1781,24 +1853,46 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
                     vex_pp, vex_map);
                 *pc += *s;
             }
-
-            else if(((a->type == O_XMM && b->type == O_XMM)||
-                    (a->type == O_XMM && b->type == O_YMM)||
-                    (a->type == O_YMM && b->type == O_ZMM))&& c->type == O_IMM){
+            
+            // mem, reg
+            else if((form & FORM_MR) && ((a->type == O_MEM && b->type == O_XMM && c->type == O_NONE) ||
+                                         (a->type == O_MEM && b->type == O_YMM && c->type == O_NONE))){
+                                       
                 node->ins.pc = *pc;
-                *s = encode_avx_reg_reg_reg(machine_code, opcode, 
-                    find_xmm_index(a->reg), 
-                    0, 
-                    find_xmm_index(b->reg),
+                AddrExpr *mem = &a->addr; 
+                *s = encode_avx_reg_reg_mem(machine_code, !strncmp(cmd, "vmov", 4) ? opcode+1 : opcode, 
+                    find_xmm_index(b->reg), 
+                    0,
+                    mem,
+                    node->ins.operands[1].imm_sz == 16 ? VEX_XMM :
+                    node->ins.operands[1].imm_sz == 32 ? VEX_YMM :
                     b->type == O_XMM ? VEX_XMM : 
                     b->type == O_YMM ? VEX_YMM : 0,
                     vex_pp, vex_map);
-                machine_code[(*s)++] = (uint8_t)c->imm;
                 *pc += *s;
             }
 
-            else if(((a->type == O_MEM && b->type == O_XMM && c->type == O_IMM)||
-                     (a->type == O_MEM && b->type == O_YMM && c->type == O_IMM))){
+            // reg, reg, mem
+            else if((form & FORM_RRM) && ((a->type == O_XMM && b->type == O_XMM && c->type == O_MEM) ||
+                                          (a->type == O_YMM && b->type == O_YMM && c->type == O_MEM))){
+                                       
+                node->ins.pc = *pc;
+                AddrExpr *mem = &c->addr; 
+                *s = encode_avx_reg_reg_mem(machine_code,opcode, 
+                    find_xmm_index(a->reg), 
+                    find_xmm_index(b->reg),
+                    mem,
+                    node->ins.operands[1].imm_sz == 16 ? VEX_XMM :
+                    node->ins.operands[1].imm_sz == 32 ? VEX_YMM :
+                    b->type == O_XMM ? VEX_XMM : 
+                    b->type == O_YMM ? VEX_YMM : 0,
+                    vex_pp, vex_map);
+                *pc += *s;
+            }
+
+            // mem, reg, imm
+            else if(form & FORM_MRI && ((a->type == O_MEM && b->type == O_XMM && c->type == O_IMM)||
+                                        (a->type == O_MEM && b->type == O_YMM && c->type == O_IMM))){
 
                 node->ins.pc = *pc;
                 AddrExpr *mem = &a->addr; 
@@ -1813,13 +1907,28 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
                 *pc += *s;
             }
 
+            // reg, reg, imm
+            else if(form & FORM_RRI && (a->type == O_XMM && b->type == O_XMM &&  c->type == O_IMM)||
+                                       (a->type == O_XMM && b->type == O_YMM &&  c->type == O_IMM)){
+                node->ins.pc = *pc;
+                *s = encode_avx_reg_reg_reg(machine_code, opcode, 
+                    find_xmm_index(a->reg),
+                    0, 
+                    find_xmm_index(b->reg),
+                    b->type == O_XMM ? VEX_XMM : 
+                    b->type == O_YMM ? VEX_YMM : 0,
+                    vex_pp, vex_map);
+                *pc += *s;
+                machine_code[(*s)++] = (uint8_t)c->imm;
+            }
+
         }
     }
 
 
-erorr:
+error:
     if(*s == 0){
-        isnt_erorr = 1;
+        isnt_error = 1;
         printf("AmmAsm: Debug: !Instruction did\'t compile, operands:\n");
         printf("AmmAsm:%d: %s ", node->line, cmd);
         for (int i = 0; i < 3; i++) {
@@ -1831,6 +1940,10 @@ erorr:
                 node->ins.operands[i].type == O_REG16 ? "REG16" :
                 node->ins.operands[i].type == O_REG32 ? "REG32" :
                 node->ins.operands[i].type == O_REG64 ? "REG64" :
+                node->ins.operands[i].type == O_APX_REG8  ? "APX_REG8"  :
+                node->ins.operands[i].type == O_APX_REG16 ? "APX_REG16" :
+                node->ins.operands[i].type == O_APX_REG32 ? "APX_REG32" :
+                node->ins.operands[i].type == O_APX_REG64 ? "APX_REG64" :
                 node->ins.operands[i].type == O_EXPR  ? "EXPR"  :
                 node->ins.operands[i].type == O_PC    ? "PC"    :
                 node->ins.operands[i].type == O_CHAR  ? "CHAR"  :

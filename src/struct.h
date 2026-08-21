@@ -36,6 +36,7 @@ typedef struct {
     uint8_t mask_reg; // AVX-512 (k0-k7)
     uint8_t z_reg;    // AVX-512 {z}
     uint8_t brotcast; // AVX-512 {b}
+    uint8_t sae;      // AVX-512 {sae}
 
     union {
         uint8_t reg[8];
@@ -132,6 +133,10 @@ typedef struct {
     uint8_t W;
     uint8_t tuple;
     uint8_t only_evex;
+    uint8_t vex_only;
+    uint16_t form;
+    uint8_t vector_form;
+    uint8_t sae;
 } AvxInsn;
 
 typedef struct {

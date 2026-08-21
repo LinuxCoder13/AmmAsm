@@ -211,6 +211,13 @@ int LEXER(FILE* fl) {
                 else if(is2arrin(regs32, 8, buf) || is2arrin(regs32GP, 8, buf)) {add_token(T_REG32, buf, line); continue;}
                 else if(is2arrin(regs64, 8, buf) || is2arrin(regs64GP, 8, buf)) {add_token(T_REG64, buf, line); continue;} 
 
+                // APX
+                else if(is2arrin(regs8APX,  16, buf) ) {add_token(T_APX_REG8, buf, line);  continue;}
+                else if(is2arrin(regs16APX, 16, buf) ) {add_token(T_APX_REG16, buf, line); continue;}
+                else if(is2arrin(regs32APX, 16, buf) ) {add_token(T_APX_REG32, buf, line); continue;}
+                else if(is2arrin(regs64APX, 16, buf) ) {add_token(T_APX_REG64, buf, line); continue;} 
+
+
                 // XMM
                 else if(is2arrin(Xmmregs, 32, buf)){add_token(T_XMM, buf, line); continue;}
 

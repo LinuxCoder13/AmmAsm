@@ -49,6 +49,7 @@ enum {
     EVEX_MAP_0F    = 1,
     EVEX_MAP_0F38  = 2,
     EVEX_MAP_0F3A  = 3,
+    EVEX_MAP_APX   = 4, // APX NDD
     EVEX_MAP_UNNAMED5 = 5, // I did't find its name in intel manual
     EVEX_MAP_UNNAMED6 = 6, // I did't find its name in intel manual
 };
@@ -98,18 +99,44 @@ enum {
     EVEX_ZMM = 2, 
 };
 
+enum  {
+    FORM_NONE =  1,
+    FORM_RRR =   1<<1,
+    FORM_RRM =   1<<2,
+    FORM_RM16 =  1<<3, // mainly some vcvt*
+    FORM_RR =    1<<4,
+    FORM_RM =    1<<5,
+    FORM_MRI =   1<<6,
+    FORM_RRI =   1<<7,
+    FORM_MR =    1<<8, 
+    FORM_RRM16 = 1<<9,
+    FORM_RRM32 = 1<<10
+};
+
+enum {
+    FORM_SCALAR = 1,
+};
+
+enum {
+    SAE = 1,
+    ER  = 2,
+    NO_DECORATOR
+};
+
 // P0
 #define EVEX_R(rex_r) ((((rex_r) ^ 1) & 1) << 7)
 #define EVEX_X(rex_x) ((((rex_x) ^ 1) & 1) << 6)
 #define EVEX_B(rex_b) ((((rex_b) ^ 1) & 1) << 5)
 #define EVEX_ER(rex_er)((((rex_er) ^ 1) & 1) << 4)
-// #define EVEX_ZERO ((0 & 1) << 3)
+/* APX */
+#define EVEX_B4(b4) (((b4) & 1) << 3)
 #define EVEX_MMM(map) (((map) & 0b111))
  
 // P1
 #define EVEX_W(W) ((W & 1) << 7)
 #define EVEX_VVVV(reg) ((((reg) ^ 0xF) & 0xF) << 3)
-#define EVEX_INITP1_ONE ((1 & 1) << 2)
+#define EVEX_INITP1_ONE ((1 & 1) << 2) // for AVX-512
+#define EVEX_X4(x4) ((((x4) ^ 1) & 1) << 2) // for APX
 #define EVEX_PP(prefix) ((prefix) & 0b11)
 
 // P2
@@ -154,6 +181,7 @@ extern uint8_t encode_inst_reg_rm2(uint8_t *machine_code, uint8_t opcode2, uint8
 extern uint8_t encode_xmm_or_r64__xmm_or_r64(uint8_t* mash_code, uint8_t dest, uint8_t src, uint8_t is_dest_isGPR);
 extern uint8_t encode_avx_reg_reg_reg(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, uint8_t src2, uint8_t L, uint8_t pp, uint8_t mmmmm);
 extern uint8_t encode_avx_reg_reg_mem(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, AddrExpr *expr, uint8_t L, uint8_t pp, uint8_t mmmmm);
-extern uint8_t encode_avx512_reg_reg_reg(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, uint8_t src2, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W, uint8_t aaa, uint8_t z);
+extern uint8_t encode_avx512_reg_reg_reg(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, uint8_t src2, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W, uint8_t aaa, uint8_t z, uint8_t b);
 extern uint8_t encode_avx512_reg_reg_rm(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, AddrExpr *src2, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W, uint8_t aaa, uint8_t z, uint8_t TypleType, uint8_t B);
+extern uint8_t encode_NDD_APX_reg_reg_reg(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, uint8_t src2, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W, uint8_t aaa, uint8_t z, uint8_t b);
 

@@ -26,6 +26,10 @@ void DEBUG_PRINT_TOKENS() {
             case T_REG16: type_str = "T_REG16"; break;
             case T_REG32: type_str = "T_REG32"; break;
             case T_REG64: type_str = "T_REG64"; break;
+            case T_APX_REG8: type_str = " T_APX_REG8"; break;
+            case T_APX_REG16: type_str = "T_APX_REG16"; break;
+            case T_APX_REG32: type_str = "T_APX_REG32"; break;
+            case T_APX_REG64: type_str = "T_APX_REG64"; break;
             case T_XMM: type_str = "T_XMM"; break;
             case T_YMM: type_str = "T_YMM"; break;
             case T_ZMM: type_str = "T_ZMM"; break;
@@ -102,6 +106,10 @@ void DEBUG_PRINT_AST() {
                         case O_REG16: otype_str = "REG16"; break;
                         case O_REG32: otype_str = "REG32"; break;
                         case O_REG64: otype_str = "REG64"; break;
+                        case O_APX_REG8:  otype_str = "APX_REG8"; break;
+                        case O_APX_REG16: otype_str = "APX_REG16"; break;
+                        case O_APX_REG32: otype_str = "APX_REG32"; break;
+                        case O_APX_REG64: otype_str = "APX_REG64"; break;
                         case O_XMM: otype_str = "XMM"; break;
                         case O_YMM: otype_str = "YMM"; break;
                         case O_ZMM: otype_str = "ZMM"; break;
@@ -118,6 +126,10 @@ void DEBUG_PRINT_AST() {
                         case O_REG16:
                         case O_REG32:
                         case O_REG64:
+                        case O_APX_REG8:
+                        case O_APX_REG16:
+                        case O_APX_REG32:
+                        case O_APX_REG64:
                         case O_XMM:
                         case O_YMM:
                         case O_ZMM:
