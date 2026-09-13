@@ -161,7 +161,10 @@ void resolve_labels() {
 
             uint8_t real_imm_sz = node->ins.operands[1].imm_sz == 8 ? 4 : node->ins.operands[1].imm_sz;
 
-            if (is2arrin(short_imm_instructions,short_imm_instructions_COUNT, node->cmd) && IS_EXPR_OR_PC(b)) {
+            uint8_t idx_with_expr = IS_EXPR_OR_PC(b) ? 1 : 2;
+            Operand op_with_expr = IS_EXPR_OR_PC(b) ? b : c;
+
+            if (is2arrin(short_imm_instructions,short_imm_instructions_COUNT, node->cmd) && IS_EXPR_OR_PC(op_with_expr)) {
                 int immsz = 0;
 
                 if (a.type == O_MEM) {
@@ -171,17 +174,17 @@ void resolve_labels() {
                     immsz = b.imm_sz ? (b.imm_sz == 8 ? 4 : b.imm_sz) : 4;
                 }
 
-                resolve_imm(node, 1, immsz);
+                resolve_imm(node, idx_with_expr, immsz);
             }
 
             // inst r64, expr(imm)
-            else if(a.type == O_REG64 && IS_EXPR_OR_PC(b)) resolve_imm(node, 1, 8);
+            else if(a.type == O_REG64 && IS_EXPR_OR_PC(op_with_expr)) resolve_imm(node, idx_with_expr, 8);
 
             // inst r32, expr(imm)
-            else if(a.type == O_REG32 && IS_EXPR_OR_PC(b)) resolve_imm(node, 1, 4);
+            else if(a.type == O_REG32 && IS_EXPR_OR_PC(op_with_expr)) resolve_imm(node, idx_with_expr, 4);
 
             // mov [mem], imm
-            else if(a.type == O_MEM && IS_EXPR_OR_PC(b)){ resolve_imm(node, 1, real_imm_sz);}
+            else if(a.type == O_MEM && IS_EXPR_OR_PC(op_with_expr)){ resolve_imm(node, idx_with_expr, real_imm_sz);}
 
         }
          
@@ -198,15 +201,27 @@ void resolve_labels() {
             *(uint32_t*)(node->machine_code + node->machine_code_len - 4) = rel32;
         }
 
+        // JMPABS (ABS64)
+        if (!strcmp(node->cmd, "jmpabs") && IS_EXPR_OR_PC(node->ins.operands[0])) {
+            
+            uint64_t addr = resolve_expr(node->ins.operands[0].expr, node->ins.pc, node->line);
+            uint64_t abs64;
+            if(addr == (uint64_t)-2) abs64 = 0x0; 
+            else abs64 = addr;
+            *(uint64_t*)(node->machine_code + node->machine_code_len - 8) = abs64;
+        }
+
         // [RIP REL] (DISP32)
         if ((node->ins.operands[0].type == O_MEM && node->ins.operands[0].addr.is_rip_rel) ||
             (node->ins.operands[1].type == O_MEM && node->ins.operands[1].addr.is_rip_rel)) {
             
             int op0_rip = node->ins.operands[0].type == O_MEM && node->ins.operands[0].addr.is_rip_rel;
             int op1_rip = node->ins.operands[1].type == O_MEM && node->ins.operands[1].addr.is_rip_rel;
+            int op2_rip = node->ins.operands[2].type == O_MEM && node->ins.operands[2].addr.is_rip_rel;
 
-            if (op0_rip || op1_rip) {
-                int idx = op0_rip ? 0 : 1;
+            if (op0_rip || op1_rip || op2_rip) {
+                int idx = op0_rip ? 0 :
+                          op1_rip ? 1 : 2;
                 AddrExpr *mem = &node->ins.operands[idx].addr;
 
                 if (!mem->label[0]) {
@@ -219,10 +234,6 @@ void resolve_labels() {
                     fprintf(stderr, "AmmAsm:%d: undefined label '%s' in RIP-relative addressing\n", ast[i].line, mem->label);
                     exit(1);
                 }
-                // if (addr_for_disp == (uint64_t)-2) {
-                //     fprintf(stderr, "AmmAsm:%d: can't use externed label '%s' in RIP-relative addressing\n", ast[i].line, mem->label);
-                //     exit(1);
-                // }
 
                 int32_t disp32 = (int32_t)((int64_t)addr_for_disp - (int64_t)(node->ins.pc + node->machine_code_len)) + mem->disp;
                 uint8_t real_imm_sz = node->ins.operands[1].imm_sz == 8 ? 4 : node->ins.operands[1].imm_sz;
@@ -277,9 +288,6 @@ void resolve_labels() {
                 }
             }
         }
-
-        // we will not free() all Expr.tokens[i].value, becouse we need them for DEBUG_AST_PRINT() which calls at end of compiler.
-        // OS will do it by it self.
     }
 }
 

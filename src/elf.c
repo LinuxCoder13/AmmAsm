@@ -30,6 +30,7 @@
 #define R_X86_64_PC32  2
 #define R_X86_64_64    1
 #define R_X86_64_32    10
+#define R_X86_64_PC64  24
 
 // bind in st_info (high 4 bits)
 #define STB_LOCAL      0 // local lab (other .o will not see it)
@@ -425,7 +426,7 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
                     relas[rela_count].r_addend = (int64_t)oper->addr.disp - 4 - real_imm_sz; // linker writes: S + A - P
                     rela_count++;
 
-                    memset(text_buf + reloc_off, 0, 4);
+                  //  memset(text_buf + reloc_off, 0, 4);
 
                     // check for X86_64_32
                     // FOR inst [mem], label
@@ -434,7 +435,7 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
                         ast[i].ins.operands[1].type == O_EXPR &&
                         expr_label_count(&ast[i].ins.operands[1].expr) == 1 &&
                         ast[i].ins.operands[1].expr.count == 1){
-
+                            
                         
                         Expr *imm_expr = &ast[i].ins.operands[1].expr;
                         const uint8_t *lab2 = get_label_from_expr(*imm_expr);
@@ -449,7 +450,7 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
                                     "skipping relocation for \'%s\'\n",
                                     ast[i].line,
                                     imm_sz2 == 1 ? "byte" :
-                                    imm_sz2 == 2 ? "word" : "dword",
+                                    imm_sz2 == 2 ? "word" : "qword",
                                     lab2);
                             } 
                             else if (rela_count < 256) {
@@ -463,10 +464,12 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
                                 uint64_t imm_reloc_off =
                                     (ast[i].ins.pc - text_start_pc) +
                                     (ast[i].machine_code_len - 4);
+                                uint32_t vaddr = find_lab_addr(lab2);
+                                uint32_t imm32 = *(uint32_t*)(ast[i].machine_code + ast[i].machine_code_len - 4);
     
                                 relas[rela_count].r_offset = imm_reloc_off;
                                 relas[rela_count].r_info   = ((uint64_t)sym_idx2 << 32) | R_X86_64_32;
-                                relas[rela_count].r_addend = 0;
+                                relas[rela_count].r_addend = imm32 - vaddr;
                                 rela_count++;
     
                                
@@ -515,16 +518,32 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
 
                 //R_X86_64_32
                 // inst [non-rip-rel mem], dd label
-                // inst eax, label
+                // inst eax/rax, label
                 else if 
-                    (ast[i].ins.operands[1].type == O_EXPR &&
-                    expr_label_count(&ast[i].ins.operands[1].expr) == 1 &&
+                    (((ast[i].ins.operands[1].type == O_EXPR && expr_label_count(&ast[i].ins.operands[1].expr) == 1) ||
+                     (ast[i].ins.operands[2].type == O_EXPR && expr_label_count(&ast[i].ins.operands[2].expr) == 1)) &&
                     ((ast[i].ins.operands[0].type == O_MEM && !ast[i].ins.operands[0].addr.is_rip_rel) || (ast[i].ins.operands[0].type == O_REG32) || 
                     (ast[i].ins.operands[0].type == O_REG64 && is2arrin(short_imm_instructions, short_imm_instructions_COUNT, ast[i].cmd)))){
                                             
-                    if(ast[i].ins.operands[1].expr.count > 1){ fprintf(stderr, "AmmAsm:%d: realoc via added not supported\n", ast[i].line); exit(1);}
+                    Expr expr = ast[i].ins.operands[1].type == O_EXPR ? ast[i].ins.operands[1].expr : ast[i].ins.operands[2].expr;
 
-                    const uint8_t *lab2 = get_label_from_expr(ast[i].ins.operands[1].expr);
+                    uint8_t imm_sz2 = ast[i].ins.operands[1].imm_sz;
+                        
+                    const uint8_t *lab2 = get_label_from_expr(expr);
+                    
+                    if (imm_sz2 != 4 && imm_sz2) {
+                        fprintf(stderr,
+                            "AmmAsm:%d: warning: inst [mem], %s label: "
+                            "only \'dword\' (4-byte) supported for R_X86_64_32; "
+                            "skipping relocation for \'%s\'\n",
+                            ast[i].line,
+                            imm_sz2 == 1 ? "byte" :
+                            imm_sz2 == 2 ? "word" : "qword",
+                            lab2);
+                        break;;
+                    } 
+                    
+                    
                     if (lab2 && *lab2 && rela_count < 256) {
                         int sym_idx2 = data_section_sym_idx;
                         for (int s2 = 0; s2 < sym_count; s2++) {
@@ -535,9 +554,13 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
                         uint64_t imm_reloc_off =
                             (ast[i].ins.pc - text_start_pc) +
                             (ast[i].machine_code_len - 4);
+
+                        uint32_t vaddr = find_lab_addr(lab2);
+                        uint32_t imm32 = *(uint32_t*)(ast[i].machine_code + ast[i].machine_code_len - 4);
+
                         relas[rela_count].r_offset = imm_reloc_off;
                         relas[rela_count].r_info   = ((uint64_t)sym_idx2 << 32) | R_X86_64_32;
-                        relas[rela_count].r_addend = 0;
+                        relas[rela_count].r_addend = imm32 - vaddr;
                         rela_count++;
                         
                     }
@@ -545,7 +568,7 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
                 }
                 
                 // resolving R_X86_64_64
-                else if (oper->type == O_EXPR ) {
+                else if (oper->type == O_EXPR && expr_label_count(&oper->expr) == 1) {
                     int sym_idx = data_section_sym_idx;
                     uint8_t *lab = NULL;
                     for (int k = 0; k < oper->expr.count; k++) {
@@ -579,7 +602,7 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
                     relas[rela_count].r_addend = (int64_t)imm64 - vaddr;
                     rela_count++;
 
-                    memset(text_buf + reloc_off, 0, 8);
+                   //memset(text_buf + reloc_off, 0, 8);
                     break;
 
                 }

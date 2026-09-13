@@ -10,11 +10,24 @@
 #include "utality.h"
 
 
-#define REX_BASE  0x40
+#define REX_BASE  0b01000000
 #define REX_W     0b00001000
 #define REX_R     0b00000100
 #define REX_X     0b00000010
 #define REX_B     0b00000001
+// THE GREAT OFFENSIVE HAS BEGUN!
+#define REX2_M0   0b10000000 // 0x0F
+#define REX2_R4   0b01000000
+#define REX2_X4   0b00100000
+#define REX2_B4   0b00010000
+#define REX2_W    0b00001000
+#define REX2_R3   0b00000100
+#define REX2_X3   0b00000010
+#define REX2_B3   0b00000001
+
+// tools
+#define CLEAR_REX_BASE(x) ((x) & (~(1 << 6)))
+#define CHECK_REX_BASE(x) (((x) >> 6) & 1)
 
 typedef enum  {
     VEX_PP_NONE = 0,
@@ -49,7 +62,7 @@ enum {
     EVEX_MAP_0F    = 1,
     EVEX_MAP_0F38  = 2,
     EVEX_MAP_0F3A  = 3,
-    EVEX_MAP_APX   = 4, // APX NDD
+    EVEX_MAP_APX   = 4, // APX
     EVEX_MAP_UNNAMED5 = 5, // I did't find its name in intel manual
     EVEX_MAP_UNNAMED6 = 6, // I did't find its name in intel manual
 };
@@ -158,11 +171,14 @@ extern uint8_t encode_mov_reg_imm(uint8_t *mash_code, uint8_t reg_idx, uint64_t 
 extern uint8_t encode_mov_reg_reg(uint8_t *mash_code, uint8_t dest_idx, uint8_t src_idx, uint8_t sz);
 extern uint8_t encode_inst_rm_rm(uint8_t *mash_code, uint8_t reg_idx, AddrExpr *expr, uint8_t sz, uint8_t opcode, uint8_t imm_sz, uint64_t imm);
 extern uint8_t encode_group1_imm( uint8_t *machine_code, uint8_t reg, uint32_t imm, uint8_t sz, uint8_t group_digit, uint8_t is_expr);
+extern uint8_t encode_APX_group1_imm(uint8_t* mash_code, uint8_t group, uint8_t dest, uint8_t src1, uint8_t sz, uint8_t is_ndd, uint8_t nf, uint32_t imm, uint8_t imm_is_expr);
+extern uint8_t encode_APX_group1_reg_mem_imm(uint8_t* mash_code,uint8_t group, uint8_t dest, AddrExpr mem, uint8_t sz, uint8_t is_ndd, uint8_t nf, uint32_t imm, uint8_t imm_is_expr);
 extern uint8_t encode_group1_reg_reg(uint8_t *mash_code, uint8_t dest, uint8_t src, uint8_t sz, uint8_t opcode);
 extern uint8_t encode_imul_reg(uint8_t *mash_code, uint8_t reg, uint8_t sz);
 extern uint8_t encode_imul_reg_reg(uint8_t *mash_code, uint8_t src, uint8_t dest, uint8_t sz);
 extern uint8_t encode_imul_reg_reg_imm(uint8_t *mash_code, uint8_t dest, uint8_t src, uint64_t imm, uint8_t sz, int is_expr);
 extern uint8_t encode_push_reg(uint8_t *mash_code, uint8_t reg, uint8_t sz);
+extern uint8_t encode_push2_pop2_P_b64_v64(uint8_t *mash_code, uint8_t opcode, uint8_t b64, uint8_t v64, uint8_t group_digit, uint8_t W);
 extern uint8_t encode_pop_reg(uint8_t *mash_code, uint8_t reg, uint8_t sz);
 extern uint8_t encode_div_or_idiv_reg(uint8_t* mash_code, uint8_t reg ,uint8_t src, uint8_t sz);
 extern uint8_t encode_group2_reg_imm(uint8_t* mash_code, uint8_t dest, uint8_t opcode, uint8_t group_digit, uint8_t imm, uint8_t sz);
@@ -184,4 +200,15 @@ extern uint8_t encode_avx_reg_reg_mem(uint8_t* mash_code, uint8_t opcode, uint8_
 extern uint8_t encode_avx512_reg_reg_reg(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, uint8_t src2, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W, uint8_t aaa, uint8_t z, uint8_t b);
 extern uint8_t encode_avx512_reg_reg_rm(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, AddrExpr *src2, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W, uint8_t aaa, uint8_t z, uint8_t TypleType, uint8_t B);
 extern uint8_t encode_NDD_APX_reg_reg_reg(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, uint8_t src2, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W, uint8_t aaa, uint8_t z, uint8_t b);
+extern uint8_t encode_NDD_APX_reg_reg_imm(uint8_t* mash_code, uint8_t opcode, uint8_t group_digit, uint8_t dest, uint8_t src1, uint8_t imm, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W, uint8_t aaa, uint8_t z, uint8_t b);
+extern uint8_t encode_NDD_APX_reg_reg_rm(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, AddrExpr *mem, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W, uint8_t aaa, uint8_t z, uint8_t b);
 
+extern uint8_t encode_CCMPcc_reg_reg(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, uint8_t src2, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W, uint8_t aaa, uint8_t z, uint8_t b);
+extern uint8_t encode_CCMPcc_reg_imm(uint8_t* mash_code, uint8_t group, uint8_t dest, uint8_t dfv, uint8_t sz, uint8_t scc, uint32_t imm, uint8_t imm_is_expr);
+extern uint8_t encode_CCMPcc_reg_rm(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t dfv, AddrExpr *mem, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W, uint8_t scc, uint8_t z, uint8_t b);
+extern uint8_t encode_CCMPcc_mem_imm(uint8_t* mash_code, uint8_t group, uint8_t dfv, AddrExpr *mem, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W, uint8_t scc, uint8_t z, uint8_t b, uint64_t imm, uint8_t is_expr, uint8_t sz);
+
+extern uint8_t encode_CTESTcc_reg_reg(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t dfv, uint8_t src2, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W, uint8_t scc, uint8_t z, uint8_t b);
+extern uint8_t encode_CTESTcc_reg_imm( uint8_t* mash_code, uint8_t group, uint8_t dest, uint8_t dfv, uint8_t sz,  uint8_t scc, uint32_t imm, uint8_t imm_is_expr);
+extern uint8_t encode_CTESTcc_reg_rm(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t dfv, AddrExpr *mem, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W, uint8_t scc, uint8_t z, uint8_t b);
+extern uint8_t encode_CTESTcc_mem_imm(uint8_t* mash_code, uint8_t group, uint8_t dfv, AddrExpr *mem, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W, uint8_t scc, uint8_t z, uint8_t b, uint64_t imm, uint8_t is_expr, uint8_t sz);

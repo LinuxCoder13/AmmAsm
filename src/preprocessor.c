@@ -382,13 +382,15 @@ static void FindCallOfMacro(char *buff, macro *macros, int macros_len, int *line
             continue;
         }
 
+        /* I decided to remove skip of comment in order to make error masages more accurate*/
 
-        char *before_skip = buf;
-        buf = SkipComment(buf, line);
+        // char *before_skip = buf;
+        // buf = SkipComment(buf, line);
        
-        for (char *c = before_skip; c < buf && (*c == ' ' || *c == '\t'); c++) {
-            fputc(*c, out);
-        }
+        // for (char *c = before_skip; c < buf && (*c == ' ' || *c == '\t'); c++) {
+        //     fputc(*c, out);
+        // }
+        
         if (!*buf) break;
 
         if (*buf == '"' || *buf == '\'') {

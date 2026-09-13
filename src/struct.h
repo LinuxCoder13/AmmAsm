@@ -37,6 +37,9 @@ typedef struct {
     uint8_t z_reg;    // AVX-512 {z}
     uint8_t brotcast; // AVX-512 {b}
     uint8_t sae;      // AVX-512 {sae}
+    uint8_t nf;       // APX_NDD {nf}
+    uint8_t zu;       // APX_NDD {zu}
+    uint8_t dfv;      // APX {dfv=of,sf,zf,cf}
 
     union {
         uint8_t reg[8];
@@ -69,7 +72,6 @@ typedef struct AST {
     char cmd[16];  // mostly useing for ins
     uint16_t line;
 
-    // sizeof(AST) == 456
     union {     
         struct { Operand  operands[4]; int oper_count; uint64_t pc;} ins; // biggest?
         struct { uint8_t  *data; int data_len; int data_cap; } u8; // 256
@@ -148,6 +150,20 @@ typedef struct {
     const char *name;
     uint8_t opcode;
 } SetccInsn;
+
+typedef struct {
+    const char *name;
+    uint8_t scc;
+    uint8_t reg_reg;
+    uint8_t reg_mem;
+} CCMPccInsn;
+
+typedef struct {
+    const char *name;
+    uint8_t scc;
+    uint8_t reg_reg;
+    uint8_t reg_mem;
+} CTESTccInsn;
 
 typedef struct {
     const char *name;

@@ -116,12 +116,12 @@ AddrExpr parse_addr_expr(const uint8_t* expr, int line) {
     }
 
 
-    if (new.have_index && !(is2arrin(regs64, 8, index) || is2arrin(regs64GP, 8, index))) {
+    if (new.have_index && !(is2arrin(regs64, 8, index) || is2arrin(regs64GP, 8, index) || is2arrin(regs64APX, 16, index))) {
         fprintf(stderr, "AmmAsm:%d: invalid index register name '%s'\n", line, index);
         exit(1);
     }
     
-    if (new.have_base && !(is2arrin(regs64, 8, base) || is2arrin(regs64GP, 8, base))) {
+    if (new.have_base && !(is2arrin(regs64, 8, base) || is2arrin(regs64GP, 8, base) || is2arrin(regs64APX, 16, base))) {
         strncpy(new.label, base, sizeof new.label);
         new.label[sizeof(new.label) - 1] = '\0';
         new.is_rip_rel = 1;
@@ -141,29 +141,50 @@ AddrExpr parse_addr_expr(const uint8_t* expr, int line) {
 }
 
 
-
 // mov reg, imm
 uint8_t encode_mov_reg_imm(uint8_t *mash_code, uint8_t reg_idx, uint64_t imm, uint8_t sz){
-    uint8_t legacy_prefix = 0x66; // 16 bit
+    uint8_t legacy_prefix = sz == 16; // 16 bit
+    uint8_t rex2 = 0xD5;
     uint8_t rex = 0;
     uint8_t opcode = (sz == 8) ? 0xB0 : 0xB8; 
     uint8_t pos = 0;
+    uint8_t is_apx = 0;
 
+    if((reg_idx >> 3) & 1)rex = REX_BASE | REX_B;
 
-
-    if(reg_idx >= 8)rex = REX_BASE | REX_B;
-
-    switch(sz){
+     switch(sz){
         case 8: if(reg_idx >= 4 && reg_idx <= 7) rex |= REX_BASE; break; // spl, bpl, sil, dil
-        case 16: mash_code[pos++] = legacy_prefix; break;
+        case 16: break;
         case 32: break; // none
         case 64: rex |= REX_BASE | REX_W; break;
     }
-    
+
+    /*
+     * APX: r16-r31.
+     *
+     * The old REX_BASE bit cannot survive here because
+     * REX2 reuses that bit position for R4.
+     */
+
+    if((reg_idx >> 4) & 1){
+        
+        if(CHECK_REX_BASE(rex))
+             rex = CLEAR_REX_BASE(rex);
+
+        is_apx=1;
+        rex |= REX2_B4;
+    }
 
     opcode += (reg_idx & 7);
 
-    if(rex)mash_code[pos++] = rex;
+    if(legacy_prefix) mash_code[pos++] = 0x66;
+
+    if(is_apx){
+        mash_code[pos++] = rex2;
+        mash_code[pos++] = rex;
+    }
+    else {if(rex)mash_code[pos++] = rex;}
+
     mash_code[pos++] = opcode;
 
     switch (sz){
@@ -179,15 +200,17 @@ uint8_t encode_mov_reg_imm(uint8_t *mash_code, uint8_t reg_idx, uint64_t imm, ui
 // mov reg, reg
 uint8_t encode_mov_reg_reg(uint8_t *mash_code, uint8_t dest_idx, uint8_t src_idx, uint8_t sz){
     uint8_t legacy_prefix = 0x66; // 16 bit 
+    uint8_t rex2 = 0xD5;
     uint8_t rex = 0;
     uint8_t opcode = (sz == 8) ? 0x88 : 0x89;
     uint8_t modrm = 0;
     uint8_t pos = 0;
+    uint8_t is_apx = 0;
 
 
     
-    if(dest_idx >= 8)rex |=  REX_BASE | REX_B;
-    if(src_idx >= 8)rex |= REX_BASE | REX_R;
+    if((dest_idx >> 3) & 1)rex |=  REX_BASE | REX_B;
+    if((src_idx >> 3) & 1)rex |= REX_BASE | REX_R;
 
     
 
@@ -199,7 +222,20 @@ uint8_t encode_mov_reg_reg(uint8_t *mash_code, uint8_t dest_idx, uint8_t src_idx
                
     }
 
-    if(rex)mash_code[pos++] = rex;
+    if((dest_idx >> 4) & 1 || (src_idx >> 4) & 1){
+        if(CHECK_REX_BASE(rex)) rex = CLEAR_REX_BASE(rex);
+        is_apx=1;
+        
+        if((dest_idx >> 4) & 1)rex |= REX2_B4;
+        if((src_idx >> 4)  & 1)rex |= REX2_R4;
+    }
+
+
+    if(is_apx){
+        mash_code[pos++] = rex2;
+        mash_code[pos++] = rex;
+    }
+    else {if(rex)mash_code[pos++] = rex;}
     mash_code[pos++] = opcode;
     // mod = 0b11 means that this operation take place between 2 regs (no memory used)
     mash_code[pos++] = emit_modrm(0b11, src_idx, dest_idx);
@@ -209,18 +245,20 @@ uint8_t encode_mov_reg_reg(uint8_t *mash_code, uint8_t dest_idx, uint8_t src_idx
 
 uint8_t encode_two_byte_opcode_reg(uint8_t *mash_code, uint8_t opcode, uint8_t dest, uint8_t src, uint8_t destsz, uint8_t prefix){
     uint8_t legacy_prefix = 0x66;
+    uint8_t rex2 = 0xD5;
     uint8_t rex = 0;
     uint8_t modrm = 0;
     int pos = 0;
+    uint8_t is_apx = 0;
 
     uint8_t rm = src;
     uint8_t reg = dest;
+      
     
-
+    if (src >= 4 && src <= 7) rex |= REX_BASE;
+    if((reg >> 3) & 1) rex |= REX_BASE | REX_R;
+    if((rm  >> 3) & 1) rex |= REX_BASE | REX_B;
     
-    
-    if((src >= 4) && (src <= 7)) rex |= REX_BASE;
-
     switch(destsz){
         case 128: break; // none
         case 64: rex |= REX_BASE | REX_W; break;
@@ -229,11 +267,28 @@ uint8_t encode_two_byte_opcode_reg(uint8_t *mash_code, uint8_t opcode, uint8_t d
         case 8: break; // no return as we have SETcc
     }   
 
+    if ((reg >> 4) & 1 || (rm >> 4) & 1) {
+        if (CHECK_REX_BASE(rex))rex = CLEAR_REX_BASE(rex);
+        is_apx = 1;
+
+        if ((reg >> 4) & 1) rex |= REX2_R4;
+        if ((rm >> 4) & 1) rex |= REX2_B4;
+        rex |= REX2_M0;
+    }
+
     modrm = emit_modrm(0b11, reg, rm);
 
-    if(prefix) mash_code[pos++] = prefix;
-    if(rex) mash_code[pos++] = rex;
-    mash_code[pos++] = 0x0F;
+    if(is_apx){
+        if(prefix == 0x66) mash_code[pos++] = prefix;
+        mash_code[pos++] = rex2;
+        mash_code[pos++] = rex;
+    }
+    else {
+        if(prefix) mash_code[pos++] = prefix;
+        if(rex) mash_code[pos++] = rex;
+        mash_code[pos++] = 0x0F;
+    }
+    
     mash_code[pos++] = opcode;
     mash_code[pos++] = modrm;
     
@@ -358,13 +413,13 @@ Modrm_SIB gen_modrm_sib(AddrExpr *expr, uint8_t reg){
     return gen_modrm_sib_ex(expr, reg, 0);
 }
 
-// 2 the most powerfull encoders in AmmAsm!!!!!!!!!!!!!!!!!!
-
 // inst reg, [addr] | inst [addr], reg/imm
 uint8_t encode_inst_rm_rm(uint8_t *mash_code, uint8_t reg, AddrExpr *expr, uint8_t sz,  uint8_t opcode, uint8_t imm_sz, uint64_t imm){
     uint8_t legacy_prefix = 0x66; // 16 bit
+    uint8_t rex2 = 0xD5;
     uint8_t rex = 0;
     int pos = 0;
+    uint8_t is_apx = 0;
 
     switch(sz){
         case 64: rex |= REX_BASE | REX_W; break;
@@ -372,6 +427,21 @@ uint8_t encode_inst_rm_rm(uint8_t *mash_code, uint8_t reg, AddrExpr *expr, uint8
         case 16: mash_code[pos++] = legacy_prefix; break;
         case 8:  if(reg >= 4 && imm_sz == 0) rex |= REX_BASE; break;
     }
+    
+    if((reg >> 3) & 1)         rex |= REX_R;
+    if((expr->base >> 3) & 1)  rex |= REX_B;
+    if((expr->index >> 3) & 1) rex |= REX_X;
+
+    if ((reg >> 4) & 1 || (expr->base  >> 4) & 1 || (expr->index >> 4) & 1) {
+        if (CHECK_REX_BASE(rex))rex = CLEAR_REX_BASE(rex);
+        is_apx = 1;
+
+        if ((reg >> 4) & 1) rex |= REX2_R4;
+        if ((expr->base >> 4) & 1) rex |= REX2_B4;
+        if ((expr->index >> 4) & 1) rex |= REX2_X4;
+    }
+
+    
     /*  
     Addresing | mod | r/m| SIB?| disp? |
     |---------|-----|----|-----|-------|     
@@ -389,14 +459,16 @@ uint8_t encode_inst_rm_rm(uint8_t *mash_code, uint8_t reg, AddrExpr *expr, uint8
             [DONE] :-)
     */
 
-    if(reg >= 8)   rex |= REX_R;
-    if(expr->base >= 8)  rex |= REX_B;
-    if(expr->index >= 8) rex |= REX_X;
-
-
     Modrm_SIB out = gen_modrm_sib(expr, reg);
     
-    if(rex != 0) mash_code[pos++] = rex | REX_BASE;
+
+    if(is_apx){
+        mash_code[pos++] = rex2;
+        mash_code[pos++] = rex;
+    }
+    else {
+        if(rex != 0) mash_code[pos++] = rex | REX_BASE;  
+    }
     mash_code[pos++] = opcode;
     mash_code[pos++] = out.modrm;
     if(out.have_sib) mash_code[pos++] = out.sib;
@@ -424,26 +496,45 @@ uint8_t encode_inst_rm_rm(uint8_t *mash_code, uint8_t reg, AddrExpr *expr, uint8
 // 0F B6/B7/BE/BF.......
 uint8_t encode_inst_reg_rm2( uint8_t *machine_code, uint8_t opcode2, uint8_t reg, AddrExpr *expr, uint8_t dst_sz, uint8_t prefix)
 {
+    uint8_t rex2 = 0xD5;
     uint8_t rex = 0;
     int pos = 0;
+    uint8_t is_apx = 0;
 
     switch (dst_sz) {
-        case 64: rex |= REX_W; break;
+        case 64: rex |= REX_BASE | REX_W; break;
         case 32: break;
         case 16: machine_code[pos++] = 0x66; break;
         case 8:  break;
     }
 
-    if (reg >= 8)         rex |= REX_R;
-    if (expr->base >= 8)  rex |= REX_B;
-    if (expr->index >= 8) rex |= REX_X;
+    if((reg >> 3) & 1)         rex |= REX_R;
+    if((expr->base >> 3) & 1)  rex |= REX_B;
+    if((expr->index >> 3) & 1) rex |= REX_X;
+
+    if ((reg >> 4) & 1 || (expr->base  >> 4) & 1 || (expr->index >> 4) & 1) {
+        if (CHECK_REX_BASE(rex))rex = CLEAR_REX_BASE(rex);
+        is_apx = 1;
+
+        if ((reg >> 4) & 1) rex |= REX2_R4;
+        if ((expr->base >> 4) & 1) rex |= REX2_B4;
+        if ((expr->index >> 4) & 1) rex |= REX2_X4;
+        rex |= REX2_M0;
+    }
 
     Modrm_SIB out = gen_modrm_sib(expr, reg);
 
-    if (prefix)machine_code[pos++] = prefix;
-    if (rex) machine_code[pos++] = rex | REX_BASE;
+    if(is_apx){
+        if(prefix == 0x66 || prefix == 0xF3) machine_code[pos++] = prefix;
+        machine_code[pos++] = rex2;
+        machine_code[pos++] = rex;
+    }
+    else {
+        if(prefix) machine_code[pos++] = prefix;
+        if(rex) machine_code[pos++] = rex;
+        machine_code[pos++] = 0x0F;
+    }
 
-    machine_code[pos++] = 0x0F;
     machine_code[pos++] = opcode2;
     machine_code[pos++] = out.modrm;
 
@@ -468,37 +559,43 @@ uint8_t encode_inst_reg_rm2( uint8_t *machine_code, uint8_t opcode2, uint8_t reg
 
 uint8_t encode_group1_imm( uint8_t *machine_code, uint8_t reg, uint32_t imm, uint8_t sz, uint8_t group_digit, uint8_t is_expr)
 {
+    uint8_t rex2 = 0xD5;
     uint8_t rex = 0;
     uint8_t opcode;
     int pos = 0;
+    uint8_t is_apx = 0;
 
-    if (reg >= 8)  rex |= REX_BASE | REX_B;
+    if ((reg >> 3) & 1)  rex |= REX_BASE | REX_B;
 
     switch (sz) {
-        case 8:
-            if (reg >= 4 && reg <= 7)
-                rex |= REX_BASE;
-            break;
-        case 16:
-            machine_code[pos++] = 0x66;
-            break;
-        case 32:
-            break;
-        case 64:
-            rex |= REX_BASE | REX_W;
-            break;
+        case 8: if (reg >= 4 && reg <= 7) rex |= REX_BASE; break;
+        case 16:machine_code[pos++] = 0x66;break;
+        case 32:break;
+        case 64:rex |= REX_BASE | REX_W;break;
+    }
+
+    if ((reg >> 4) & 1) {
+        if (CHECK_REX_BASE(rex))rex = CLEAR_REX_BASE(rex);
+        is_apx = 1;
+        if ((reg >> 4) & 1) rex |= REX2_B4;
     }
 
     if (sz == 8) opcode = 0x80;
-    else if (!is_expr &&
-             (int32_t)imm >= -128 &&
-             (int32_t)imm <= 127) {
+    else if (!is_expr && (int32_t)imm >= -128 && (int32_t)imm <= 127) {
         opcode = 0x83;
     }
     else opcode = 0x81;
     
 
-    if (rex) machine_code[pos++] = rex;
+    if(is_apx){
+        machine_code[pos++] = rex2;
+        machine_code[pos++] = rex;
+    }
+
+    else{
+        if (rex) machine_code[pos++] = rex;     
+    } 
+
     machine_code[pos++] = opcode;
     machine_code[pos++] = emit_modrm( 0b11, group_digit, reg);
 
@@ -517,17 +614,73 @@ uint8_t encode_group1_imm( uint8_t *machine_code, uint8_t reg, uint32_t imm, uin
     return pos;
 }
 
+uint8_t encode_APX_group1_imm(uint8_t* mash_code, uint8_t group, uint8_t dest, uint8_t src1, uint8_t sz, uint8_t is_ndd, uint8_t nf, uint32_t imm, uint8_t imm_is_expr){
+    uint8_t opcode;
+    uint8_t pos = 0;
+
+    if (sz == 8) opcode = 0x80;
+    else if (!imm_is_expr && (int32_t)imm >= -128 && (int32_t)imm <= 127) opcode = 0x83;
+    else opcode = 0x81;
+
+    if(sz == 8 &&  !((int8_t)imm >= INT8_MIN && (int8_t)imm <= INT8_MAX))     return 0; 
+    if(sz == 16 && !((int16_t)imm >= INT16_MIN && (int16_t) imm <= INT16_MAX)) return 0;
+                
+    pos = encode_NDD_APX_reg_reg_reg(mash_code, opcode, 
+        group,
+        is_ndd ? dest : src1,
+        is_ndd ? src1 : dest,
+        EVEX_MAP_APX,
+        0,
+        sz == 16 ? EVEX_PP_66 : EVEX_PP_NONE , sz == 64, nf , EVEX_Z0, is_ndd);
+
+            
+    if (opcode == 0x83)  mash_code[pos++] = (uint8_t)imm;
+    else if (sz == 8) mash_code[pos++] = (uint8_t)imm;
+    else if (sz == 16) {*(uint16_t *)(mash_code + pos) = (uint16_t)imm; pos += 2;}
+    else {*(uint32_t *)(mash_code + pos) = imm; pos += 4;}
+    return pos;
+}
+
+uint8_t encode_APX_group1_reg_mem_imm(uint8_t* mash_code,uint8_t group, uint8_t dest, AddrExpr mem, uint8_t sz, uint8_t is_ndd, uint8_t nf, uint32_t imm, uint8_t imm_is_expr){
+    uint8_t opcode;
+    uint8_t pos = 0;
+
+    if (sz == 8) opcode = 0x80;
+    else if (!imm_is_expr && (int32_t)imm >= -128 && (int32_t)imm <= 127) opcode = 0x83;
+    else opcode = 0x81;
+
+    if(sz == 8 &&  !((int8_t)imm >= INT8_MIN && (int8_t)imm <= INT8_MAX))     return 0; 
+    if(sz == 16 && !((int16_t)imm >= INT16_MIN && (int16_t) imm <= INT16_MAX)) return 0;
+                
+    pos = encode_NDD_APX_reg_reg_rm(mash_code, opcode, 
+        group,
+        dest,
+        &mem,
+        EVEX_MAP_APX,
+        0,
+        sz == 16 ? EVEX_PP_66 : EVEX_PP_NONE , sz == 64, nf , EVEX_Z0, is_ndd);
+
+            
+    if (opcode == 0x83)  mash_code[pos++] = (uint8_t)imm;
+    else if (sz == 8) mash_code[pos++] = (uint8_t)imm;
+    else if (sz == 16) {*(uint16_t *)(mash_code + pos) = (uint16_t)imm; pos += 2;}
+    else {*(uint32_t *)(mash_code + pos) = imm; pos += 4;}
+    return pos;
+}
+
 uint8_t encode_group1_reg_reg(uint8_t *mash_code, uint8_t dest, uint8_t src, uint8_t sz, uint8_t opcode){
     uint8_t legacy_prefix = 0x66;  // 16 bit
+    uint8_t rex2 = 0xD5;
     uint8_t rex = 0;
     uint8_t modrm = 0;
     uint8_t pos = 0;
+    uint8_t is_apx = 0;
 
     uint8_t rm  = dest;
     uint8_t reg = src;
 
-    if(src >= 8)rex |= REX_BASE | REX_B;
-    if(dest >= 8)rex |= REX_BASE | REX_R;
+    if((reg  >> 3) & 1)rex |= REX_BASE | REX_B;
+    if((rm >> 3) & 1)rex |= REX_BASE | REX_R;
 
 
     switch(sz){
@@ -537,9 +690,26 @@ uint8_t encode_group1_reg_reg(uint8_t *mash_code, uint8_t dest, uint8_t src, uin
         case 64: rex |= REX_BASE | REX_W; break;
     }
 
+    if((rm >> 4) & 1 || (reg >> 4) & 1){
+        if(CHECK_REX_BASE(rex)) rex = CLEAR_REX_BASE(rex);
+        is_apx=1;
+        
+        if((reg >> 4) & 1)rex |= REX2_B4;
+        if((rm >> 4)  & 1)rex |= REX2_R4;
+    }
+
+
     modrm = emit_modrm(0b11, rm , reg);
 
-    if(rex)mash_code[pos++] = rex;
+    if(is_apx){
+        mash_code[pos++] = rex2;
+        mash_code[pos++] = rex;
+    }
+
+    else{
+        if (rex) mash_code[pos++] = rex;     
+    } 
+
     mash_code[pos++] = opcode;
     mash_code[pos++] = modrm;
 
@@ -548,14 +718,16 @@ uint8_t encode_group1_reg_reg(uint8_t *mash_code, uint8_t dest, uint8_t src, uin
 
 uint8_t encode_imul_reg(uint8_t *mash_code, uint8_t reg, uint8_t sz){
     uint8_t legacy_prefix = 0x66;
+    uint8_t rex2 = 0xD5;
     uint8_t rex = 0;
     uint8_t opcode = (sz == 8) ? 0xF6 : 0xF7;
     uint8_t modrm = 0;
     uint8_t pos = 0;
+    uint8_t is_apx = 0;
 
     uint8_t rm = reg;
 
-    if(reg >= 8)rex |= REX_BASE | REX_B;
+    if((reg >> 3) & 1)rex |= REX_BASE | REX_B;
 
     
     // if sz == 64: result of imul is in RDX:RAX
@@ -570,9 +742,22 @@ uint8_t encode_imul_reg(uint8_t *mash_code, uint8_t reg, uint8_t sz){
         case 64: rex |= REX_BASE | REX_W; break;
     }
 
+    if((rm >> 4) & 1 || (reg >> 4) & 1){
+        if(CHECK_REX_BASE(rex)) rex = CLEAR_REX_BASE(rex);
+        is_apx=1;
+        if((rm >> 4)  & 1)rex |= REX2_B4;
+    }
+
     modrm = emit_modrm(0b11, 0b101, rm);
 
-    if(rex) mash_code[pos++] = rex;
+    if(is_apx){
+        mash_code[pos++] = rex2;
+        mash_code[pos++] = rex;
+    }
+
+    else{
+        if (rex) mash_code[pos++] = rex;     
+    } 
     mash_code[pos++] = opcode;
     mash_code[pos++] = modrm;
 
@@ -582,19 +767,19 @@ uint8_t encode_imul_reg(uint8_t *mash_code, uint8_t reg, uint8_t sz){
 uint8_t encode_imul_reg_reg(uint8_t *mash_code, uint8_t dest, uint8_t src, uint8_t sz){
     // Warn: imul r8, r8 does not exists
     uint8_t legacy_prefix = 0x66;
+    uint8_t rex2 = 0xD5;
     uint8_t rex = 0;
     uint8_t modrm = 0;
     uint8_t opc = 0x0F; // Two-byte escape opcode
     uint8_t opcode = 0xAF;
     int pos = 0;
+    uint8_t is_apx = 0;
 
     uint8_t rm = dest;
     uint8_t reg = src;
-    
-    if(dest >= 8) rex |= REX_BASE | REX_B;
 
-
-    if(src >= 8)rex |= REX_BASE | REX_R;
+    if((rm >> 3) & 1) rex |= REX_BASE | REX_B;
+    if((reg  >> 3) & 1)rex |= REX_BASE | REX_R;
 
     switch(sz){
         case 8:  {fprintf(stderr, "AmmAasm: invalid instruction 'imul r8, r8'\n"); exit(1); } break;
@@ -603,10 +788,27 @@ uint8_t encode_imul_reg_reg(uint8_t *mash_code, uint8_t dest, uint8_t src, uint8
         case 64: rex |= REX_BASE | REX_W;
     }
 
+    if((rm >> 4) & 1 || (reg >> 4) & 1){
+        if(CHECK_REX_BASE(rex)) rex = CLEAR_REX_BASE(rex);
+        is_apx=1;
+        
+        if((rm >> 4) & 1)rex |= REX2_B4;
+        if((reg >> 4)  & 1)rex |= REX2_R4;
+        rex |= REX2_M0;
+    }
+
     modrm = emit_modrm(0b11, reg, rm);
 
-    if(rex) mash_code[pos++] = rex;
-    mash_code[pos++] = opc;
+    if(is_apx){
+        mash_code[pos++] = rex2;
+        mash_code[pos++] = rex;
+    }
+
+    else{
+        if (rex) mash_code[pos++] = rex; 
+        mash_code[pos++] = opc;    
+    } 
+
     mash_code[pos++] = opcode;
     mash_code[pos++] = modrm;
 
@@ -616,17 +818,18 @@ uint8_t encode_imul_reg_reg(uint8_t *mash_code, uint8_t dest, uint8_t src, uint8
 
 uint8_t encode_imul_reg_reg_imm(uint8_t *mash_code, uint8_t dest, uint8_t src, uint64_t imm, uint8_t sz, int is_expr) {
     uint8_t legacy_prefix = 0x66;
+    uint8_t rex2 = 0xD5;
     uint8_t rex = 0;
     uint8_t modrm = 0;
     uint8_t opcode;
     int pos = 0;
+    uint8_t is_apx = 0;
 
     uint8_t rm = src;
     uint8_t reg = dest; 
 
-    if (dest >= 8) rex |= REX_BASE | REX_R;
-
-    if (src >= 8) rex |= REX_BASE | REX_B;
+    if ((reg >> 3) & 1) rex |= REX_BASE | REX_R;
+    if ((rm  >> 3) & 1) rex |= REX_BASE | REX_B;
 
 
     switch(sz) {
@@ -656,11 +859,28 @@ uint8_t encode_imul_reg_reg_imm(uint8_t *mash_code, uint8_t dest, uint8_t src, u
                 opcode = 0x69;
             }
             break;
+
+        case 8: return 0;
+    }
+
+    if((rm >> 4) & 1 || (reg >> 4) & 1){
+        if(CHECK_REX_BASE(rex)) rex = CLEAR_REX_BASE(rex);
+        is_apx=1;
+        
+        if((rm >> 4) & 1)rex |= REX2_B4;
+        if((reg >> 4)  & 1)rex |= REX2_R4;
     }
 
     modrm = emit_modrm(0b11, reg, rm);
 
-    if (rex) mash_code[pos++] = rex;
+    if(is_apx){
+        mash_code[pos++] = rex2;
+        mash_code[pos++] = rex;
+    }
+
+    else{
+        if (rex) mash_code[pos++] = rex;     
+    } 
     mash_code[pos++] = opcode;
     mash_code[pos++] = modrm;
 
@@ -680,16 +900,17 @@ uint8_t encode_imul_reg_reg_imm(uint8_t *mash_code, uint8_t dest, uint8_t src, u
 
 uint8_t encode_div_or_idiv_reg(uint8_t* mash_code, uint8_t reg ,uint8_t src, uint8_t sz){
     uint8_t legacy_prefix = 0x66;
+    uint8_t rex2 = 0xD5;
     uint8_t rex = 0;
     uint8_t opcode = sz == 8 ? 0xF6 : 0xF7;
     uint8_t modrm = 0;
     int pos = 0;
+    uint8_t is_apx = 0;
 
     uint8_t rm = src;
 
-    if(src >= 8)rex |= REX_BASE | REX_B;
+    if((rm >> 3) & 1)rex |= REX_BASE | REX_B;
     
-
     switch(sz){
         case 8 : { if(src >= 4 && src <= 7){ rex |= REX_BASE;} break; } // spl, bpl, sil, dil
         case 16: mash_code[pos++] = legacy_prefix; break;
@@ -697,9 +918,23 @@ uint8_t encode_div_or_idiv_reg(uint8_t* mash_code, uint8_t reg ,uint8_t src, uin
         case 64: rex |= REX_BASE | REX_W; break;
     }
 
+    if((rm >> 4) & 1 || (reg >> 4) & 1){
+        if(CHECK_REX_BASE(rex)) rex = CLEAR_REX_BASE(rex);
+        is_apx=1;
+        if((rm >> 4)  & 1)rex |= REX2_B4;
+    }
+
     modrm = emit_modrm(0b11, reg, rm);
 
-    if(rex) mash_code[pos++] = rex;
+    if(is_apx){
+        mash_code[pos++] = rex2;
+        mash_code[pos++] = rex;
+    }
+
+    else{
+        if (rex) mash_code[pos++] = rex;     
+    } 
+
     mash_code[pos++] = opcode;
     mash_code[pos++] = modrm;  
     return pos;
@@ -709,14 +944,16 @@ uint8_t encode_div_or_idiv_reg(uint8_t* mash_code, uint8_t reg ,uint8_t src, uin
 
 uint8_t encode_push_reg(uint8_t *mash_code, uint8_t reg, uint8_t sz){
     uint8_t legacy_prefix = 0x66;
+    uint8_t rex2 = 0xD5;
     uint8_t rex = 0;
     uint8_t opcode = 0x50;
    // uint8_t opcode2[] = {0x0F, 0xA0};
     int pos = 0;
+    uint8_t is_apx = 0;
 
     uint8_t src = reg;
 
-    if(reg >= 8)rex |= REX_BASE | REX_B;
+    if((src >> 3) & 1)rex |= REX_BASE | REX_B;
 
     switch(sz){
         case 8: return 0;
@@ -725,22 +962,38 @@ uint8_t encode_push_reg(uint8_t *mash_code, uint8_t reg, uint8_t sz){
         case 64: break; // no need rex.w
     }
 
+    if((src >> 4) & 1){
+        if(CHECK_REX_BASE(rex)) rex = CLEAR_REX_BASE(rex);
+        is_apx=1;
+        if((src >> 4)  & 1)rex |= REX2_B4;
+    }
+
     opcode += (src & 7);
 
-    if(rex) mash_code[pos++] = rex;
+    if(is_apx){
+        mash_code[pos++] = rex2;
+        mash_code[pos++] = rex;
+    }
+
+    else{
+        if (rex) mash_code[pos++] = rex;     
+    } 
+
     mash_code[pos++] = opcode;
     return pos;
 }
 
 uint8_t encode_pop_reg(uint8_t *mash_code, uint8_t reg, uint8_t sz){
     uint8_t legacy_prefix = 0x66;
+    uint8_t rex2 = 0xD5;
     uint8_t rex = 0;
     uint8_t opcode = 0x58;
     int pos = 0;
+    uint8_t is_apx = 0;
 
     uint8_t src = reg;
 
-    if(reg >= 8)rex |= REX_BASE | REX_B;
+    if((src >> 3) & 1)rex |= REX_BASE | REX_B;
 
 
     switch(sz){
@@ -750,36 +1003,108 @@ uint8_t encode_pop_reg(uint8_t *mash_code, uint8_t reg, uint8_t sz){
         case 64: break; // no need rex.w
     }
 
+    if((src >> 4) & 1){
+        if(CHECK_REX_BASE(rex)) rex = CLEAR_REX_BASE(rex);
+        is_apx=1;
+        if((src >> 4)  & 1)rex |= REX2_B4;
+    }
+
     opcode += (src & 7);
 
-    if(rex) mash_code[pos++] = rex;
+    if(is_apx){
+        mash_code[pos++] = rex2;
+        mash_code[pos++] = rex;
+    }
+
+    else{
+        if (rex) mash_code[pos++] = rex;     
+    } 
+
     mash_code[pos++] = opcode;
     return pos;
+}
+
+// via EVEX engine
+uint8_t encode_push2_pop2_P_b64_v64(uint8_t *mash_code, uint8_t opcode, uint8_t b64, uint8_t v64, uint8_t group_digit, uint8_t W){
+    uint8_t prefix = 0x62; // AmmAsm is imortal
+    uint8_t P0 = 0;
+    uint8_t P1 = 0;
+    uint8_t P2 = 0;
+    uint8_t modrm = 0;
+    int pos = 0;
+
+
+    P0 |= EVEX_R((b64 >> 3) & 1);
+    P0 |= EVEX_X(0);
+    P0 |= EVEX_B((v64 >> 3) & 1);
+    P0 |= EVEX_ER((b64 >> 4) & 1);
+    P0 |= EVEX_B4((v64 >> 4) & 1);
+    P0 |= EVEX_MMM(EVEX_MAP_APX);
+    
+    P1 |= EVEX_W(W);
+    P1 |= EVEX_VVVV(b64);
+    P1 |= EVEX_X4(0);
+    
+    P1 |= EVEX_PP(EVEX_PP_NONE);
+
+    P2 |= EVEX_Z(0);
+    P2 |= EVEX_LL(0); 
+    P2 |= EVEX_BRODCAST(1);
+    P2 |= EVEX_EV(!(b64 >> 4) & 1); 
+    P2 |= EVEX_A(EVEX_K0);
+
+    modrm = emit_modrm(0b11, group_digit, v64);
+
+    mash_code[pos++] = prefix;
+    mash_code[pos++] = P0;
+    mash_code[pos++] = P1;
+    mash_code[pos++] = P2;
+    mash_code[pos++] = opcode;
+    mash_code[pos++] = modrm;
+    return pos;
+
 }
 
 // test reg, reg
 uint8_t encode_test_reg_reg(uint8_t *mash_code, uint8_t dest_idx, uint8_t src_idx, uint8_t sz){
     uint8_t legacy_prefix = 0x66; // 16 bit 
+    uint8_t rex2 = 0xD5;
     uint8_t rex = 0;
     uint8_t opcode = (sz == 8) ? 0x84 : 0x85;
     uint8_t pos = 0;
+    uint8_t is_apx = 0;
 
     uint8_t rm = dest_idx;
     uint8_t reg = src_idx;
     
-    if(dest_idx >= 8)rex |= REX_BASE | REX_B;
-    if(src_idx >= 8)rex |= REX_BASE | REX_R;
+    if(( rm >> 3) & 1)rex |= REX_BASE | REX_B;
+    if((reg >> 3) & 1)rex |= REX_BASE | REX_R;
 
 
     switch (sz){
-        case 8: if((dest_idx >= 4 && dest_idx <= 7) || (src_idx >= 4 && src_idx <= 7)) rex |= REX_BASE; break;// spl, bpl, sil, dil
+        case 8: if((rm >= 4 && rm <= 7) || (reg >= 4 && reg <= 7)) rex |= REX_BASE; break;// spl, bpl, sil, dil
         case 16: mash_code[pos++] = legacy_prefix; break;
         case 32: break;           
         case 64: rex |= REX_BASE | REX_W; break;            
                
     }
 
-    if(rex)mash_code[pos++] = rex;
+    if((rm >> 4) & 1 || (reg >> 4) & 1){
+        if(CHECK_REX_BASE(rex)) rex = CLEAR_REX_BASE(rex);
+        is_apx=1;
+        
+        if((rm >> 4) & 1)rex |= REX2_B4;
+        if((reg >> 4)  & 1)rex |= REX2_R4;
+    }
+
+    if(is_apx){
+        mash_code[pos++] = rex2;
+        mash_code[pos++] = rex;
+    }
+
+    else{
+        if (rex) mash_code[pos++] = rex;     
+    } 
     mash_code[pos++] = opcode;
     mash_code[pos++] = emit_modrm(0b11, reg, rm);
 
@@ -788,15 +1113,17 @@ uint8_t encode_test_reg_reg(uint8_t *mash_code, uint8_t dest_idx, uint8_t src_id
 
 uint8_t encode_group2_reg_imm(uint8_t* mash_code, uint8_t dest, uint8_t opcode, uint8_t group_digit, uint8_t imm, uint8_t sz){
     uint8_t legacy_prefix = 0x66;
+    uint8_t rex2 = 0xD5;
     uint8_t rex = 0;
     uint8_t modrm = 0;
     uint8_t pos = 0;
+    uint8_t is_apx = 0;
 
     uint8_t rm = dest;
-    if(dest >= 8)rex |= REX_BASE | REX_B;
+    if((rm >> 3) & 1)rex |= REX_BASE | REX_B;
 
     switch(sz){
-        case 8 : { if((dest >= 4 && dest <= 7)){ rex |= REX_BASE;} break; } // spl, bpl, sil, dil
+        case 8 : { if((rm >= 4 && rm <= 7)){ rex |= REX_BASE;} break; } // spl, bpl, sil, dil
         case 16: mash_code[pos++] = legacy_prefix; break;
         case 32: break;
         case 64: rex |= REX_BASE | REX_W; break;
@@ -804,7 +1131,21 @@ uint8_t encode_group2_reg_imm(uint8_t* mash_code, uint8_t dest, uint8_t opcode, 
 
     modrm = emit_modrm(0b11, group_digit, rm);
 
-    if(rex) mash_code[pos++] = rex;
+    if((rm >> 4) & 1){
+        if(CHECK_REX_BASE(rex)) rex = CLEAR_REX_BASE(rex);
+        is_apx=1;
+    
+        if((rm >> 4) & 1)rex |= REX2_B4;
+    }
+
+    if(is_apx){
+        mash_code[pos++] = rex2;
+        mash_code[pos++] = rex;
+    }
+
+    else{
+        if (rex) mash_code[pos++] = rex;     
+    } 
     mash_code[pos++] = opcode;
     mash_code[pos++] = modrm;
     if(imm != 1) mash_code[pos++] = imm;
@@ -814,16 +1155,18 @@ uint8_t encode_group2_reg_imm(uint8_t* mash_code, uint8_t dest, uint8_t opcode, 
 
 uint8_t encode_group2_reg_cl(uint8_t* mash_code, uint8_t dest, uint8_t opcode, uint8_t group_digit, uint8_t sz){
     uint8_t legacy_prefix = 0x66;
+    uint8_t rex2 = 0xD5;
     uint8_t rex = 0;
     uint8_t modrm = 0;
     uint8_t pos = 0;
+    uint8_t is_apx = 0;
 
     uint8_t rm = dest;
-    if(dest >= 8)rex |= REX_BASE | REX_B;
+    if((rm >> 3) & 1)rex |= REX_BASE | REX_B;
 
 
     switch(sz){
-        case 8 : { if((dest >= 4 && dest <= 7)){ rex |= REX_BASE;} break; } // spl, bpl, sil, dil
+        case 8 : { if((rm >= 4 && rm <= 7)){ rex |= REX_BASE;} break; } // spl, bpl, sil, dil
         case 16: mash_code[pos++] = legacy_prefix; break;
         case 32: break;
         case 64: rex |= REX_BASE | REX_W; break;
@@ -831,7 +1174,21 @@ uint8_t encode_group2_reg_cl(uint8_t* mash_code, uint8_t dest, uint8_t opcode, u
 
     modrm = emit_modrm(0b11, group_digit, rm);
 
-    if(rex) mash_code[pos++] = rex;
+    if((rm >> 4) & 1){
+        if(CHECK_REX_BASE(rex)) rex = CLEAR_REX_BASE(rex);
+        is_apx=1;
+        
+        if((rm >> 4) & 1)rex |= REX2_B4;
+    }
+
+    if(is_apx){
+        mash_code[pos++] = rex2;
+        mash_code[pos++] = rex;
+    }
+
+    else{
+        if (rex) mash_code[pos++] = rex;     
+    } 
     mash_code[pos++] = opcode;
     mash_code[pos++] = modrm;
 
@@ -841,16 +1198,18 @@ uint8_t encode_group2_reg_cl(uint8_t* mash_code, uint8_t dest, uint8_t opcode, u
 
 uint8_t encode_group3_reg(uint8_t* mash_code, uint8_t dest, uint8_t opcode, uint8_t group_digit, uint8_t sz){
     uint8_t legacy_prefix = 0x66;
+    uint8_t rex2 = 0xD5;
     uint8_t rex = 0;
     uint8_t modrm = 0;
     uint8_t pos = 0;
+    uint8_t is_apx = 0;
 
     uint8_t rm = dest;
 
-    if(dest >= 8) rex |= REX_BASE | REX_B;
+    if((rm >> 3) & 1) rex |= REX_BASE | REX_B;
 
     switch(sz){
-        case 8 : { if((dest >= 4 && dest <= 7)){ rex |= REX_BASE;} break; } // spl, bpl, sil, dil
+        case 8 : { if((rm >= 4 && rm <= 7)){ rex |= REX_BASE;} break; } // spl, bpl, sil, dil
         case 16: mash_code[pos++] = legacy_prefix; break;
         case 32: break;
         case 64: rex |= REX_BASE | REX_W; break;
@@ -858,7 +1217,22 @@ uint8_t encode_group3_reg(uint8_t* mash_code, uint8_t dest, uint8_t opcode, uint
 
     modrm = emit_modrm(0b11, group_digit, rm);
 
-    if(rex) mash_code[pos++] = rex;
+    if((rm >> 4) & 1){
+        if(CHECK_REX_BASE(rex)) rex = CLEAR_REX_BASE(rex);
+        is_apx=1;
+        
+        if((rm >> 4) & 1)rex |= REX2_B4;
+    }
+
+    if(is_apx){
+        mash_code[pos++] = rex2;
+        mash_code[pos++] = rex;
+    }
+
+    else{
+        if (rex) mash_code[pos++] = rex;     
+    } 
+
     mash_code[pos++] = opcode;
     mash_code[pos++] = modrm;
 
@@ -867,17 +1241,19 @@ uint8_t encode_group3_reg(uint8_t* mash_code, uint8_t dest, uint8_t opcode, uint
 
 uint8_t encode_test_reg_imm(uint8_t *mash_code, uint8_t reg_idx, uint64_t imm, uint8_t sz){
     uint8_t legacy_prefix = 0x66; // 16 bit
+    uint8_t rex2 = 0xD5;
     uint8_t rex = 0;
     uint8_t opcode = (sz == 8) ? 0xF6 : 0xF7;
     uint8_t modrm = 0;
     uint8_t pos = 0;
+    uint8_t is_apx = 0;
 
     uint8_t rm_ = reg_idx;
 
-    if(reg_idx >= 8)rex = REX_BASE | REX_B;
+    if((rm_ >> 3) & 1) rex |= REX_BASE | REX_B;
 
     switch(sz){
-        case 8: if(reg_idx >= 4 && reg_idx <= 7) rex |= REX_BASE; break; // spl, bpl, sil, dil
+        case 8: if(rm_ >= 4 && rm_ <= 7) rex |= REX_BASE; break; // spl, bpl, sil, dil
         case 16: mash_code[pos++] = legacy_prefix; break;
         case 32: break; // none
         case 64: rex |= REX_BASE | REX_W; break;
@@ -885,8 +1261,21 @@ uint8_t encode_test_reg_imm(uint8_t *mash_code, uint8_t reg_idx, uint64_t imm, u
     
     modrm = emit_modrm(0b11, 0b000, rm_);
 
+    if((rm_ >> 4) & 1){
+        if(CHECK_REX_BASE(rex)) rex = CLEAR_REX_BASE(rex);
+        is_apx=1;
+        
+        if((rm_ >> 4) & 1)rex |= REX2_B4;
+    }
 
-    if(rex)mash_code[pos++] = rex;
+    if(is_apx){
+        mash_code[pos++] = rex2;
+        mash_code[pos++] = rex;
+    }
+
+    else{
+        if (rex) mash_code[pos++] = rex;     
+    } 
     mash_code[pos++] = opcode;
     mash_code[pos++] = modrm;
 
@@ -902,38 +1291,59 @@ uint8_t encode_test_reg_imm(uint8_t *mash_code, uint8_t reg_idx, uint64_t imm, u
 
 uint8_t encode_xchg_reg_reg(uint8_t *mash_code, uint8_t dest_idx, uint8_t src_idx, uint8_t sz){
     uint8_t legacy_prefix = 0x66;
+    uint8_t rex2 = 0xD5;
     uint8_t rex = 0;
     uint8_t opcode = sz == 8 ? 0x86 : 0x87;
     uint8_t modrm = 0;
     int pos = 0;
+    uint8_t is_apx = 0;
 
-    if(dest_idx >= 8)rex |=  REX_BASE | REX_B;
-    if(src_idx >= 8)rex |= REX_BASE | REX_R;
+    uint8_t reg = src_idx;
+    uint8_t rm = dest_idx;
+
+    if(( rm >> 3) & 1)rex |= REX_BASE | REX_B;
+    if((reg >> 3) & 1)rex |= REX_BASE | REX_R;
 
     switch (sz){
-        case 8: if((dest_idx >= 4 && dest_idx <= 7) || (src_idx >= 4 && src_idx <= 7)) rex |= REX_BASE; break;// spl, bpl, sil, dil
+        case 8: if((rm >= 4 && rm <= 7) || (reg >= 4 && reg <= 7)) rex |= REX_BASE; break;// spl, bpl, sil, dil
         case 16: mash_code[pos++] = legacy_prefix; break;
         case 32: break;           
         case 64: rex |= REX_BASE | REX_W; break;            
     }
 
-    // rax, eax, ax, 
-    if(dest_idx == 0 && sz != 8){
-        uint8_t rex2 = 0;
-        opcode = 0x90; // fun fact: encode `xchg rax, rax` and `nop` are same, but disassemblers such as objdump shows nop
-        opcode += (src_idx & 7);
+    if((rm >> 4) & 1 || (reg >> 4) & 1){
+        if(CHECK_REX_BASE(rex)) rex = CLEAR_REX_BASE(rex);
+        is_apx=1;
+        
+        if((rm >> 4) & 1)rex |= REX2_B4;
+        if((reg >> 4)  & 1)rex |= REX2_R4;
+    }
 
-        if (sz == 64) rex2 |= REX_BASE | REX_W;
-        if (src_idx >= 8) rex2 |= REX_BASE | REX_B;
+    // rax, eax, ax
+    if(rm == 0 && sz != 8 && !is_apx){ /* APX does not support this form. Useing REX2. */
+        uint8_t rex3 = 0;
+        opcode = 0x90; 
+        opcode += (reg & 7);
 
-        if(rex2) mash_code[pos++] = rex2;
+        if (sz == 64) rex3 |= REX_BASE | REX_W;
+        if (reg >= 8) rex3 |= REX_BASE | REX_B;
+
+        if(rex3) mash_code[pos++] = rex3;
         mash_code[pos++] = opcode;
         return pos;
     }
 
-    if(rex)mash_code[pos++] = rex;
+    if(is_apx){
+        mash_code[pos++] = rex2;
+        mash_code[pos++] = rex;
+    }
+
+    else{
+        if (rex) mash_code[pos++] = rex;     
+    } 
+    
     mash_code[pos++] = opcode;
-    mash_code[pos++] = emit_modrm(0b11, src_idx, dest_idx);
+    mash_code[pos++] = emit_modrm(0b11, reg, rm);
     return pos;
 }
 
@@ -944,20 +1354,43 @@ uint8_t encode_xmm_or_r64__xmm_or_r64(uint8_t* mash_code, uint8_t dest, uint8_t 
         else:
             mov xmm, r64
     */
-    
+
+    uint8_t rex2 = 0xD5;
     uint8_t rex = REX_BASE | REX_W;
     uint8_t opcode = is_dest_isGPR ? 0x7E : 0x6E;
     uint8_t modrm = 0;
     int pos = 0;
+    uint8_t is_apx = 0;
 
-    if(dest >= 8)rex |= REX_B;
-    if(src >= 8)rex |= REX_R;
+    uint8_t reg = src;
+    uint8_t rm = dest;
 
-    modrm = emit_modrm(0b11, src, dest);
+    if((rm  >> 3) & 1)rex |= REX_B;
+    if((reg >> 3) & 1)rex |= REX_R;
+    if((rm >> 4) & 1 || (reg >> 4) & 1){
+        if(CHECK_REX_BASE(rex)) rex = CLEAR_REX_BASE(rex);
+        is_apx=1;
+        
+        if((rm >> 4) & 1)rex |= REX2_B4;
+        if((reg >> 4)  & 1) return 0; // xmm16-xmm31 requires EVEX
+        rex |= REX2_M0; // 0x0F
+    }
+
+    modrm = emit_modrm(0b11, reg, rm);
+
 
     mash_code[pos++] = 0x66;
-    mash_code[pos++] = rex;
-    mash_code[pos++] = 0x0F;
+
+    if(is_apx){
+        mash_code[pos++] = rex2;
+        mash_code[pos++] = rex;
+    }
+
+    else{
+        mash_code[pos++] = rex;
+        mash_code[pos++] = 0x0F;        
+    }
+
     mash_code[pos++] = opcode;
     mash_code[pos++] = modrm;
     return pos;
@@ -1209,13 +1642,14 @@ uint8_t encode_avx512_reg_reg_rm(uint8_t* mash_code, uint8_t opcode,
 
     P0 |= EVEX_R((dest >> 3) & 1);
     P0 |= EVEX_B((src2->base >> 3) & 1);
-    P0 |= EVEX_X((src2->index >> 4) & 1);
+    P0 |= EVEX_X((src2->index >> 3) & 1);
     P0 |= EVEX_ER((dest >> 4) & 1);
+    P0 |= ((src2->base >> 4) & 1) ? EVEX_B4(1) : 0; 
     P0 |= EVEX_MMM(mmm);
     
     P1 |= EVEX_W(W);
     P1 |= EVEX_VVVV(src1);
-    P1 |= EVEX_INITP1_ONE;
+    P1 |= ((src2->index >> 4) & 1) ? EVEX_X4(1) : EVEX_INITP1_ONE; 
     P1 |= EVEX_PP(PP);
 
     P2 |= EVEX_Z(z);
@@ -1273,7 +1707,7 @@ uint8_t encode_NDD_APX_reg_reg_reg(uint8_t* mash_code, uint8_t opcode, uint8_t d
 
     P2 |= EVEX_Z(z);
     P2 |= EVEX_LL(LL); 
-    P2 |= EVEX_BRODCAST(1);
+    P2 |= EVEX_BRODCAST(b);
     P2 |= EVEX_EV(!(src1 >= 16)); 
     P2 |= EVEX_A(aaa);
 
@@ -1287,4 +1721,356 @@ uint8_t encode_NDD_APX_reg_reg_reg(uint8_t* mash_code, uint8_t opcode, uint8_t d
     mash_code[pos++] = modrm;
     return pos;
 
+}
+
+uint8_t encode_NDD_APX_reg_reg_rm(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, AddrExpr *mem, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W, uint8_t aaa, uint8_t z, uint8_t b){
+    uint8_t prefix = 0x62; // AmmAsm is imortal
+    uint8_t P0 = 0;
+    uint8_t P1 = 0;
+    uint8_t P2 = 0;
+    uint8_t modrm = 0;
+    int pos = 0;
+
+
+    P0 |= EVEX_R((dest >> 3) & 1);
+    P0 |= EVEX_X((mem->index >> 3) & 1);
+    P0 |= EVEX_B((mem->base >> 3) & 1);
+    P0 |= EVEX_ER((dest >> 4) & 1);
+    P0 |= EVEX_B4((mem->base >> 4) & 1);
+    P0 |= EVEX_MMM(mmm);
+    
+    P1 |= EVEX_W(W);
+    P1 |= EVEX_VVVV(src1);
+    P1 |= EVEX_X4((mem->index >> 4) & 1);
+    P1 |= EVEX_PP(PP);
+
+    P2 |= EVEX_Z(z);
+    P2 |= EVEX_LL(LL);
+    /* b=1 means that operation is NDD */ 
+    P2 |= EVEX_BRODCAST(b);
+    P2 |= EVEX_EV(!(src1 >= 16)); 
+    P2 |= EVEX_A(aaa);
+
+    Modrm_SIB out = gen_modrm_sib(mem, dest);
+
+
+    mash_code[pos++] = prefix;
+    mash_code[pos++] = P0;
+    mash_code[pos++] = P1;
+    mash_code[pos++] = P2;
+    mash_code[pos++] = opcode;
+    mash_code[pos++] = out.modrm;
+    if(out.have_sib) mash_code[pos++] = out.sib;
+
+    if (mem->have_disp && !mem->is_rip_rel) {
+        if (out.disp_sz == 1)
+            mash_code[pos++] = (uint8_t)mem->disp; 
+        else {
+            *(uint32_t*)(mash_code + pos) = mem->disp;
+            pos += 4;
+        }
+    }
+    
+    if (mem->is_rip_rel) {
+        *(uint32_t*)(mash_code + pos) = 0x0;
+        pos += 4;
+        mem->disp_offset = pos - 4;
+    }
+
+    return pos;
+
+}
+
+uint8_t encode_CCMPcc_reg_reg(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t dfv, uint8_t src2, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W, uint8_t scc, uint8_t z, uint8_t b){
+    uint8_t prefix = 0x62; // AmmAsm is imortal
+    uint8_t P0 = 0;
+    uint8_t P1 = 0;
+    uint8_t P2 = 0;
+    uint8_t modrm = 0;
+    int pos = 0;
+
+
+    P0 |= EVEX_R((dest >> 3) & 1);
+    P0 |= EVEX_X(0);
+    P0 |= EVEX_B((src2 >> 3) & 1);
+    P0 |= EVEX_ER((dest >> 4) & 1);
+    P0 |= EVEX_B4((src2 >> 4) & 1);
+    P0 |= EVEX_MMM(mmm);
+    
+    P1 |= EVEX_W(W);
+#define EVEX_DFV(x) (((x) & 0b1111) << 3)
+    P1 |= EVEX_DFV(dfv);
+    P1 |= EVEX_X4(0);
+    P1 |= EVEX_PP(PP);
+    
+    P2 |= EVEX_Z(z);
+    P2 |= EVEX_LL(LL); 
+    P2 |= EVEX_BRODCAST(b);
+#define EVEX_SCC(x) (((x) & 0b1111))
+    P2 |= EVEX_SCC(scc); 
+
+
+    modrm = emit_modrm(0b11, dest, src2);
+
+    mash_code[pos++] = prefix;
+    mash_code[pos++] = P0;
+    mash_code[pos++] = P1;
+    mash_code[pos++] = P2;
+    mash_code[pos++] = opcode;
+    mash_code[pos++] = modrm;
+    return pos;
+
+}
+
+uint8_t encode_CCMPcc_reg_imm(uint8_t* mash_code, uint8_t group, uint8_t dest, uint8_t dfv, uint8_t sz, uint8_t scc, uint32_t imm, uint8_t imm_is_expr){
+    uint8_t opcode;
+    uint8_t pos = 0;
+
+    if (sz == 8) opcode = 0x80;
+    else if (!imm_is_expr && (int32_t)imm >= -128 && (int32_t)imm <= 127) opcode = 0x83;
+    else opcode = 0x81;
+
+    if(sz == 8 &&  !((int8_t)imm >= INT8_MIN && (int8_t)imm <= INT8_MAX))     return 0; 
+    if(sz == 16 && !((int16_t)imm >= INT16_MIN && (int16_t) imm <= INT16_MAX)) return 0;
+                
+    pos = encode_CCMPcc_reg_reg(mash_code, opcode, 
+        group,
+        dfv,
+        dest,
+        EVEX_MAP_APX,
+        0,
+        sz == 16 ? EVEX_PP_66 : EVEX_PP_NONE , sz == 64, scc , EVEX_Z0, 0);
+
+            
+    if (opcode == 0x83)  mash_code[pos++] = (uint8_t)imm;
+    else if (sz == 8) mash_code[pos++] = (uint8_t)imm;
+    else if (sz == 16) {*(uint16_t *)(mash_code + pos) = (uint16_t)imm; pos += 2;}
+    else {*(uint32_t *)(mash_code + pos) = imm; pos += 4;}
+    return pos;
+}
+
+uint8_t encode_CTESTcc_reg_imm( uint8_t* mash_code, uint8_t group, uint8_t dest, uint8_t dfv, uint8_t sz, uint8_t scc, uint32_t imm, uint8_t imm_is_expr) {
+    uint8_t opcode;
+    uint8_t pos = 0;
+
+    if (sz == 8) opcode = 0xF6;
+    else opcode = 0xF7;
+
+    if (sz == 8 && !imm_is_expr && !((int32_t)imm >= INT8_MIN && (int32_t)imm <= INT8_MAX)) return 0;
+    if (sz == 16 &&!imm_is_expr && !((int32_t)imm >= INT16_MIN && (int32_t)imm <= INT16_MAX)) return 0;
+
+    pos = encode_CTESTcc_reg_reg(
+        mash_code,
+        opcode,
+        group,
+        dfv,
+        dest,
+        EVEX_MAP_APX, 0, sz == 16 ? EVEX_PP_66 : EVEX_PP_NONE, sz == 64, scc, EVEX_Z0, 0);
+
+    if (sz == 8) mash_code[pos++] = (uint8_t)imm;
+    else if (sz == 16) {*(uint16_t *)(mash_code + pos) = (uint16_t)imm; pos += 2;} 
+    else { *(uint32_t *)(mash_code + pos) = imm; pos += 4;}
+
+    return pos;
+}
+
+uint8_t encode_CCMPcc_reg_rm(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t dfv, AddrExpr *mem, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W, uint8_t scc, uint8_t z, uint8_t b){
+    uint8_t prefix = 0x62; // AmmAsm is imortal
+    uint8_t P0 = 0;
+    uint8_t P1 = 0;
+    uint8_t P2 = 0;
+    uint8_t modrm = 0;
+    int pos = 0;
+
+
+    P0 |= EVEX_R((dest >> 3) & 1);
+    P0 |= EVEX_X((mem->index >> 3) & 1);
+    P0 |= EVEX_B((mem->base >> 3) & 1);
+    P0 |= EVEX_ER((dest >> 4) & 1);
+    P0 |= EVEX_B4((mem->base >> 4) & 1);
+    P0 |= EVEX_MMM(mmm);
+    
+    P1 |= EVEX_W(W);
+#define EVEX_DFV(x) (((x) & 0b1111) << 3)
+    P1 |= EVEX_DFV(dfv);
+    P1 |= EVEX_X4((mem->index >> 4) & 1);
+    P1 |= EVEX_PP(PP);
+
+    P2 |= EVEX_Z(z);
+    P2 |= EVEX_LL(LL);
+    P2 |= EVEX_BRODCAST(b);
+    P2 |= EVEX_SCC(scc); 
+
+    Modrm_SIB out = gen_modrm_sib(mem, dest);
+
+
+    mash_code[pos++] = prefix;
+    mash_code[pos++] = P0;
+    mash_code[pos++] = P1;
+    mash_code[pos++] = P2;
+    mash_code[pos++] = opcode;
+    mash_code[pos++] = out.modrm;
+    if(out.have_sib) mash_code[pos++] = out.sib;
+
+    if (mem->have_disp && !mem->is_rip_rel) {
+        if (out.disp_sz == 1)
+            mash_code[pos++] = (uint8_t)mem->disp; 
+        else {
+            *(uint32_t*)(mash_code + pos) = mem->disp;
+            pos += 4;
+        }
+    }
+    
+    if (mem->is_rip_rel) {
+        *(uint32_t*)(mash_code + pos) = 0x0;
+        pos += 4;
+        mem->disp_offset = pos - 4;
+    }
+
+    return pos;
+
+}
+
+uint8_t encode_CCMPcc_mem_imm(uint8_t* mash_code, uint8_t group, uint8_t dfv, AddrExpr *mem, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W, uint8_t scc, uint8_t z, uint8_t b, uint64_t imm, uint8_t is_expr, uint8_t sz){
+    uint8_t prefix = 0x62; // AmmAsm is imortal
+    uint8_t P0 = 0;
+    uint8_t P1 = 0;
+    uint8_t P2 = 0;
+    uint8_t opcode = 0;
+    uint8_t modrm = 0;
+
+    int pos = 0;
+
+    if (sz == 8) opcode = 0x80;
+    else if (!is_expr && (int32_t)imm >= -128 && (int32_t)imm <= 127) opcode = 0x83;
+    else opcode = 0x81;
+
+    if(sz == 8 &&  !((int8_t)imm >= INT8_MIN && (int8_t)imm <= INT8_MAX))     return 0; 
+    if(sz == 16 && !((int16_t)imm >= INT16_MIN && (int16_t) imm <= INT16_MAX)) return 0;
+
+    P0 |= EVEX_R(0);
+    P0 |= EVEX_X((mem->index >> 3) & 1);
+    P0 |= EVEX_B((mem->base >> 3) & 1);
+    P0 |= EVEX_ER(0);
+    P0 |= EVEX_B4((mem->base >> 4) & 1);
+    P0 |= EVEX_MMM(mmm);
+    
+    P1 |= EVEX_W(W);
+    P1 |= EVEX_DFV(dfv);
+    P1 |= EVEX_X4((mem->index >> 4) & 1);
+    P1 |= EVEX_PP(PP);
+
+    P2 |= EVEX_Z(z);
+    P2 |= EVEX_LL(LL);
+    P2 |= EVEX_BRODCAST(b);
+    P2 |= EVEX_SCC(scc); 
+
+    Modrm_SIB out = gen_modrm_sib(mem, group);
+
+
+    mash_code[pos++] = prefix;
+    mash_code[pos++] = P0;
+    mash_code[pos++] = P1;
+    mash_code[pos++] = P2;
+    mash_code[pos++] = opcode;
+    mash_code[pos++] = out.modrm;
+    if(out.have_sib) mash_code[pos++] = out.sib;
+
+    if (mem->have_disp && !mem->is_rip_rel) {
+        if (out.disp_sz == 1)
+            mash_code[pos++] = (uint8_t)mem->disp; 
+        else {
+            *(uint32_t*)(mash_code + pos) = mem->disp;
+            pos += 4;
+        }
+    }
+    
+    if (mem->is_rip_rel) {
+        *(uint32_t*)(mash_code + pos) = 0x0;
+        pos += 4;
+        mem->disp_offset = pos - 4;
+    }
+    
+    if (opcode == 0x83)  mash_code[pos++] = (uint8_t)imm;
+    else if (sz == 8) mash_code[pos++] = (uint8_t)imm;
+    else if (sz == 16) {*(uint16_t *)(mash_code + pos) = (uint16_t)imm; pos += 2;}
+    else {*(uint32_t *)(mash_code + pos) = imm; pos += 4;}
+
+    return pos;
+}
+
+
+uint8_t encode_CTESTcc_mem_imm(uint8_t* mash_code, uint8_t group, uint8_t dfv, AddrExpr *mem, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W, uint8_t scc, uint8_t z, uint8_t b, uint64_t imm, uint8_t is_expr, uint8_t sz){
+    uint8_t prefix = 0x62; // AmmAsm is imortal
+    uint8_t P0 = 0;
+    uint8_t P1 = 0;
+    uint8_t P2 = 0;
+    uint8_t opcode = 0;
+    uint8_t modrm = 0;
+
+    int pos = 0;
+
+    if (sz == 8) opcode = 0xF6;
+    else opcode = 0xF7;
+
+    if(sz == 8 &&  !((int8_t)imm >= INT8_MIN && (int8_t)imm <= INT8_MAX))     return 0; 
+    if(sz == 16 && !((int16_t)imm >= INT16_MIN && (int16_t) imm <= INT16_MAX)) return 0;
+
+    P0 |= EVEX_R(0);
+    P0 |= EVEX_X((mem->index >> 3) & 1);
+    P0 |= EVEX_B((mem->base >> 3) & 1);
+    P0 |= EVEX_ER(0);
+    P0 |= EVEX_B4((mem->base >> 4) & 1);
+    P0 |= EVEX_MMM(mmm);
+    
+    P1 |= EVEX_W(W);
+    P1 |= EVEX_DFV(dfv);
+    P1 |= EVEX_X4((mem->index >> 4) & 1);
+    P1 |= EVEX_PP(PP);
+
+    P2 |= EVEX_Z(z);
+    P2 |= EVEX_LL(LL);
+    P2 |= EVEX_BRODCAST(b);
+    P2 |= EVEX_SCC(scc); 
+
+    Modrm_SIB out = gen_modrm_sib(mem, group);
+
+
+    mash_code[pos++] = prefix;
+    mash_code[pos++] = P0;
+    mash_code[pos++] = P1;
+    mash_code[pos++] = P2;
+    mash_code[pos++] = opcode;
+    mash_code[pos++] = out.modrm;
+    if(out.have_sib) mash_code[pos++] = out.sib;
+
+    if (mem->have_disp && !mem->is_rip_rel) {
+        if (out.disp_sz == 1)
+            mash_code[pos++] = (uint8_t)mem->disp; 
+        else {
+            *(uint32_t*)(mash_code + pos) = mem->disp;
+            pos += 4;
+        }
+    }
+    
+    if (mem->is_rip_rel) {
+        *(uint32_t*)(mash_code + pos) = 0x0;
+        pos += 4;
+        mem->disp_offset = pos - 4;
+    }
+    
+    if (opcode == 0x83)  mash_code[pos++] = (uint8_t)imm;
+    else if (sz == 8) mash_code[pos++] = (uint8_t)imm;
+    else if (sz == 16) {*(uint16_t *)(mash_code + pos) = (uint16_t)imm; pos += 2;}
+    else {*(uint32_t *)(mash_code + pos) = imm; pos += 4;}
+
+    return pos;
+}
+
+uint8_t encode_CTESTcc_reg_reg(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t dfv, uint8_t src2, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W, uint8_t scc, uint8_t z, uint8_t b){
+    return encode_CCMPcc_reg_reg(mash_code,  opcode,  dest,  dfv,  src2,  mmm,  LL,  PP,  W,  scc,  z,  b);
+}
+
+uint8_t encode_CTESTcc_reg_rm(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t dfv, AddrExpr *mem, uint8_t mmm, uint8_t LL, uint8_t PP, uint8_t W, uint8_t scc, uint8_t z, uint8_t b){
+    return encode_CCMPcc_reg_rm(mash_code,  opcode,  dest,  dfv, mem,  mmm,  LL,  PP,  W,  scc,  z,  b);
 }

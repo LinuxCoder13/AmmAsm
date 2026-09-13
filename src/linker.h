@@ -10,7 +10,7 @@
 #include "debug.h"
 
 #define IS_EXPR_OR_PC(operand) \
-    (operand.type == O_PC || operand.type == O_EXPR)
+    ((operand).type == O_PC || (operand).type == O_EXPR)
 
 #define IS_EXPR_OR_IMM_OR_PC(operand) \
     ((operand).type == O_PC || (operand).type == O_EXPR || (operand).type == O_IMM)

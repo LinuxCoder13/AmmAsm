@@ -1,0 +1,126 @@
+a.o:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000000000 <_start>:
+   0:	c7 44 24 f0 00 04 00 	mov    DWORD PTR [rsp-0x10],0x400
+   7:	00 
+   8:	d5 19 89 f9          	mov    r25,rdi
+   c:	d5 18 89 f7          	mov    r23,rsi
+  10:	49 89 d1             	mov    r9,rdx
+  13:	c7 44 24 f4 00 04 00 	mov    DWORD PTR [rsp-0xc],0x400
+  1a:	00 
+  1b:	d5 19 89 ca          	mov    r26,rcx
+  1f:	c7 44 24 f8 00 04 00 	mov    DWORD PTR [rsp-0x8],0x400
+  26:	00 
+  27:	c7 44 24 fc 00 04 00 	mov    DWORD PTR [rsp-0x4],0x400
+  2e:	00 
+  2f:	48 85 f6             	test   rsi,rsi
+  32:	0f 84 4c 01 00 00    	je     184 <_start.L12>
+  38:	d5 50 33 e4          	xor    r20d,r20d
+  3c:	45 33 c0             	xor    r8d,r8d
+  3f:	be ff ff ff ff       	mov    esi,0xffffffff
+  44:	33 ff                	xor    edi,edi
+  46:	d5 48 8d 54 24 f4    	lea    r18,[rsp-0xc]
+  4c:	d5 48 8d 6c 24 fc    	lea    r21,[rsp-0x4]
+  52:	d5 19 b8 ab aa aa aa 	movabs r24,0xaaaaaaaaaaaaaaab
+  59:	aa aa aa aa 
+  5d:	d5 10 be 00 04 00 00 	mov    r22d,0x400
+  64:	d5 48 8d 5c 24 f0    	lea    r19,[rsp-0x10]
+  6a:	90                   	nop
+  6b:	90                   	nop
+  6c:	90                   	nop
+  6d:	90                   	nop
+  6e:	90                   	nop
+  6f:	90                   	nop
+
+0000000000000070 <_start.L11>:
+  70:	d5 48 89 e0          	mov    rax,r20
+  74:	d5 f1 b6 0c 21       	movzx  r17d,BYTE PTR [r25+r20*1]
+  79:	b9 07 00 00 00       	mov    ecx,0x7
+  7e:	d5 19 f7 e0          	mul    r24
+  82:	62 fc 24 18 c1 f9 07 	sar    r11d,r17d,0x7
+  89:	62 f4 fc 14 d1 ea    	{nf} shr r16,rdx,1
+  8f:	62 f4 fc 0c 83 e2 fe 	{nf} and rdx,0xfffffffffffffffe
+  96:	d5 48 03 c2          	add    r16,rdx
+  9a:	d5 48 89 d2          	mov    rdx,r18
+  9e:	62 ec fc 10 2b e0    	sub    r16,r20,r16
+  a4:	d5 18 83 f8 01       	cmp    r16,0x1
+  a9:	0f 84 8a 00 00 00    	je     139 <_start.L14>
+  af:	90                   	nop
+
+00000000000000b0 <_start.L21>:
+  b0:	d5 18 83 f8 02       	cmp    r16,0x2
+  b5:	d5 98 44 d5          	cmove  rdx,r21
+  b9:	62 f4 2c 18 c1 ee 0b 	shr    r10d,esi,0xb
+  c0:	8b 02                	mov    eax,DWORD PTR [rdx]
+  c2:	44 0f af d0          	imul   r10d,eax
+  c6:	45 85 db             	test   r11d,r11d
+  c9:	0f 85 87 00 00 00    	jne    156 <_start.L6>
+
+00000000000000cf <_start.L22>:
+  cf:	62 e4 4c 18 2b f0    	sub    esi,r22d,eax
+  d5:	c1 ee 05             	shr    esi,0x5
+  d8:	03 c6                	add    eax,esi
+  da:	44 89 d6             	mov    esi,r10d
+
+00000000000000dd <_start.L7>:
+  dd:	89 02                	mov    DWORD PTR [rdx],eax
+  df:	81 fe ff ff ff 00    	cmp    esi,0xffffff
+  e5:	0f 87 28 00 00 00    	ja     113 <_start.L9>
+  eb:	90                   	nop
+  ec:	90                   	nop
+  ed:	90                   	nop
+  ee:	90                   	nop
+  ef:	90                   	nop
+
+00000000000000f0 <_start.L8>:
+  f0:	62 f4 fc 18 c1 ef 18 	shr    rax,rdi,0x18
+  f7:	49 83 c0 01          	add    r8,0x1
+  fb:	c1 e6 08             	shl    esi,0x8
+  fe:	43 88 44 01 ff       	mov    BYTE PTR [r9+r8*1-0x1],al
+ 103:	48 c1 e7 08          	shl    rdi,0x8
+ 107:	81 fe ff ff ff 00    	cmp    esi,0xffffff
+ 10d:	0f 86 dd ff ff ff    	jbe    f0 <_start.L8>
+
+0000000000000113 <_start.L9>:
+ 113:	85 c9                	test   ecx,ecx
+ 115:	0f 84 55 00 00 00    	je     170 <_start.L20>
+ 11b:	83 e9 01             	sub    ecx,0x1
+ 11e:	41 d3 fb             	sar    r11d,cl
+ 121:	41 83 e3 01          	and    r11d,0x1
+ 125:	f6 c1 01             	test   cl,0x1
+ 128:	62 ec ec 18 44 d3    	cmove  rdx,r18,r19
+ 12e:	d5 18 83 f8 01       	cmp    r16,0x1
+ 133:	0f 85 77 ff ff ff    	jne    b0 <_start.L21>
+
+0000000000000139 <_start.L14>:
+ 139:	8b 44 24 f8          	mov    eax,DWORD PTR [rsp-0x8]
+ 13d:	62 f4 2c 18 c1 ee 0b 	shr    r10d,esi,0xb
+ 144:	48 8d 54 24 f8       	lea    rdx,[rsp-0x8]
+ 149:	44 0f af d0          	imul   r10d,eax
+ 14d:	45 85 db             	test   r11d,r11d
+ 150:	0f 84 79 ff ff ff    	je     cf <_start.L22>
+
+0000000000000156 <_start.L6>:
+ 156:	45 89 d3             	mov    r11d,r10d
+ 159:	41 2b f2             	sub    esi,r10d
+ 15c:	62 f4 2c 18 c1 e8 05 	shr    r10d,eax,0x5
+ 163:	49 03 fb             	add    rdi,r11
+ 166:	41 2b c2             	sub    eax,r10d
+ 169:	e9 6f ff ff ff       	jmp    dd <_start.L7>
+ 16e:	90                   	nop
+ 16f:	90                   	nop
+
+0000000000000170 <_start.L20>:
+ 170:	d5 18 83 c4 01       	add    r20,0x1
+ 175:	d5 58 3b fc          	cmp    r23,r20
+ 179:	0f 85 f1 fe ff ff    	jne    70 <_start.L11>
+ 17f:	d5 1d 89 02          	mov    QWORD PTR [r26],r8
+ 183:	c3                   	ret
+
+0000000000000184 <_start.L12>:
+ 184:	45 33 c0             	xor    r8d,r8d
+ 187:	d5 1d 89 02          	mov    QWORD PTR [r26],r8
+ 18b:	c3                   	ret

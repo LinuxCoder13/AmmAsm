@@ -78,7 +78,7 @@ void resolve_imm(AST* node, int expr_idx, int imm_size) {
     uint64_t val = (tmp == (uint64_t)-2) ? 0 : tmp;
 
     int offset = node->machine_code_len - imm_size;
-    
+
     switch(imm_size) {
         case 1: *(uint8_t*) (node->machine_code   + offset) = (uint8_t) val; break;
         case 2: *(uint16_t*)(node->machine_code + offset) = (uint16_t)val; break;
@@ -488,6 +488,11 @@ long parse_expr() {
     return left;
 }
 
+long eval_expr(const uint8_t *str) {
+    p = str;
+    return parse_expr();
+}
+
 uint8_t inst_uses_zmm(uint8_t* a, uint8_t* b, uint8_t* c){
     if(((a[0] == 'z') || (a[0] == 'Z')) || 
        ((b[0] == 'z') || (b[0] == 'Z')) || 
@@ -507,58 +512,15 @@ uint8_t is_avx512(uint8_t uses_zmm, uint8_t has_b, uint8_t has_maskreg, uint8_t 
     return 0;
 }
 
-uint8_t isNDD_APXinstruction64(Operand a, Operand b, Operand c){
-    return (a.type == O_REG64 && b.type == O_REG64 && c.type == O_REG64) ? 1 :
-           (a.type == O_APX_REG64 && b.type == O_REG64 && c.type == O_REG64) ? 1 :
-           (a.type == O_APX_REG64 && b.type == O_APX_REG64 && c.type == O_REG64) ? 1 :
-           (a.type == O_APX_REG64 && b.type == O_APX_REG64 && c.type == O_APX_REG64) ? 1 :
-           (a.type == O_REG64 && b.type == O_REG64 && c.type == O_APX_REG64) ? 1 :
-           (a.type == O_REG64 && b.type == O_APX_REG64 && c.type == O_APX_REG64) ? 1:
-           (a.type == O_REG64 && b.type == O_APX_REG64 && c.type == O_REG64) ? 1 :
-           (a.type == O_APX_REG64 && b.type == O_REG64 && c.type == O_APX_REG64) ? 1 :
-           0;
+uint8_t is_apx_flag(Token a, Token b, Token c, Token d, Token e){
+    if(a.type == T_OSHPPRANT && !strcasecmp("nf", b.value) && c.type == T_CSHPPRANT) return 1;
+    if(a.type == T_OSHPPRANT && !strcasecmp("zu", b.value) && c.type == T_CSHPPRANT) return 2;
+    if(a.type == T_OSHPPRANT && !strcasecmp("nf", b.value) && c.value[0] == '|' && !strcasecmp("zu", d.value) && e.type == T_CSHPPRANT) return 3;
+    if(a.type == T_OSHPPRANT && !strcasecmp("zu", b.value) && c.value[0] == '|' && !strcasecmp("nf", d.value) && e.type == T_CSHPPRANT) return 3;
+    
+    return 0;
 }
 
-uint8_t isNDD_APXinstruction32(Operand a, Operand b, Operand c){
-    return (a.type == O_REG32 && b.type == O_REG32 && c.type == O_REG32) ? 1 :
-           (a.type == O_APX_REG32 && b.type == O_REG32 && c.type == O_REG32) ? 1 :
-           (a.type == O_APX_REG32 && b.type == O_APX_REG32 && c.type == O_REG32) ? 1 :
-           (a.type == O_APX_REG32 && b.type == O_APX_REG32 && c.type == O_APX_REG32) ? 1 :
-           (a.type == O_REG32 && b.type == O_REG32 && c.type == O_APX_REG32) ? 1 :
-           (a.type == O_REG32 && b.type == O_APX_REG32 && c.type == O_APX_REG32) ? 1:
-           (a.type == O_REG32 && b.type == O_APX_REG32 && c.type == O_REG32) ? 1 :
-           (a.type == O_APX_REG32 && b.type == O_REG32 && c.type == O_APX_REG32) ? 1 :
-           0;
-}
-
-uint8_t isNDD_APXinstruction16(Operand a, Operand b, Operand c){
-    return (a.type == O_REG16 && b.type == O_REG16 && c.type == O_REG16) ? 1 :
-           (a.type == O_APX_REG16 && b.type == O_REG16 && c.type == O_REG16) ? 1 :
-           (a.type == O_APX_REG16 && b.type == O_APX_REG16 && c.type == O_REG16) ? 1 :
-           (a.type == O_APX_REG16 && b.type == O_APX_REG16 && c.type == O_APX_REG16) ? 1 :
-           (a.type == O_REG16 && b.type == O_REG16 && c.type == O_APX_REG16) ? 1 :
-           (a.type == O_REG16 && b.type == O_APX_REG16 && c.type == O_APX_REG16) ? 1:
-           (a.type == O_REG16 && b.type == O_APX_REG16 && c.type == O_REG16) ? 1 :
-           (a.type == O_APX_REG16 && b.type == O_REG16 && c.type == O_APX_REG16) ? 1 :
-           0;
-}
-
-uint8_t isNDD_APXinstruction8(Operand a, Operand b, Operand c){
-    return (a.type == O_REG8 && b.type == O_REG8 && c.type == O_REG8) ? 1 :
-           (a.type == O_APX_REG8 && b.type == O_REG8 && c.type == O_REG8) ? 1 :
-           (a.type == O_APX_REG8 && b.type == O_APX_REG8 && c.type == O_REG8) ? 1 :
-           (a.type == O_APX_REG8 && b.type == O_APX_REG8 && c.type == O_APX_REG8) ? 1 :
-           (a.type == O_REG8 && b.type == O_REG8 && c.type == O_APX_REG8) ? 1 :
-           (a.type == O_REG8 && b.type == O_APX_REG8 && c.type == O_APX_REG8) ? 1:
-           (a.type == O_REG8 && b.type == O_APX_REG8 && c.type == O_REG8) ? 1 :
-           (a.type == O_APX_REG8 && b.type == O_REG8 && c.type == O_APX_REG8) ? 1 :
-           0;
-}
-
-long eval_expr(const uint8_t *str) {
-    p = str;
-    return parse_expr();
-}
 
 void check_cpu(){
     int eax = 1, ebx = 0, ecx = 0, edx = 0;

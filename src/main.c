@@ -3,9 +3,8 @@
     Copyright (C) 2025-2026 Ammar Najafli
 */
 
-
 #include "main.h"
-#define VERSION "2.4.10"
+#define VERSION "3.0.0"
 
 void compiler(uint8_t *text, int *textsize, uint64_t *e_entry) {
     if (!text) return;
@@ -90,7 +89,10 @@ void handl_pipeline(int argc, char **argv){
  
     compiler(text, &textsize, &entry_point);
     DEBUG_PRINT_AST();
-    flsz += obj_file ? GenObjElfFile(output, argv[0]) : ELFgenfile(output, entry_point, text, textsize, pie_mode);
+    // mini driver
+    flsz += pe32plus ?  PEgenfile(output, entry_point, text, textsize, pie_mode)  : 
+            obj_file ?  GenObjElfFile(output, argv[0]) : 
+                        ELFgenfile(output, entry_point, text, textsize, pie_mode);
     
     chmod(argv[1], 0775); // +x
     fclose(output);
@@ -111,6 +113,7 @@ int main(int argc, char **argv){
     for (int i = 1; i < argc; ++i){
         if (!strcmp(argv[i], "-o")){ out = argv[i+1]; i++; continue; }
         if (!strcmp(argv[i], "-pie")){ pie_mode = 1;  continue; }
+        if (!strcmp(argv[i], "-pe32+")){ pe32plus = 1;  continue; }
         if (!strcmp(argv[i], "-E")){ stop_compile = 1;  continue; }
         if (!strcmp(argv[i], "-c")){ out = argv[i+1]; i++; obj_file = 1; continue; }
         if (!strcmp(argv[i], "-v")){ printf("AASM version %s\n", VERSION); exit(0);}

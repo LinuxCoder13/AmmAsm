@@ -95,6 +95,8 @@ int LEXER(FILE* fl) {
             else if (*buff == '{'){ buff++; add_token(T_OSHPPRANT,   "{",  line); continue;}
             else if (*buff == '}'){ buff++; add_token(T_CSHPPRANT,   "}",  line); continue;}
 
+            else if (*buff == '='){ buff++; add_token(T_EQUAL, "=",  line); continue;}
+
             else if (*buff >= '0' && *buff <= '9') {
 
                 char num[128] = {0};
@@ -206,16 +208,10 @@ int LEXER(FILE* fl) {
                 }
 
                 // registers (GPR)
-                else if(is2arrin(regs8,  8, buf)  || is2arrin(regs8GP, 8, buf)) {add_token(T_REG8, buf, line);  continue;}
-                else if(is2arrin(regs16, 8, buf) || is2arrin(regs16GP, 8, buf)) {add_token(T_REG16, buf, line); continue;}
-                else if(is2arrin(regs32, 8, buf) || is2arrin(regs32GP, 8, buf)) {add_token(T_REG32, buf, line); continue;}
-                else if(is2arrin(regs64, 8, buf) || is2arrin(regs64GP, 8, buf)) {add_token(T_REG64, buf, line); continue;} 
-
-                // APX
-                else if(is2arrin(regs8APX,  16, buf) ) {add_token(T_APX_REG8, buf, line);  continue;}
-                else if(is2arrin(regs16APX, 16, buf) ) {add_token(T_APX_REG16, buf, line); continue;}
-                else if(is2arrin(regs32APX, 16, buf) ) {add_token(T_APX_REG32, buf, line); continue;}
-                else if(is2arrin(regs64APX, 16, buf) ) {add_token(T_APX_REG64, buf, line); continue;} 
+                else if(is2arrin(regs8,  8, buf) || is2arrin(regs8GP, 8, buf)  || is2arrin(regs8APX , 16, buf)) {add_token(T_REG8, buf, line);  continue;}
+                else if(is2arrin(regs16, 8, buf) || is2arrin(regs16GP, 8, buf) || is2arrin(regs16APX, 16, buf)) {add_token(T_REG16, buf, line); continue;}
+                else if(is2arrin(regs32, 8, buf) || is2arrin(regs32GP, 8, buf) || is2arrin(regs32APX, 16, buf)) {add_token(T_REG32, buf, line); continue;}
+                else if(is2arrin(regs64, 8, buf) || is2arrin(regs64GP, 8, buf) || is2arrin(regs64APX, 16, buf)) {add_token(T_REG64, buf, line); continue;}
 
 
                 // XMM
@@ -347,7 +343,7 @@ int LEXER(FILE* fl) {
             }
 
             else{ 
-                fprintf(stderr, "AmmAsm:%d: unvalid syntax or char\n", line); 
+                fprintf(stderr, "AmmAsm:%d: invalid syntax or char\n", line); 
                 exit(1); 
             }
             buff++;

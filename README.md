@@ -5,57 +5,54 @@
 AmmAsm - Assembler that sucks less.
 
 ![GitHub last commit](https://img.shields.io/github/last-commit/LinuxCoder13/AmmAsm)
-![Version](https://img.shields.io/badge/version-v2.4.10-blue)
+![Version](https://img.shields.io/badge/version-v3.0.0-blue)
 ![Platform](https://img.shields.io/badge/platform-Linux_x86--64-success)
 
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Status](https://img.shields.io/badge/status-active-success)
-[![AI](https://img.shields.io/badge/AI--assisted-blueviolet)](#)
+![Status](https://img.shields.io/badge/status-maintenance--only-yellow)
 <br clear="left"/>
 
 **Author:** Ammar Najafli
 
-AmmAsm is a handwritten x86-64 assembler designed for simplicity and clarity, educational and experimental purpuse. It compiles assembly code directly to machine code and produces ELF executables, PIE binaries (Position-Independent Executables), and relocatable object files for Linux x86-64. Successfully tested on Deban12, Kyronix, Windows(experimental).
+AmmAsm is a handwritten x86-64 assembler designed for simplicity and clarity, educational and experimental purpose. It compiles assembly code directly to machine code and produces ELF executables, PIE binaries (Position-Independent Executables), and relocatable object files for Linux x86-64. Successfully tested on Debian12, Kyronix, Windows(experimental).
 
 ---
 
-## What's New in v2.4.x
+## What's New in v3.0.x
 
-1) Added new instructions: `SSE2`(45 instructions), `AVX/AVX2/AVX512/AVX10.1`(~90 instructions), `bsf`, `bsr`, `cmc`, `clc`, `stc`, `cld`, `std`, `cli`, `sti`, `lahf`, `sahf`, `pushf`, `popf`, `popfq`, `iret`, `iretq`, `cpuid`, `hlt`, `wait`, `fwait`, `pause`, `ud2`, `xchg`, `movq`, `rdpru`, `rdtsc`, `rdtscp`, `lfence`
+1) Added new instructions: `push2`, `pop2`, `push2p`, `pop2p`, `jmpabs`, `endbr64`, `CCMPcc`(set), `CTESTcc`(set), `CFCMOVcc`(set), `vpunpcklqdq`
 
-2) Added floating-point number support for SSE1 (IEEE-754)
+2) Added Advanced APX support
 
-3) `align` symbol: `align <scale>, <8 bit number>: align 16, 0`
+3) Added documentation for APX `doc/APX/APX.md`
 
-4) Added `XMM16-XMM31` registers
- 
-5) Added `YMM0-YMM31` registers
+4) Added PE32+ output (experimental)
 
-6) Added `ZMM0-ZMM31` registers (Fully supported via EVEX prefix engine)
+---
 
-7) Hardware check for the presence of SIMD instructions via `cpuid`
+## Advanced APX (Advance Performance Extension) Support
 
-8) Full VEX/EVEX support (mask registers k0-k7, z, broatcast, sae, etc.)
+Starting from 3.0.0, AmmAsm includes a fully handwritten, **Advance Performance Extension** with zero external dependencies. It supports **almost** full of modern Intel APX architecture. For better documentation please see `doc/APX/APX.md`
 
-9) Backend refactoring
+### Key APX Features
 
-10) Added Documentation for every supported instruction in AmmAsm
-
-11) added `xword`, `yword`, `zword` key-words
-
-12) Massive AVX* refactoring(fixed bugs) & added {sae} and {*-sae} decorator 
-
-13) Initial APX(Advanced Performance Extensions) support via EVEX engine (only NDD for `foo reg64, reg64, reg64`). See the `./insn.dat`
-
-14) Added the `r16-r31` registers for APX, and reserved in parser `r16d-r31d`, `r16w-r31w`, `r16b-r31b` for future updates
-
-15) 898 more reasons not to release v2.5
+* **EGPRs:**  New `r16-r31` registers
+* **NDD:** Non-destructive destination via **EVEX prefix engine**
+* **NF:**  Status flags modification suppression
+* **ZU:**  Zero Upper
+* **CCMPcc / CTESTcc:** Conditional `CMP` and `TEST` instructions
+* **PUSH2 / POP2:** Extended push/pop for two registers
+* **JMPABS:** Absolute 64-bit jump (`jmp abs64`)
+* **REX2:** Extended `REX` prefix
+* **NDD-CMOVcc:** Non-destructive destination for `CMOVcc`
+* **Syntax Sugar:** Exclusive AmmAsm syntax sugar
+* **CFCMOVcc:** Conditionally Faulting Conditional Move
 
 ---
 
 ## Advanced AVX-512 Support (EVEX Prefix)
 
-AmmAsm includes a fully handwritten, high-performance **EVEX prefix encoder** with zero external dependencies. It supports the core features of the modern Intel/AMD AVX-512 architecture.
+Starting from v2.4, AmmAsm includes a fully handwritten, high-performance **EVEX prefix encoder** with zero external dependencies. It supports the core features of the modern Intel/AMD AVX-512 architecture.
 
 ### Key AVX-512 Features
 
@@ -93,6 +90,7 @@ Code generated directly by AmmAsm and disassembled using standard Linux `objdump
    f:	c4 62 7e 72 3c 08    	{vex} vcvtneps2bf16 xmm15,YMMWORD PTR [rax+rcx*1]
 ```
 
+---
 
 ## Object File Support (ELF64 Relocatable)
 
@@ -123,7 +121,7 @@ global _start, strcmp
 extern printf, __pthread_unregister_cancel_restore
 ```
 
-Only object-file generation uses exported symbols. They have no effect when producing ET_EXEC.
+Only object-file generation uses exported symbols. They have no effect when producing ET_EXEC/PIE.
 
 ### Relocations
 
@@ -145,30 +143,27 @@ gcc hello.o -o hello
 ./hello
 ```
 
+---
 
 ## Features
 
 - Basic SSE/SSE2/AVX1/AVX2/AVX-512 support(VEX/EVEX full suport)
-- Basic APX(Advanced Performance Extensions) support
+- Advanced APX(Advanced Performance Extensions) support
 - Macro system (v2.2.0)
 - Compatible with GNU ld and GCC object-file linking
 - Direct x86-64 encoding - No NASM/GAS dependencies
-- Multiple operand sizes - 8/16/32/64-bit registers and immediates
+- Multiple operand sizes - 8/16/32/64-bit and vector 128/256/512 bit registers and immediates
 - Memory addressing - Full SIB/ModRM support with explicit key-value syntax
 - RIP-relative addressing - Automatic for label bases (v1.6)
 - Label support - Global and local labels with two-pass symbol resolution
 - Inline literals - Embed strings and data directly in .text
-- Control flow - jmp, call, conditional jumps with relative addressing
+- Control flow - jmp, call, conditional jumps with relative addressing, and jmpabs with absolute 64 bit jump
 - Two-pass linker - Built-in symbol resolution and relocation
-- Numeric literals - 0xDEADBEEF, 0b1010, 0o777, decimal, negative, float (beta)
+- Numeric literals - 0xDEADBEEF, 0b1010, 0o777, decimal, negative, 32 bit-float (IEE-754)
+- Align symbol: usage: `align 16, 0x90`
+- Hardware check for the presence of SIMD instructions via `cpuid`
 - **ELF output - Generates valid Linux x86-64 ET_EXEC, PIE and OBJ(v2.0.0) binary**
-
----
-
-## Honor Features
-
-- AmmAsm supports RDPRU, an AMD-specific instruction currently not supported by NASM 3.02.
-- AmmAsm supports all form of `vcvtps2ph` instruction while NASM 3.02 does not
+- PE32+ output (experimental)
 
 ---
 
@@ -254,7 +249,7 @@ Emits x86-64 machine code per AST node.
 - ModR/M and SIB encoding via encode_inst_rm_rm()
 - Displacement and immediate encoding (little-endian)
 - Placeholder bytes (0x00000000) for unresolved label references
-- SSE/SSE2
+- SSE/SSE2/AVX/AVX2/AVX512/APX
 
 ### 5. Linker (collect_labels + resolve_labels)
 
@@ -307,6 +302,7 @@ mov rax, [b=msg, d=4]                  ; msg + 4
 ./aasm -pie input.asm -o prog
 ./aasm input.asm -c prog.o -d
 ./aasm input.asm -c prog.o -E
+./aasm input.asm -pe32+ -o a.out
 
 # Run
 chmod +x output && ./output
@@ -320,17 +316,3 @@ ld prog.o -o output && chmod +x output && ./output
 - Limited instruction set - Only a subset of the x86-64 instruction set is currently implemented (look at `./insn.dat`)
 - x87 FPU not implemented
 - No `ah, bh, ch, dh` registers (sorry)
-
----
-
-```
-Intel, what were you smoking when you designed VEX?
-```
-```
-Intel... after implementing EVEX, I no longer want to know. :)
-```
-```
-Daaamn... APX is hell...
-```
-
----

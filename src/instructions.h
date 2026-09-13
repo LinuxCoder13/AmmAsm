@@ -15,7 +15,6 @@ extern const char* short_imm_instructions[];
 
 extern const char* zero_operand_instructions[];
 
-extern const char* AVX512[];
 extern const char* AVX512_that_not_suppots_broatcast[];
 
 
@@ -31,5 +30,4 @@ extern const int short_imm_instructions_COUNT;
 
 extern const int zero_operand_instructions_COUNT;
 
-extern const int AVX512_COUNT;
 extern const int AVX512_that_not_suppots_broatcast_COUNT;
