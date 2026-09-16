@@ -60,7 +60,8 @@ void compiler(uint8_t *text, int *textsize, uint64_t *e_entry) {
 }
  
 void handl_pipeline(int argc, char **argv){ 
-    char *prosesedfile = Preprocess(argv[0]);
+    char *prosesedfile = no_preprocess ? NULL : Preprocess(argv[0]);
+    char *file_name = prosesedfile ? prosesedfile : argv[0];
 
     if(stop_compile){
         printf("AmmAsm: Preprocessed successfully! %s\n", prosesedfile);
@@ -75,13 +76,13 @@ void handl_pipeline(int argc, char **argv){
 
     uint64_t entry_point = (pie_mode) ? 0x1000 : 0x401000; 
  
-    FILE *input = fopen(prosesedfile, "r");
+    FILE *input = fopen(file_name, "r");
     LEXER(input);
     DEBUG_PRINT_TOKENS();
  
     fclose(input);
-    remove(prosesedfile);
-    free(prosesedfile);
+
+    if(!no_preprocess){remove(prosesedfile); free(prosesedfile);}
     
     PARSE();
     
@@ -118,18 +119,21 @@ int main(int argc, char **argv){
         if (!strcmp(argv[i], "-c")){ out = argv[i+1]; i++; obj_file = 1; continue; }
         if (!strcmp(argv[i], "-v")){ printf("AASM version %s\n", VERSION); exit(0);}
         if (!strcmp(argv[i], "-d") || !strcmp(argv[i], "--debug")) { debug = 1; continue;}
+        if (!strcmp(argv[i], "--no-preprocess")){no_preprocess = 1; continue;}
         if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")){ 
             puts("AASM - Amm Assembler\n");
             puts("Usage:");
             puts("  ./aasm [options] <input_file>\n");
             puts("Options:");
-            puts("  -o <file.out>  Specify the output file name.");
-            puts("  -c <file.out>  Compile to an object file instead of executable.");
-            puts("  -pie           Enable Position Independent Executable mode.");
-            puts("  -d, --debug    Display a debug information while compiling.");
-            puts("  -v             Display the version of AASM and exit.");
-            puts("  -h, --help     Display this help menu and exit.");
-            puts("  -E             Run the preprocessor only and generate <input>.i\n");
+            puts("  -o <file.out>   Specify the output file name.");
+            puts("  -c <file.out>   Compile to an object file instead of executable.");
+            puts("  -pie            Enable Position Independent Executable mode.");
+            puts("  -d, --debug     Display a debug information while compiling.");
+            puts("  -v              Display the version of AASM and exit.");
+            puts("  -h, --help      Display this help menu and exit.");
+            puts("  -E              Run the preprocessor only and generate <input>.i");
+            puts("  -pe32+          Compile to PE32+ file format");
+            puts("  --no-preprocess Do not run the preprocessor to increase speed\n");
             puts("Report bugs to: https://github.com/LinuxCoder13/AmmAsm/issues");
             exit(0);
         }
@@ -148,6 +152,11 @@ int main(int argc, char **argv){
 
     if(pie_mode && obj_file){
         fprintf(stderr, "AmmAsm: can't combinate pie and obj file mode\n");
+        return 1;
+    }
+
+    if(no_preprocess && stop_compile){
+        fprintf(stderr, "AmmAsm: impossible combination of flags\n");
         return 1;
     }
 

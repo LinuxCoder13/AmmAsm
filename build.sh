@@ -7,3 +7,6 @@ gcc -std=gnu99 -Oz \
     -fno-ident \
     -march=native \
     src/*.c -o aasm
+
+# Remove "-march=native" when you will test "benchmark/memory.sh"! 
+# Else you might get SIGILL

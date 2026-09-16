@@ -15,3 +15,4 @@ uint8_t avx512f_defined = 0;
 uint8_t avx512vl_defined = 0;
 uint8_t rdpru_defined = 0;
 uint8_t isnt_error = 0;
+uint8_t no_preprocess = 0;

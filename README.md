@@ -28,6 +28,8 @@ AmmAsm is a handwritten x86-64 assembler designed for simplicity and clarity, ed
 
 4) Added PE32+ output (experimental)
 
+5) Added Benchmakrs - AmmAsm vs Nasm
+
 ---
 
 ## Advanced APX (Advance Performance Extension) Support
