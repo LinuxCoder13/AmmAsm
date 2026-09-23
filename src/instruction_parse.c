@@ -773,6 +773,57 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
 
             *pc += *s;
         }
+
+        // ndd, reg -> only for not/neg
+        else if((a->type == O_REG8  && b->type == O_REG8 )|| 
+                (a->type == O_REG16 && b->type == O_REG16)||
+                (a->type == O_REG32 && b->type == O_REG32)||
+                (a->type == O_REG64 && b->type == O_REG64)){
+            if(insn->group != 2 && insn->group != 3) goto error;
+
+            int reg = reg_index(a);
+            int src = reg_index(b);
+            int sz = operand_bits(a);
+            
+            /* 
+                Nasm encodes mul reg, reg as imul reg, reg. AmmAsm does not support this sugar yet.
+
+                Basicly nf + mul -> Nasm encodes via VEX prefix as xmul which is BMI2 instruction.
+                AmmAsm does not supports BMI yet. so we are exiting with error ;(
+            */
+
+            if(a->nf && insn->group == 2) goto error;
+
+            node->ins.pc = *pc;
+            *s = encode_NDD_APX_reg_reg_reg(machine_code, sz == 8 ? 0xf6 : 0xf7, 
+                insn->group,
+                reg,
+                src,
+                EVEX_MAP_APX,
+                0,
+                sz == 16 ? EVEX_PP_66 : EVEX_PP_NONE , sz == 64, a->nf , EVEX_Z0, 1);
+            *pc += *s;  
+        }
+
+        // ndd, mem -> only for not/neg
+        else if ((a->type == O_REG64 || a->type == O_REG32 ||
+            a->type == O_REG16 || a->type == O_REG8) && b->type == O_MEM  && c->type == O_NONE) {
+            AddrExpr *mem = &b->addr;
+
+            uint8_t sz = operand_bits(a);
+
+            if(a->nf && insn->group == 2) goto error;
+            node->ins.pc = *pc;
+            *s = encode_NDD_APX_reg_reg_rm(machine_code, sz == 8 ? 0xF6 : 0xf7, 
+                insn->group,
+                reg_index(b),
+                mem,
+                EVEX_MAP_APX,
+                0,
+                sz == 16 ? EVEX_PP_66 : EVEX_PP_NONE , sz == 64 /* bytes */, a->nf , EVEX_Z0, 1);   
+
+            *pc += *s;
+        }
     }
 
     // TEST

@@ -433,6 +433,10 @@ NOT       byte mem                 [rm: f6 /2]
 NOT       word mem                 [rm: 66 f7 /2]
 NOT       dword mem                [rm: f7 /2]
 NOT       qword mem                [rm: rex.w f7 /2]                      X86_64
+NOT       reg64, rm64             [evex.0.w1.f7 /2]                      APX_NDD
+NOT       reg32, rm32             [evex.0.w0.f7 /2]                      APX_NDD
+NOT       reg16, rm16             [evex.66.w0.f7 /2]                     APX_NDD
+NOT       reg8,  rm8              [evex.0.w0.f6 /2]                      APX_NDD
 
 NEG       reg8                     [rm: f6 /3]
 NEG       reg16                    [rm: 66 f7 /3]
@@ -442,6 +446,10 @@ NEG       byte mem                 [rm: f6 /3]
 NEG       word mem                 [rm: 66 f7 /3]
 NEG       dword mem                [rm: f7 /3]
 NEG       qword mem                [rm: rex.w f7 /3]                      X86_64
+NEG       reg64, rm64             [evex.0.w1.f7 /3]                      APX_NDD
+NEG       reg32, rm32             [evex.0.w0.f7 /3]                      APX_NDD
+NEG       reg16, rm16             [evex.66.w0.f7 /3]                     APX_NDD
+NEG       reg8,  rm8              [evex.0.w0.f6 /3]                      APX_NDD
 
 MUL       reg8                     [rm: f6 /4]
 MUL       reg16                    [rm: 66 f7 /4]
@@ -806,6 +814,310 @@ CMOVZ     reg16,mem16              [rm: 66 0f 44 /r]
 CMOVZ     reg32,mem32              [rm: 0f 44 /r]
 CMOVZ     reg64,mem64              [rm: rex.w 0f 44 /r]                   X86_64
 
+; --- CMOVcc APX (NDD, 3-operand) forms --------------------------------------
+; CMOVcc dest,src1,src2 (dest = src2 if condition true, else src1)
+; CMOVcc dest,src1,mem  -> opcode unchanged
+; CMOVcc dest,mem,src2  -> opcode = paired(negated-condition) opcode (encoder trick)
+CMOVA     reg64,reg64,reg64         [evex.w1.0.PN.47 /r]                APX_NDD
+CMOVA     reg32,reg32,reg32         [evex.w0.0.PN.47 /r]                APX_NDD
+CMOVA     reg16,reg16,reg16         [evex.w0.0.P66.47 /r]                APX_NDD
+CMOVA     reg64,reg64,mem64         [evex.w1.0.PN.47 /r]                APX_NDD
+CMOVA     reg32,reg32,mem32         [evex.w0.0.PN.47 /r]                APX_NDD
+CMOVA     reg16,reg16,mem16         [evex.w0.0.P66.47 /r]                APX_NDD
+CMOVA     reg64,mem64,reg64         [evex.w1.0.PN.46 /r]                APX_NDD
+CMOVA     reg32,mem32,reg32         [evex.w0.0.PN.46 /r]                APX_NDD
+CMOVA     reg16,mem16,reg16         [evex.w0.0.P66.46 /r]                APX_NDD
+
+CMOVAE    reg64,reg64,reg64         [evex.w1.0.PN.43 /r]                APX_NDD
+CMOVAE    reg32,reg32,reg32         [evex.w0.0.PN.43 /r]                APX_NDD
+CMOVAE    reg16,reg16,reg16         [evex.w0.0.P66.43 /r]                APX_NDD
+CMOVAE    reg64,reg64,mem64         [evex.w1.0.PN.43 /r]                APX_NDD
+CMOVAE    reg32,reg32,mem32         [evex.w0.0.PN.43 /r]                APX_NDD
+CMOVAE    reg16,reg16,mem16         [evex.w0.0.P66.43 /r]                APX_NDD
+CMOVAE    reg64,mem64,reg64         [evex.w1.0.PN.42 /r]                APX_NDD
+CMOVAE    reg32,mem32,reg32         [evex.w0.0.PN.42 /r]                APX_NDD
+CMOVAE    reg16,mem16,reg16         [evex.w0.0.P66.42 /r]                APX_NDD
+
+CMOVB     reg64,reg64,reg64         [evex.w1.0.PN.42 /r]                APX_NDD
+CMOVB     reg32,reg32,reg32         [evex.w0.0.PN.42 /r]                APX_NDD
+CMOVB     reg16,reg16,reg16         [evex.w0.0.P66.42 /r]                APX_NDD
+CMOVB     reg64,reg64,mem64         [evex.w1.0.PN.42 /r]                APX_NDD
+CMOVB     reg32,reg32,mem32         [evex.w0.0.PN.42 /r]                APX_NDD
+CMOVB     reg16,reg16,mem16         [evex.w0.0.P66.42 /r]                APX_NDD
+CMOVB     reg64,mem64,reg64         [evex.w1.0.PN.43 /r]                APX_NDD
+CMOVB     reg32,mem32,reg32         [evex.w0.0.PN.43 /r]                APX_NDD
+CMOVB     reg16,mem16,reg16         [evex.w0.0.P66.43 /r]                APX_NDD
+
+CMOVBE    reg64,reg64,reg64         [evex.w1.0.PN.46 /r]                APX_NDD
+CMOVBE    reg32,reg32,reg32         [evex.w0.0.PN.46 /r]                APX_NDD
+CMOVBE    reg16,reg16,reg16         [evex.w0.0.P66.46 /r]                APX_NDD
+CMOVBE    reg64,reg64,mem64         [evex.w1.0.PN.46 /r]                APX_NDD
+CMOVBE    reg32,reg32,mem32         [evex.w0.0.PN.46 /r]                APX_NDD
+CMOVBE    reg16,reg16,mem16         [evex.w0.0.P66.46 /r]                APX_NDD
+CMOVBE    reg64,mem64,reg64         [evex.w1.0.PN.47 /r]                APX_NDD
+CMOVBE    reg32,mem32,reg32         [evex.w0.0.PN.47 /r]                APX_NDD
+CMOVBE    reg16,mem16,reg16         [evex.w0.0.P66.47 /r]                APX_NDD
+
+CMOVC     reg64,reg64,reg64         [evex.w1.0.PN.42 /r]                APX_NDD
+CMOVC     reg32,reg32,reg32         [evex.w0.0.PN.42 /r]                APX_NDD
+CMOVC     reg16,reg16,reg16         [evex.w0.0.P66.42 /r]                APX_NDD
+CMOVC     reg64,reg64,mem64         [evex.w1.0.PN.42 /r]                APX_NDD
+CMOVC     reg32,reg32,mem32         [evex.w0.0.PN.42 /r]                APX_NDD
+CMOVC     reg16,reg16,mem16         [evex.w0.0.P66.42 /r]                APX_NDD
+CMOVC     reg64,mem64,reg64         [evex.w1.0.PN.43 /r]                APX_NDD
+CMOVC     reg32,mem32,reg32         [evex.w0.0.PN.43 /r]                APX_NDD
+CMOVC     reg16,mem16,reg16         [evex.w0.0.P66.43 /r]                APX_NDD
+
+CMOVE     reg64,reg64,reg64         [evex.w1.0.PN.44 /r]                APX_NDD
+CMOVE     reg32,reg32,reg32         [evex.w0.0.PN.44 /r]                APX_NDD
+CMOVE     reg16,reg16,reg16         [evex.w0.0.P66.44 /r]                APX_NDD
+CMOVE     reg64,reg64,mem64         [evex.w1.0.PN.44 /r]                APX_NDD
+CMOVE     reg32,reg32,mem32         [evex.w0.0.PN.44 /r]                APX_NDD
+CMOVE     reg16,reg16,mem16         [evex.w0.0.P66.44 /r]                APX_NDD
+CMOVE     reg64,mem64,reg64         [evex.w1.0.PN.45 /r]                APX_NDD
+CMOVE     reg32,mem32,reg32         [evex.w0.0.PN.45 /r]                APX_NDD
+CMOVE     reg16,mem16,reg16         [evex.w0.0.P66.45 /r]                APX_NDD
+
+CMOVG     reg64,reg64,reg64         [evex.w1.0.PN.4F /r]                APX_NDD
+CMOVG     reg32,reg32,reg32         [evex.w0.0.PN.4F /r]                APX_NDD
+CMOVG     reg16,reg16,reg16         [evex.w0.0.P66.4F /r]                APX_NDD
+CMOVG     reg64,reg64,mem64         [evex.w1.0.PN.4F /r]                APX_NDD
+CMOVG     reg32,reg32,mem32         [evex.w0.0.PN.4F /r]                APX_NDD
+CMOVG     reg16,reg16,mem16         [evex.w0.0.P66.4F /r]                APX_NDD
+CMOVG     reg64,mem64,reg64         [evex.w1.0.PN.4E /r]                APX_NDD
+CMOVG     reg32,mem32,reg32         [evex.w0.0.PN.4E /r]                APX_NDD
+CMOVG     reg16,mem16,reg16         [evex.w0.0.P66.4E /r]                APX_NDD
+
+CMOVGE    reg64,reg64,reg64         [evex.w1.0.PN.4D /r]                APX_NDD
+CMOVGE    reg32,reg32,reg32         [evex.w0.0.PN.4D /r]                APX_NDD
+CMOVGE    reg16,reg16,reg16         [evex.w0.0.P66.4D /r]                APX_NDD
+CMOVGE    reg64,reg64,mem64         [evex.w1.0.PN.4D /r]                APX_NDD
+CMOVGE    reg32,reg32,mem32         [evex.w0.0.PN.4D /r]                APX_NDD
+CMOVGE    reg16,reg16,mem16         [evex.w0.0.P66.4D /r]                APX_NDD
+CMOVGE    reg64,mem64,reg64         [evex.w1.0.PN.4C /r]                APX_NDD
+CMOVGE    reg32,mem32,reg32         [evex.w0.0.PN.4C /r]                APX_NDD
+CMOVGE    reg16,mem16,reg16         [evex.w0.0.P66.4C /r]                APX_NDD
+
+CMOVL     reg64,reg64,reg64         [evex.w1.0.PN.4C /r]                APX_NDD
+CMOVL     reg32,reg32,reg32         [evex.w0.0.PN.4C /r]                APX_NDD
+CMOVL     reg16,reg16,reg16         [evex.w0.0.P66.4C /r]                APX_NDD
+CMOVL     reg64,reg64,mem64         [evex.w1.0.PN.4C /r]                APX_NDD
+CMOVL     reg32,reg32,mem32         [evex.w0.0.PN.4C /r]                APX_NDD
+CMOVL     reg16,reg16,mem16         [evex.w0.0.P66.4C /r]                APX_NDD
+CMOVL     reg64,mem64,reg64         [evex.w1.0.PN.4D /r]                APX_NDD
+CMOVL     reg32,mem32,reg32         [evex.w0.0.PN.4D /r]                APX_NDD
+CMOVL     reg16,mem16,reg16         [evex.w0.0.P66.4D /r]                APX_NDD
+
+CMOVLE    reg64,reg64,reg64         [evex.w1.0.PN.4E /r]                APX_NDD
+CMOVLE    reg32,reg32,reg32         [evex.w0.0.PN.4E /r]                APX_NDD
+CMOVLE    reg16,reg16,reg16         [evex.w0.0.P66.4E /r]                APX_NDD
+CMOVLE    reg64,reg64,mem64         [evex.w1.0.PN.4E /r]                APX_NDD
+CMOVLE    reg32,reg32,mem32         [evex.w0.0.PN.4E /r]                APX_NDD
+CMOVLE    reg16,reg16,mem16         [evex.w0.0.P66.4E /r]                APX_NDD
+CMOVLE    reg64,mem64,reg64         [evex.w1.0.PN.4F /r]                APX_NDD
+CMOVLE    reg32,mem32,reg32         [evex.w0.0.PN.4F /r]                APX_NDD
+CMOVLE    reg16,mem16,reg16         [evex.w0.0.P66.4F /r]                APX_NDD
+
+CMOVNA    reg64,reg64,reg64         [evex.w1.0.PN.46 /r]                APX_NDD
+CMOVNA    reg32,reg32,reg32         [evex.w0.0.PN.46 /r]                APX_NDD
+CMOVNA    reg16,reg16,reg16         [evex.w0.0.P66.46 /r]                APX_NDD
+CMOVNA    reg64,reg64,mem64         [evex.w1.0.PN.46 /r]                APX_NDD
+CMOVNA    reg32,reg32,mem32         [evex.w0.0.PN.46 /r]                APX_NDD
+CMOVNA    reg16,reg16,mem16         [evex.w0.0.P66.46 /r]                APX_NDD
+CMOVNA    reg64,mem64,reg64         [evex.w1.0.PN.47 /r]                APX_NDD
+CMOVNA    reg32,mem32,reg32         [evex.w0.0.PN.47 /r]                APX_NDD
+CMOVNA    reg16,mem16,reg16         [evex.w0.0.P66.47 /r]                APX_NDD
+
+CMOVNAE   reg64,reg64,reg64         [evex.w1.0.PN.42 /r]                APX_NDD
+CMOVNAE   reg32,reg32,reg32         [evex.w0.0.PN.42 /r]                APX_NDD
+CMOVNAE   reg16,reg16,reg16         [evex.w0.0.P66.42 /r]                APX_NDD
+CMOVNAE   reg64,reg64,mem64         [evex.w1.0.PN.42 /r]                APX_NDD
+CMOVNAE   reg32,reg32,mem32         [evex.w0.0.PN.42 /r]                APX_NDD
+CMOVNAE   reg16,reg16,mem16         [evex.w0.0.P66.42 /r]                APX_NDD
+CMOVNAE   reg64,mem64,reg64         [evex.w1.0.PN.43 /r]                APX_NDD
+CMOVNAE   reg32,mem32,reg32         [evex.w0.0.PN.43 /r]                APX_NDD
+CMOVNAE   reg16,mem16,reg16         [evex.w0.0.P66.43 /r]                APX_NDD
+
+CMOVNB    reg64,reg64,reg64         [evex.w1.0.PN.43 /r]                APX_NDD
+CMOVNB    reg32,reg32,reg32         [evex.w0.0.PN.43 /r]                APX_NDD
+CMOVNB    reg16,reg16,reg16         [evex.w0.0.P66.43 /r]                APX_NDD
+CMOVNB    reg64,reg64,mem64         [evex.w1.0.PN.43 /r]                APX_NDD
+CMOVNB    reg32,reg32,mem32         [evex.w0.0.PN.43 /r]                APX_NDD
+CMOVNB    reg16,reg16,mem16         [evex.w0.0.P66.43 /r]                APX_NDD
+CMOVNB    reg64,mem64,reg64         [evex.w1.0.PN.42 /r]                APX_NDD
+CMOVNB    reg32,mem32,reg32         [evex.w0.0.PN.42 /r]                APX_NDD
+CMOVNB    reg16,mem16,reg16         [evex.w0.0.P66.42 /r]                APX_NDD
+
+CMOVNBE   reg64,reg64,reg64         [evex.w1.0.PN.47 /r]                APX_NDD
+CMOVNBE   reg32,reg32,reg32         [evex.w0.0.PN.47 /r]                APX_NDD
+CMOVNBE   reg16,reg16,reg16         [evex.w0.0.P66.47 /r]                APX_NDD
+CMOVNBE   reg64,reg64,mem64         [evex.w1.0.PN.47 /r]                APX_NDD
+CMOVNBE   reg32,reg32,mem32         [evex.w0.0.PN.47 /r]                APX_NDD
+CMOVNBE   reg16,reg16,mem16         [evex.w0.0.P66.47 /r]                APX_NDD
+CMOVNBE   reg64,mem64,reg64         [evex.w1.0.PN.46 /r]                APX_NDD
+CMOVNBE   reg32,mem32,reg32         [evex.w0.0.PN.46 /r]                APX_NDD
+CMOVNBE   reg16,mem16,reg16         [evex.w0.0.P66.46 /r]                APX_NDD
+
+CMOVNC    reg64,reg64,reg64         [evex.w1.0.PN.43 /r]                APX_NDD
+CMOVNC    reg32,reg32,reg32         [evex.w0.0.PN.43 /r]                APX_NDD
+CMOVNC    reg16,reg16,reg16         [evex.w0.0.P66.43 /r]                APX_NDD
+CMOVNC    reg64,reg64,mem64         [evex.w1.0.PN.43 /r]                APX_NDD
+CMOVNC    reg32,reg32,mem32         [evex.w0.0.PN.43 /r]                APX_NDD
+CMOVNC    reg16,reg16,mem16         [evex.w0.0.P66.43 /r]                APX_NDD
+CMOVNC    reg64,mem64,reg64         [evex.w1.0.PN.42 /r]                APX_NDD
+CMOVNC    reg32,mem32,reg32         [evex.w0.0.PN.42 /r]                APX_NDD
+CMOVNC    reg16,mem16,reg16         [evex.w0.0.P66.42 /r]                APX_NDD
+
+CMOVNE    reg64,reg64,reg64         [evex.w1.0.PN.45 /r]                APX_NDD
+CMOVNE    reg32,reg32,reg32         [evex.w0.0.PN.45 /r]                APX_NDD
+CMOVNE    reg16,reg16,reg16         [evex.w0.0.P66.45 /r]                APX_NDD
+CMOVNE    reg64,reg64,mem64         [evex.w1.0.PN.45 /r]                APX_NDD
+CMOVNE    reg32,reg32,mem32         [evex.w0.0.PN.45 /r]                APX_NDD
+CMOVNE    reg16,reg16,mem16         [evex.w0.0.P66.45 /r]                APX_NDD
+CMOVNE    reg64,mem64,reg64         [evex.w1.0.PN.44 /r]                APX_NDD
+CMOVNE    reg32,mem32,reg32         [evex.w0.0.PN.44 /r]                APX_NDD
+CMOVNE    reg16,mem16,reg16         [evex.w0.0.P66.44 /r]                APX_NDD
+
+CMOVNG    reg64,reg64,reg64         [evex.w1.0.PN.4E /r]                APX_NDD
+CMOVNG    reg32,reg32,reg32         [evex.w0.0.PN.4E /r]                APX_NDD
+CMOVNG    reg16,reg16,reg16         [evex.w0.0.P66.4E /r]                APX_NDD
+CMOVNG    reg64,reg64,mem64         [evex.w1.0.PN.4E /r]                APX_NDD
+CMOVNG    reg32,reg32,mem32         [evex.w0.0.PN.4E /r]                APX_NDD
+CMOVNG    reg16,reg16,mem16         [evex.w0.0.P66.4E /r]                APX_NDD
+CMOVNG    reg64,mem64,reg64         [evex.w1.0.PN.4F /r]                APX_NDD
+CMOVNG    reg32,mem32,reg32         [evex.w0.0.PN.4F /r]                APX_NDD
+CMOVNG    reg16,mem16,reg16         [evex.w0.0.P66.4F /r]                APX_NDD
+
+CMOVNGE   reg64,reg64,reg64         [evex.w1.0.PN.4C /r]                APX_NDD
+CMOVNGE   reg32,reg32,reg32         [evex.w0.0.PN.4C /r]                APX_NDD
+CMOVNGE   reg16,reg16,reg16         [evex.w0.0.P66.4C /r]                APX_NDD
+CMOVNGE   reg64,reg64,mem64         [evex.w1.0.PN.4C /r]                APX_NDD
+CMOVNGE   reg32,reg32,mem32         [evex.w0.0.PN.4C /r]                APX_NDD
+CMOVNGE   reg16,reg16,mem16         [evex.w0.0.P66.4C /r]                APX_NDD
+CMOVNGE   reg64,mem64,reg64         [evex.w1.0.PN.4D /r]                APX_NDD
+CMOVNGE   reg32,mem32,reg32         [evex.w0.0.PN.4D /r]                APX_NDD
+CMOVNGE   reg16,mem16,reg16         [evex.w0.0.P66.4D /r]                APX_NDD
+
+CMOVNL    reg64,reg64,reg64         [evex.w1.0.PN.4D /r]                APX_NDD
+CMOVNL    reg32,reg32,reg32         [evex.w0.0.PN.4D /r]                APX_NDD
+CMOVNL    reg16,reg16,reg16         [evex.w0.0.P66.4D /r]                APX_NDD
+CMOVNL    reg64,reg64,mem64         [evex.w1.0.PN.4D /r]                APX_NDD
+CMOVNL    reg32,reg32,mem32         [evex.w0.0.PN.4D /r]                APX_NDD
+CMOVNL    reg16,reg16,mem16         [evex.w0.0.P66.4D /r]                APX_NDD
+CMOVNL    reg64,mem64,reg64         [evex.w1.0.PN.4C /r]                APX_NDD
+CMOVNL    reg32,mem32,reg32         [evex.w0.0.PN.4C /r]                APX_NDD
+CMOVNL    reg16,mem16,reg16         [evex.w0.0.P66.4C /r]                APX_NDD
+
+CMOVNLE   reg64,reg64,reg64         [evex.w1.0.PN.4F /r]                APX_NDD
+CMOVNLE   reg32,reg32,reg32         [evex.w0.0.PN.4F /r]                APX_NDD
+CMOVNLE   reg16,reg16,reg16         [evex.w0.0.P66.4F /r]                APX_NDD
+CMOVNLE   reg64,reg64,mem64         [evex.w1.0.PN.4F /r]                APX_NDD
+CMOVNLE   reg32,reg32,mem32         [evex.w0.0.PN.4F /r]                APX_NDD
+CMOVNLE   reg16,reg16,mem16         [evex.w0.0.P66.4F /r]                APX_NDD
+CMOVNLE   reg64,mem64,reg64         [evex.w1.0.PN.4E /r]                APX_NDD
+CMOVNLE   reg32,mem32,reg32         [evex.w0.0.PN.4E /r]                APX_NDD
+CMOVNLE   reg16,mem16,reg16         [evex.w0.0.P66.4E /r]                APX_NDD
+
+CMOVNO    reg64,reg64,reg64         [evex.w1.0.PN.41 /r]                APX_NDD
+CMOVNO    reg32,reg32,reg32         [evex.w0.0.PN.41 /r]                APX_NDD
+CMOVNO    reg16,reg16,reg16         [evex.w0.0.P66.41 /r]                APX_NDD
+CMOVNO    reg64,reg64,mem64         [evex.w1.0.PN.41 /r]                APX_NDD
+CMOVNO    reg32,reg32,mem32         [evex.w0.0.PN.41 /r]                APX_NDD
+CMOVNO    reg16,reg16,mem16         [evex.w0.0.P66.41 /r]                APX_NDD
+CMOVNO    reg64,mem64,reg64         [evex.w1.0.PN.40 /r]                APX_NDD
+CMOVNO    reg32,mem32,reg32         [evex.w0.0.PN.40 /r]                APX_NDD
+CMOVNO    reg16,mem16,reg16         [evex.w0.0.P66.40 /r]                APX_NDD
+
+CMOVNP    reg64,reg64,reg64         [evex.w1.0.PN.4B /r]                APX_NDD
+CMOVNP    reg32,reg32,reg32         [evex.w0.0.PN.4B /r]                APX_NDD
+CMOVNP    reg16,reg16,reg16         [evex.w0.0.P66.4B /r]                APX_NDD
+CMOVNP    reg64,reg64,mem64         [evex.w1.0.PN.4B /r]                APX_NDD
+CMOVNP    reg32,reg32,mem32         [evex.w0.0.PN.4B /r]                APX_NDD
+CMOVNP    reg16,reg16,mem16         [evex.w0.0.P66.4B /r]                APX_NDD
+CMOVNP    reg64,mem64,reg64         [evex.w1.0.PN.4A /r]                APX_NDD
+CMOVNP    reg32,mem32,reg32         [evex.w0.0.PN.4A /r]                APX_NDD
+CMOVNP    reg16,mem16,reg16         [evex.w0.0.P66.4A /r]                APX_NDD
+
+CMOVNS    reg64,reg64,reg64         [evex.w1.0.PN.49 /r]                APX_NDD
+CMOVNS    reg32,reg32,reg32         [evex.w0.0.PN.49 /r]                APX_NDD
+CMOVNS    reg16,reg16,reg16         [evex.w0.0.P66.49 /r]                APX_NDD
+CMOVNS    reg64,reg64,mem64         [evex.w1.0.PN.49 /r]                APX_NDD
+CMOVNS    reg32,reg32,mem32         [evex.w0.0.PN.49 /r]                APX_NDD
+CMOVNS    reg16,reg16,mem16         [evex.w0.0.P66.49 /r]                APX_NDD
+CMOVNS    reg64,mem64,reg64         [evex.w1.0.PN.48 /r]                APX_NDD
+CMOVNS    reg32,mem32,reg32         [evex.w0.0.PN.48 /r]                APX_NDD
+CMOVNS    reg16,mem16,reg16         [evex.w0.0.P66.48 /r]                APX_NDD
+
+CMOVNZ    reg64,reg64,reg64         [evex.w1.0.PN.45 /r]                APX_NDD
+CMOVNZ    reg32,reg32,reg32         [evex.w0.0.PN.45 /r]                APX_NDD
+CMOVNZ    reg16,reg16,reg16         [evex.w0.0.P66.45 /r]                APX_NDD
+CMOVNZ    reg64,reg64,mem64         [evex.w1.0.PN.45 /r]                APX_NDD
+CMOVNZ    reg32,reg32,mem32         [evex.w0.0.PN.45 /r]                APX_NDD
+CMOVNZ    reg16,reg16,mem16         [evex.w0.0.P66.45 /r]                APX_NDD
+CMOVNZ    reg64,mem64,reg64         [evex.w1.0.PN.44 /r]                APX_NDD
+CMOVNZ    reg32,mem32,reg32         [evex.w0.0.PN.44 /r]                APX_NDD
+CMOVNZ    reg16,mem16,reg16         [evex.w0.0.P66.44 /r]                APX_NDD
+
+CMOVO     reg64,reg64,reg64         [evex.w1.0.PN.40 /r]                APX_NDD
+CMOVO     reg32,reg32,reg32         [evex.w0.0.PN.40 /r]                APX_NDD
+CMOVO     reg16,reg16,reg16         [evex.w0.0.P66.40 /r]                APX_NDD
+CMOVO     reg64,reg64,mem64         [evex.w1.0.PN.40 /r]                APX_NDD
+CMOVO     reg32,reg32,mem32         [evex.w0.0.PN.40 /r]                APX_NDD
+CMOVO     reg16,reg16,mem16         [evex.w0.0.P66.40 /r]                APX_NDD
+CMOVO     reg64,mem64,reg64         [evex.w1.0.PN.41 /r]                APX_NDD
+CMOVO     reg32,mem32,reg32         [evex.w0.0.PN.41 /r]                APX_NDD
+CMOVO     reg16,mem16,reg16         [evex.w0.0.P66.41 /r]                APX_NDD
+
+CMOVP     reg64,reg64,reg64         [evex.w1.0.PN.4A /r]                APX_NDD
+CMOVP     reg32,reg32,reg32         [evex.w0.0.PN.4A /r]                APX_NDD
+CMOVP     reg16,reg16,reg16         [evex.w0.0.P66.4A /r]                APX_NDD
+CMOVP     reg64,reg64,mem64         [evex.w1.0.PN.4A /r]                APX_NDD
+CMOVP     reg32,reg32,mem32         [evex.w0.0.PN.4A /r]                APX_NDD
+CMOVP     reg16,reg16,mem16         [evex.w0.0.P66.4A /r]                APX_NDD
+CMOVP     reg64,mem64,reg64         [evex.w1.0.PN.4B /r]                APX_NDD
+CMOVP     reg32,mem32,reg32         [evex.w0.0.PN.4B /r]                APX_NDD
+CMOVP     reg16,mem16,reg16         [evex.w0.0.P66.4B /r]                APX_NDD
+
+CMOVPE    reg64,reg64,reg64         [evex.w1.0.PN.4A /r]                APX_NDD
+CMOVPE    reg32,reg32,reg32         [evex.w0.0.PN.4A /r]                APX_NDD
+CMOVPE    reg16,reg16,reg16         [evex.w0.0.P66.4A /r]                APX_NDD
+CMOVPE    reg64,reg64,mem64         [evex.w1.0.PN.4A /r]                APX_NDD
+CMOVPE    reg32,reg32,mem32         [evex.w0.0.PN.4A /r]                APX_NDD
+CMOVPE    reg16,reg16,mem16         [evex.w0.0.P66.4A /r]                APX_NDD
+CMOVPE    reg64,mem64,reg64         [evex.w1.0.PN.4B /r]                APX_NDD
+CMOVPE    reg32,mem32,reg32         [evex.w0.0.PN.4B /r]                APX_NDD
+CMOVPE    reg16,mem16,reg16         [evex.w0.0.P66.4B /r]                APX_NDD
+
+CMOVPO    reg64,reg64,reg64         [evex.w1.0.PN.4B /r]                APX_NDD
+CMOVPO    reg32,reg32,reg32         [evex.w0.0.PN.4B /r]                APX_NDD
+CMOVPO    reg16,reg16,reg16         [evex.w0.0.P66.4B /r]                APX_NDD
+CMOVPO    reg64,reg64,mem64         [evex.w1.0.PN.4B /r]                APX_NDD
+CMOVPO    reg32,reg32,mem32         [evex.w0.0.PN.4B /r]                APX_NDD
+CMOVPO    reg16,reg16,mem16         [evex.w0.0.P66.4B /r]                APX_NDD
+CMOVPO    reg64,mem64,reg64         [evex.w1.0.PN.4A /r]                APX_NDD
+CMOVPO    reg32,mem32,reg32         [evex.w0.0.PN.4A /r]                APX_NDD
+CMOVPO    reg16,mem16,reg16         [evex.w0.0.P66.4A /r]                APX_NDD
+
+CMOVS     reg64,reg64,reg64         [evex.w1.0.PN.48 /r]                APX_NDD
+CMOVS     reg32,reg32,reg32         [evex.w0.0.PN.48 /r]                APX_NDD
+CMOVS     reg16,reg16,reg16         [evex.w0.0.P66.48 /r]                APX_NDD
+CMOVS     reg64,reg64,mem64         [evex.w1.0.PN.48 /r]                APX_NDD
+CMOVS     reg32,reg32,mem32         [evex.w0.0.PN.48 /r]                APX_NDD
+CMOVS     reg16,reg16,mem16         [evex.w0.0.P66.48 /r]                APX_NDD
+CMOVS     reg64,mem64,reg64         [evex.w1.0.PN.49 /r]                APX_NDD
+CMOVS     reg32,mem32,reg32         [evex.w0.0.PN.49 /r]                APX_NDD
+CMOVS     reg16,mem16,reg16         [evex.w0.0.P66.49 /r]                APX_NDD
+
+CMOVZ     reg64,reg64,reg64         [evex.w1.0.PN.44 /r]                APX_NDD
+CMOVZ     reg32,reg32,reg32         [evex.w0.0.PN.44 /r]                APX_NDD
+CMOVZ     reg16,reg16,reg16         [evex.w0.0.P66.44 /r]                APX_NDD
+CMOVZ     reg64,reg64,mem64         [evex.w1.0.PN.44 /r]                APX_NDD
+CMOVZ     reg32,reg32,mem32         [evex.w0.0.PN.44 /r]                APX_NDD
+CMOVZ     reg16,reg16,mem16         [evex.w0.0.P66.44 /r]                APX_NDD
+CMOVZ     reg64,mem64,reg64         [evex.w1.0.PN.45 /r]                APX_NDD
+CMOVZ     reg32,mem32,reg32         [evex.w0.0.PN.45 /r]                APX_NDD
+CMOVZ     reg16,mem16,reg16         [evex.w0.0.P66.45 /r]                APX_NDD
+
 ; --- SETcc -----------------------------------------------------------------
 ; Opcode = 0F 90+cc (cc = condition code)
 SETA      reg8                     [rm: 0f 97 /r]
@@ -919,6 +1231,9 @@ FWAIT                              [oi: 9b]
 PAUSE                              [oi: f3 90]
 UD2                                [oi: 0f 0b]
 RDPRU                              [oi: 0f 01 fd]
+RDTSC                              [oi: 0f 31]
+RDTSCP                             [oi: 0f 01 f9]
+LFENCE                             [oi: 0f ae e8]
 ENDBR64                            [oi: f3 0f 1e fa]
 
 ; ============================================================================
@@ -982,6 +1297,12 @@ IDIV      reg16,reg16             [evex.w0.0.P66.F7 /7]               APX_NDD
 IMUL      reg64,reg64             [evex.w1.0.PN.F7 /5]                APX_NDD
 IMUL      reg32,reg32             [evex.w0.0.PN.F7 /5]                APX_NDD
 IMUL      reg16,reg16             [evex.w0.0.P66.F7 /5]               APX_NDD
+NOT       reg8,reg8               [evex.w0.0.PN.F6 /2]                APX_NDD
+NEG       reg8,reg8               [evex.w0.0.PN.F6 /3]                APX_NDD
+MUL       reg8,reg8               [evex.w0.0.PN.F6 /4]                APX_NDD
+DIV       reg8,reg8               [evex.w0.0.PN.F6 /6]                APX_NDD
+IDIV      reg8,reg8               [evex.w0.0.PN.F6 /7]                APX_NDD
+IMUL      reg8,reg8               [evex.w0.0.PN.F6 /5]                APX_NDD
 
 ; --- APX INC/DEC NDD forms --------------------------------------------------
 INC       reg64,reg64             [evex.w1.0.PN.FF /0]                APX_NDD
@@ -1076,6 +1397,279 @@ CCMPG     reg32,reg32              [evex.w0.0.PN.39 /r]                APX_F
 CCMPG     reg16,reg16              [evex.w0.0.P66.39 /r]               APX_F
 CCMPG     reg8,reg8                [evex.w0.0.PN.38 /r]                APX_F
 
+; --- APX CCMP additional forms (reg,mem / mem,reg / reg,imm / mem,imm) ------
+CCMPO     reg64,mem64                [evex.w1.0.PN.3B /r]                APX_F
+CCMPO     reg32,mem32                [evex.w0.0.PN.3B /r]                APX_F
+CCMPO     reg16,mem16                [evex.w0.0.P66.3B /r]                APX_F
+CCMPO     reg8,mem8                  [evex.w0.0.PN.3A /r]                APX_F
+CCMPO     mem64,reg64                [evex.w1.0.PN.39 /r]                APX_F
+CCMPO     mem32,reg32                [evex.w0.0.PN.39 /r]                APX_F
+CCMPO     mem16,reg16                [evex.w0.0.P66.39 /r]                APX_F
+CCMPO     mem8,reg8                  [evex.w0.0.PN.38 /r]                APX_F
+CCMPO     reg64,imm8                [evex.w1.0.PN.83 /7 ib,s]        APX_F
+CCMPO     reg32,imm8                [evex.w0.0.PN.83 /7 ib,s]        APX_F
+CCMPO     reg16,imm8                [evex.w0.0.P66.83 /7 ib,s]        APX_F
+CCMPO     reg8,imm8                  [evex.w0.0.PN.80 /7 ib]             APX_F
+CCMPO     qword mem,imm8            [evex.w1.0.PN.83 /7 ib,s]        APX_F
+CCMPO     dword mem,imm8            [evex.w0.0.PN.83 /7 ib,s]        APX_F
+CCMPO     word mem,imm8            [evex.w0.0.P66.83 /7 ib,s]        APX_F
+CCMPO     byte mem,imm8              [evex.w0.0.PN.80 /7 ib]             APX_F
+
+CCMPNO    reg64,mem64                [evex.w1.0.PN.3B /r]                APX_F
+CCMPNO    reg32,mem32                [evex.w0.0.PN.3B /r]                APX_F
+CCMPNO    reg16,mem16                [evex.w0.0.P66.3B /r]                APX_F
+CCMPNO    reg8,mem8                  [evex.w0.0.PN.3A /r]                APX_F
+CCMPNO    mem64,reg64                [evex.w1.0.PN.39 /r]                APX_F
+CCMPNO    mem32,reg32                [evex.w0.0.PN.39 /r]                APX_F
+CCMPNO    mem16,reg16                [evex.w0.0.P66.39 /r]                APX_F
+CCMPNO    mem8,reg8                  [evex.w0.0.PN.38 /r]                APX_F
+CCMPNO    reg64,imm8                [evex.w1.0.PN.83 /7 ib,s]        APX_F
+CCMPNO    reg32,imm8                [evex.w0.0.PN.83 /7 ib,s]        APX_F
+CCMPNO    reg16,imm8                [evex.w0.0.P66.83 /7 ib,s]        APX_F
+CCMPNO    reg8,imm8                  [evex.w0.0.PN.80 /7 ib]             APX_F
+CCMPNO    qword mem,imm8            [evex.w1.0.PN.83 /7 ib,s]        APX_F
+CCMPNO    dword mem,imm8            [evex.w0.0.PN.83 /7 ib,s]        APX_F
+CCMPNO    word mem,imm8            [evex.w0.0.P66.83 /7 ib,s]        APX_F
+CCMPNO    byte mem,imm8              [evex.w0.0.PN.80 /7 ib]             APX_F
+
+CCMPB     reg64,mem64                [evex.w1.0.PN.3B /r]                APX_F
+CCMPB     reg32,mem32                [evex.w0.0.PN.3B /r]                APX_F
+CCMPB     reg16,mem16                [evex.w0.0.P66.3B /r]                APX_F
+CCMPB     reg8,mem8                  [evex.w0.0.PN.3A /r]                APX_F
+CCMPB     mem64,reg64                [evex.w1.0.PN.39 /r]                APX_F
+CCMPB     mem32,reg32                [evex.w0.0.PN.39 /r]                APX_F
+CCMPB     mem16,reg16                [evex.w0.0.P66.39 /r]                APX_F
+CCMPB     mem8,reg8                  [evex.w0.0.PN.38 /r]                APX_F
+CCMPB     reg64,imm8                [evex.w1.0.PN.83 /7 ib,s]        APX_F
+CCMPB     reg32,imm8                [evex.w0.0.PN.83 /7 ib,s]        APX_F
+CCMPB     reg16,imm8                [evex.w0.0.P66.83 /7 ib,s]        APX_F
+CCMPB     reg8,imm8                  [evex.w0.0.PN.80 /7 ib]             APX_F
+CCMPB     qword mem,imm8            [evex.w1.0.PN.83 /7 ib,s]        APX_F
+CCMPB     dword mem,imm8            [evex.w0.0.PN.83 /7 ib,s]        APX_F
+CCMPB     word mem,imm8            [evex.w0.0.P66.83 /7 ib,s]        APX_F
+CCMPB     byte mem,imm8              [evex.w0.0.PN.80 /7 ib]             APX_F
+
+CCMPAE    reg64,mem64                [evex.w1.0.PN.3B /r]                APX_F
+CCMPAE    reg32,mem32                [evex.w0.0.PN.3B /r]                APX_F
+CCMPAE    reg16,mem16                [evex.w0.0.P66.3B /r]                APX_F
+CCMPAE    reg8,mem8                  [evex.w0.0.PN.3A /r]                APX_F
+CCMPAE    mem64,reg64                [evex.w1.0.PN.39 /r]                APX_F
+CCMPAE    mem32,reg32                [evex.w0.0.PN.39 /r]                APX_F
+CCMPAE    mem16,reg16                [evex.w0.0.P66.39 /r]                APX_F
+CCMPAE    mem8,reg8                  [evex.w0.0.PN.38 /r]                APX_F
+CCMPAE    reg64,imm8                [evex.w1.0.PN.83 /7 ib,s]        APX_F
+CCMPAE    reg32,imm8                [evex.w0.0.PN.83 /7 ib,s]        APX_F
+CCMPAE    reg16,imm8                [evex.w0.0.P66.83 /7 ib,s]        APX_F
+CCMPAE    reg8,imm8                  [evex.w0.0.PN.80 /7 ib]             APX_F
+CCMPAE    qword mem,imm8            [evex.w1.0.PN.83 /7 ib,s]        APX_F
+CCMPAE    dword mem,imm8            [evex.w0.0.PN.83 /7 ib,s]        APX_F
+CCMPAE    word mem,imm8            [evex.w0.0.P66.83 /7 ib,s]        APX_F
+CCMPAE    byte mem,imm8              [evex.w0.0.PN.80 /7 ib]             APX_F
+
+CCMPE     reg64,mem64                [evex.w1.0.PN.3B /r]                APX_F
+CCMPE     reg32,mem32                [evex.w0.0.PN.3B /r]                APX_F
+CCMPE     reg16,mem16                [evex.w0.0.P66.3B /r]                APX_F
+CCMPE     reg8,mem8                  [evex.w0.0.PN.3A /r]                APX_F
+CCMPE     mem64,reg64                [evex.w1.0.PN.39 /r]                APX_F
+CCMPE     mem32,reg32                [evex.w0.0.PN.39 /r]                APX_F
+CCMPE     mem16,reg16                [evex.w0.0.P66.39 /r]                APX_F
+CCMPE     mem8,reg8                  [evex.w0.0.PN.38 /r]                APX_F
+CCMPE     reg64,imm8                [evex.w1.0.PN.83 /7 ib,s]        APX_F
+CCMPE     reg32,imm8                [evex.w0.0.PN.83 /7 ib,s]        APX_F
+CCMPE     reg16,imm8                [evex.w0.0.P66.83 /7 ib,s]        APX_F
+CCMPE     reg8,imm8                  [evex.w0.0.PN.80 /7 ib]             APX_F
+CCMPE     qword mem,imm8            [evex.w1.0.PN.83 /7 ib,s]        APX_F
+CCMPE     dword mem,imm8            [evex.w0.0.PN.83 /7 ib,s]        APX_F
+CCMPE     word mem,imm8            [evex.w0.0.P66.83 /7 ib,s]        APX_F
+CCMPE     byte mem,imm8              [evex.w0.0.PN.80 /7 ib]             APX_F
+
+CCMPNE    reg64,mem64                [evex.w1.0.PN.3B /r]                APX_F
+CCMPNE    reg32,mem32                [evex.w0.0.PN.3B /r]                APX_F
+CCMPNE    reg16,mem16                [evex.w0.0.P66.3B /r]                APX_F
+CCMPNE    reg8,mem8                  [evex.w0.0.PN.3A /r]                APX_F
+CCMPNE    mem64,reg64                [evex.w1.0.PN.39 /r]                APX_F
+CCMPNE    mem32,reg32                [evex.w0.0.PN.39 /r]                APX_F
+CCMPNE    mem16,reg16                [evex.w0.0.P66.39 /r]                APX_F
+CCMPNE    mem8,reg8                  [evex.w0.0.PN.38 /r]                APX_F
+CCMPNE    reg64,imm8                [evex.w1.0.PN.83 /7 ib,s]        APX_F
+CCMPNE    reg32,imm8                [evex.w0.0.PN.83 /7 ib,s]        APX_F
+CCMPNE    reg16,imm8                [evex.w0.0.P66.83 /7 ib,s]        APX_F
+CCMPNE    reg8,imm8                  [evex.w0.0.PN.80 /7 ib]             APX_F
+CCMPNE    qword mem,imm8            [evex.w1.0.PN.83 /7 ib,s]        APX_F
+CCMPNE    dword mem,imm8            [evex.w0.0.PN.83 /7 ib,s]        APX_F
+CCMPNE    word mem,imm8            [evex.w0.0.P66.83 /7 ib,s]        APX_F
+CCMPNE    byte mem,imm8              [evex.w0.0.PN.80 /7 ib]             APX_F
+
+CCMPBE    reg64,mem64                [evex.w1.0.PN.3B /r]                APX_F
+CCMPBE    reg32,mem32                [evex.w0.0.PN.3B /r]                APX_F
+CCMPBE    reg16,mem16                [evex.w0.0.P66.3B /r]                APX_F
+CCMPBE    reg8,mem8                  [evex.w0.0.PN.3A /r]                APX_F
+CCMPBE    mem64,reg64                [evex.w1.0.PN.39 /r]                APX_F
+CCMPBE    mem32,reg32                [evex.w0.0.PN.39 /r]                APX_F
+CCMPBE    mem16,reg16                [evex.w0.0.P66.39 /r]                APX_F
+CCMPBE    mem8,reg8                  [evex.w0.0.PN.38 /r]                APX_F
+CCMPBE    reg64,imm8                [evex.w1.0.PN.83 /7 ib,s]        APX_F
+CCMPBE    reg32,imm8                [evex.w0.0.PN.83 /7 ib,s]        APX_F
+CCMPBE    reg16,imm8                [evex.w0.0.P66.83 /7 ib,s]        APX_F
+CCMPBE    reg8,imm8                  [evex.w0.0.PN.80 /7 ib]             APX_F
+CCMPBE    qword mem,imm8            [evex.w1.0.PN.83 /7 ib,s]        APX_F
+CCMPBE    dword mem,imm8            [evex.w0.0.PN.83 /7 ib,s]        APX_F
+CCMPBE    word mem,imm8            [evex.w0.0.P66.83 /7 ib,s]        APX_F
+CCMPBE    byte mem,imm8              [evex.w0.0.PN.80 /7 ib]             APX_F
+
+CCMPA     reg64,mem64                [evex.w1.0.PN.3B /r]                APX_F
+CCMPA     reg32,mem32                [evex.w0.0.PN.3B /r]                APX_F
+CCMPA     reg16,mem16                [evex.w0.0.P66.3B /r]                APX_F
+CCMPA     reg8,mem8                  [evex.w0.0.PN.3A /r]                APX_F
+CCMPA     mem64,reg64                [evex.w1.0.PN.39 /r]                APX_F
+CCMPA     mem32,reg32                [evex.w0.0.PN.39 /r]                APX_F
+CCMPA     mem16,reg16                [evex.w0.0.P66.39 /r]                APX_F
+CCMPA     mem8,reg8                  [evex.w0.0.PN.38 /r]                APX_F
+CCMPA     reg64,imm8                [evex.w1.0.PN.83 /7 ib,s]        APX_F
+CCMPA     reg32,imm8                [evex.w0.0.PN.83 /7 ib,s]        APX_F
+CCMPA     reg16,imm8                [evex.w0.0.P66.83 /7 ib,s]        APX_F
+CCMPA     reg8,imm8                  [evex.w0.0.PN.80 /7 ib]             APX_F
+CCMPA     qword mem,imm8            [evex.w1.0.PN.83 /7 ib,s]        APX_F
+CCMPA     dword mem,imm8            [evex.w0.0.PN.83 /7 ib,s]        APX_F
+CCMPA     word mem,imm8            [evex.w0.0.P66.83 /7 ib,s]        APX_F
+CCMPA     byte mem,imm8              [evex.w0.0.PN.80 /7 ib]             APX_F
+
+CCMPS     reg64,mem64                [evex.w1.0.PN.3B /r]                APX_F
+CCMPS     reg32,mem32                [evex.w0.0.PN.3B /r]                APX_F
+CCMPS     reg16,mem16                [evex.w0.0.P66.3B /r]                APX_F
+CCMPS     reg8,mem8                  [evex.w0.0.PN.3A /r]                APX_F
+CCMPS     mem64,reg64                [evex.w1.0.PN.39 /r]                APX_F
+CCMPS     mem32,reg32                [evex.w0.0.PN.39 /r]                APX_F
+CCMPS     mem16,reg16                [evex.w0.0.P66.39 /r]                APX_F
+CCMPS     mem8,reg8                  [evex.w0.0.PN.38 /r]                APX_F
+CCMPS     reg64,imm8                [evex.w1.0.PN.83 /7 ib,s]        APX_F
+CCMPS     reg32,imm8                [evex.w0.0.PN.83 /7 ib,s]        APX_F
+CCMPS     reg16,imm8                [evex.w0.0.P66.83 /7 ib,s]        APX_F
+CCMPS     reg8,imm8                  [evex.w0.0.PN.80 /7 ib]             APX_F
+CCMPS     qword mem,imm8            [evex.w1.0.PN.83 /7 ib,s]        APX_F
+CCMPS     dword mem,imm8            [evex.w0.0.PN.83 /7 ib,s]        APX_F
+CCMPS     word mem,imm8            [evex.w0.0.P66.83 /7 ib,s]        APX_F
+CCMPS     byte mem,imm8              [evex.w0.0.PN.80 /7 ib]             APX_F
+
+CCMPNS    reg64,mem64                [evex.w1.0.PN.3B /r]                APX_F
+CCMPNS    reg32,mem32                [evex.w0.0.PN.3B /r]                APX_F
+CCMPNS    reg16,mem16                [evex.w0.0.P66.3B /r]                APX_F
+CCMPNS    reg8,mem8                  [evex.w0.0.PN.3A /r]                APX_F
+CCMPNS    mem64,reg64                [evex.w1.0.PN.39 /r]                APX_F
+CCMPNS    mem32,reg32                [evex.w0.0.PN.39 /r]                APX_F
+CCMPNS    mem16,reg16                [evex.w0.0.P66.39 /r]                APX_F
+CCMPNS    mem8,reg8                  [evex.w0.0.PN.38 /r]                APX_F
+CCMPNS    reg64,imm8                [evex.w1.0.PN.83 /7 ib,s]        APX_F
+CCMPNS    reg32,imm8                [evex.w0.0.PN.83 /7 ib,s]        APX_F
+CCMPNS    reg16,imm8                [evex.w0.0.P66.83 /7 ib,s]        APX_F
+CCMPNS    reg8,imm8                  [evex.w0.0.PN.80 /7 ib]             APX_F
+CCMPNS    qword mem,imm8            [evex.w1.0.PN.83 /7 ib,s]        APX_F
+CCMPNS    dword mem,imm8            [evex.w0.0.PN.83 /7 ib,s]        APX_F
+CCMPNS    word mem,imm8            [evex.w0.0.P66.83 /7 ib,s]        APX_F
+CCMPNS    byte mem,imm8              [evex.w0.0.PN.80 /7 ib]             APX_F
+
+CCMPT     reg64,mem64                [evex.w1.0.PN.3B /r]                APX_F
+CCMPT     reg32,mem32                [evex.w0.0.PN.3B /r]                APX_F
+CCMPT     reg16,mem16                [evex.w0.0.P66.3B /r]                APX_F
+CCMPT     reg8,mem8                  [evex.w0.0.PN.3A /r]                APX_F
+CCMPT     mem64,reg64                [evex.w1.0.PN.39 /r]                APX_F
+CCMPT     mem32,reg32                [evex.w0.0.PN.39 /r]                APX_F
+CCMPT     mem16,reg16                [evex.w0.0.P66.39 /r]                APX_F
+CCMPT     mem8,reg8                  [evex.w0.0.PN.38 /r]                APX_F
+CCMPT     reg64,imm8                [evex.w1.0.PN.83 /7 ib,s]        APX_F
+CCMPT     reg32,imm8                [evex.w0.0.PN.83 /7 ib,s]        APX_F
+CCMPT     reg16,imm8                [evex.w0.0.P66.83 /7 ib,s]        APX_F
+CCMPT     reg8,imm8                  [evex.w0.0.PN.80 /7 ib]             APX_F
+CCMPT     qword mem,imm8            [evex.w1.0.PN.83 /7 ib,s]        APX_F
+CCMPT     dword mem,imm8            [evex.w0.0.PN.83 /7 ib,s]        APX_F
+CCMPT     word mem,imm8            [evex.w0.0.P66.83 /7 ib,s]        APX_F
+CCMPT     byte mem,imm8              [evex.w0.0.PN.80 /7 ib]             APX_F
+
+CCMPF     reg64,mem64                [evex.w1.0.PN.3B /r]                APX_F
+CCMPF     reg32,mem32                [evex.w0.0.PN.3B /r]                APX_F
+CCMPF     reg16,mem16                [evex.w0.0.P66.3B /r]                APX_F
+CCMPF     reg8,mem8                  [evex.w0.0.PN.3A /r]                APX_F
+CCMPF     mem64,reg64                [evex.w1.0.PN.39 /r]                APX_F
+CCMPF     mem32,reg32                [evex.w0.0.PN.39 /r]                APX_F
+CCMPF     mem16,reg16                [evex.w0.0.P66.39 /r]                APX_F
+CCMPF     mem8,reg8                  [evex.w0.0.PN.38 /r]                APX_F
+CCMPF     reg64,imm8                [evex.w1.0.PN.83 /7 ib,s]        APX_F
+CCMPF     reg32,imm8                [evex.w0.0.PN.83 /7 ib,s]        APX_F
+CCMPF     reg16,imm8                [evex.w0.0.P66.83 /7 ib,s]        APX_F
+CCMPF     reg8,imm8                  [evex.w0.0.PN.80 /7 ib]             APX_F
+CCMPF     qword mem,imm8            [evex.w1.0.PN.83 /7 ib,s]        APX_F
+CCMPF     dword mem,imm8            [evex.w0.0.PN.83 /7 ib,s]        APX_F
+CCMPF     word mem,imm8            [evex.w0.0.P66.83 /7 ib,s]        APX_F
+CCMPF     byte mem,imm8              [evex.w0.0.PN.80 /7 ib]             APX_F
+
+CCMPL     reg64,mem64                [evex.w1.0.PN.3B /r]                APX_F
+CCMPL     reg32,mem32                [evex.w0.0.PN.3B /r]                APX_F
+CCMPL     reg16,mem16                [evex.w0.0.P66.3B /r]                APX_F
+CCMPL     reg8,mem8                  [evex.w0.0.PN.3A /r]                APX_F
+CCMPL     mem64,reg64                [evex.w1.0.PN.39 /r]                APX_F
+CCMPL     mem32,reg32                [evex.w0.0.PN.39 /r]                APX_F
+CCMPL     mem16,reg16                [evex.w0.0.P66.39 /r]                APX_F
+CCMPL     mem8,reg8                  [evex.w0.0.PN.38 /r]                APX_F
+CCMPL     reg64,imm8                [evex.w1.0.PN.83 /7 ib,s]        APX_F
+CCMPL     reg32,imm8                [evex.w0.0.PN.83 /7 ib,s]        APX_F
+CCMPL     reg16,imm8                [evex.w0.0.P66.83 /7 ib,s]        APX_F
+CCMPL     reg8,imm8                  [evex.w0.0.PN.80 /7 ib]             APX_F
+CCMPL     qword mem,imm8            [evex.w1.0.PN.83 /7 ib,s]        APX_F
+CCMPL     dword mem,imm8            [evex.w0.0.PN.83 /7 ib,s]        APX_F
+CCMPL     word mem,imm8            [evex.w0.0.P66.83 /7 ib,s]        APX_F
+CCMPL     byte mem,imm8              [evex.w0.0.PN.80 /7 ib]             APX_F
+
+CCMPGE    reg64,mem64                [evex.w1.0.PN.3B /r]                APX_F
+CCMPGE    reg32,mem32                [evex.w0.0.PN.3B /r]                APX_F
+CCMPGE    reg16,mem16                [evex.w0.0.P66.3B /r]                APX_F
+CCMPGE    reg8,mem8                  [evex.w0.0.PN.3A /r]                APX_F
+CCMPGE    mem64,reg64                [evex.w1.0.PN.39 /r]                APX_F
+CCMPGE    mem32,reg32                [evex.w0.0.PN.39 /r]                APX_F
+CCMPGE    mem16,reg16                [evex.w0.0.P66.39 /r]                APX_F
+CCMPGE    mem8,reg8                  [evex.w0.0.PN.38 /r]                APX_F
+CCMPGE    reg64,imm8                [evex.w1.0.PN.83 /7 ib,s]        APX_F
+CCMPGE    reg32,imm8                [evex.w0.0.PN.83 /7 ib,s]        APX_F
+CCMPGE    reg16,imm8                [evex.w0.0.P66.83 /7 ib,s]        APX_F
+CCMPGE    reg8,imm8                  [evex.w0.0.PN.80 /7 ib]             APX_F
+CCMPGE    qword mem,imm8            [evex.w1.0.PN.83 /7 ib,s]        APX_F
+CCMPGE    dword mem,imm8            [evex.w0.0.PN.83 /7 ib,s]        APX_F
+CCMPGE    word mem,imm8            [evex.w0.0.P66.83 /7 ib,s]        APX_F
+CCMPGE    byte mem,imm8              [evex.w0.0.PN.80 /7 ib]             APX_F
+
+CCMPLE    reg64,mem64                [evex.w1.0.PN.3B /r]                APX_F
+CCMPLE    reg32,mem32                [evex.w0.0.PN.3B /r]                APX_F
+CCMPLE    reg16,mem16                [evex.w0.0.P66.3B /r]                APX_F
+CCMPLE    reg8,mem8                  [evex.w0.0.PN.3A /r]                APX_F
+CCMPLE    mem64,reg64                [evex.w1.0.PN.39 /r]                APX_F
+CCMPLE    mem32,reg32                [evex.w0.0.PN.39 /r]                APX_F
+CCMPLE    mem16,reg16                [evex.w0.0.P66.39 /r]                APX_F
+CCMPLE    mem8,reg8                  [evex.w0.0.PN.38 /r]                APX_F
+CCMPLE    reg64,imm8                [evex.w1.0.PN.83 /7 ib,s]        APX_F
+CCMPLE    reg32,imm8                [evex.w0.0.PN.83 /7 ib,s]        APX_F
+CCMPLE    reg16,imm8                [evex.w0.0.P66.83 /7 ib,s]        APX_F
+CCMPLE    reg8,imm8                  [evex.w0.0.PN.80 /7 ib]             APX_F
+CCMPLE    qword mem,imm8            [evex.w1.0.PN.83 /7 ib,s]        APX_F
+CCMPLE    dword mem,imm8            [evex.w0.0.PN.83 /7 ib,s]        APX_F
+CCMPLE    word mem,imm8            [evex.w0.0.P66.83 /7 ib,s]        APX_F
+CCMPLE    byte mem,imm8              [evex.w0.0.PN.80 /7 ib]             APX_F
+
+CCMPG     reg64,mem64                [evex.w1.0.PN.3B /r]                APX_F
+CCMPG     reg32,mem32                [evex.w0.0.PN.3B /r]                APX_F
+CCMPG     reg16,mem16                [evex.w0.0.P66.3B /r]                APX_F
+CCMPG     reg8,mem8                  [evex.w0.0.PN.3A /r]                APX_F
+CCMPG     mem64,reg64                [evex.w1.0.PN.39 /r]                APX_F
+CCMPG     mem32,reg32                [evex.w0.0.PN.39 /r]                APX_F
+CCMPG     mem16,reg16                [evex.w0.0.P66.39 /r]                APX_F
+CCMPG     mem8,reg8                  [evex.w0.0.PN.38 /r]                APX_F
+CCMPG     reg64,imm8                [evex.w1.0.PN.83 /7 ib,s]        APX_F
+CCMPG     reg32,imm8                [evex.w0.0.PN.83 /7 ib,s]        APX_F
+CCMPG     reg16,imm8                [evex.w0.0.P66.83 /7 ib,s]        APX_F
+CCMPG     reg8,imm8                  [evex.w0.0.PN.80 /7 ib]             APX_F
+CCMPG     qword mem,imm8            [evex.w1.0.PN.83 /7 ib,s]        APX_F
+CCMPG     dword mem,imm8            [evex.w0.0.PN.83 /7 ib,s]        APX_F
+CCMPG     word mem,imm8            [evex.w0.0.P66.83 /7 ib,s]        APX_F
+CCMPG     byte mem,imm8              [evex.w0.0.PN.80 /7 ib]             APX_F
+
 ; --- APX CTEST --------------------------------------------------------------
 ; CTESTcc reg, reg / mem, reg / reg, mem  (opcodes 85/86)
 CTESTO    reg64,reg64              [evex.w1.0.PN.85 /r]                APX_F
@@ -1142,6 +1736,279 @@ CTESTG    reg64,reg64              [evex.w1.0.PN.85 /r]                APX_F
 CTESTG    reg32,reg32              [evex.w0.0.PN.85 /r]                APX_F
 CTESTG    reg16,reg16              [evex.w0.0.P66.85 /r]               APX_F
 CTESTG    reg8,reg8                [evex.w0.0.PN.84 /r]                APX_F
+
+; --- APX CTEST additional forms (reg,mem / mem,reg / reg,imm / mem,imm) -----
+CTESTO     reg64,mem64               [evex.w1.0.PN.85 /r]                APX_F
+CTESTO     reg32,mem32               [evex.w0.0.PN.85 /r]                APX_F
+CTESTO     reg16,mem16               [evex.w0.0.P66.85 /r]                APX_F
+CTESTO     reg8,mem8                 [evex.w0.0.PN.84 /r]                APX_F
+CTESTO     mem64,reg64               [evex.w1.0.PN.85 /r]                APX_F
+CTESTO     mem32,reg32               [evex.w0.0.PN.85 /r]                APX_F
+CTESTO     mem16,reg16               [evex.w0.0.P66.85 /r]                APX_F
+CTESTO     mem8,reg8                 [evex.w0.0.PN.84 /r]                APX_F
+CTESTO     reg64,imm32               [evex.w1.0.PN.F7 /0 id]           APX_F
+CTESTO     reg32,imm32               [evex.w0.0.PN.F7 /0 id]           APX_F
+CTESTO     reg16,imm16               [evex.w0.0.P66.F7 /0 iw]           APX_F
+CTESTO     reg8,imm8                 [evex.w0.0.PN.F6 /0 ib]             APX_F
+CTESTO     qword mem,imm32      [evex.w1.0.PN.F7 /0 id]           APX_F
+CTESTO     dword mem,imm32      [evex.w0.0.PN.F7 /0 id]           APX_F
+CTESTO     word mem,imm16      [evex.w0.0.P66.F7 /0 iw]           APX_F
+CTESTO     byte mem,imm8             [evex.w0.0.PN.F6 /0 ib]             APX_F
+
+CTESTNO    reg64,mem64               [evex.w1.0.PN.85 /r]                APX_F
+CTESTNO    reg32,mem32               [evex.w0.0.PN.85 /r]                APX_F
+CTESTNO    reg16,mem16               [evex.w0.0.P66.85 /r]                APX_F
+CTESTNO    reg8,mem8                 [evex.w0.0.PN.84 /r]                APX_F
+CTESTNO    mem64,reg64               [evex.w1.0.PN.85 /r]                APX_F
+CTESTNO    mem32,reg32               [evex.w0.0.PN.85 /r]                APX_F
+CTESTNO    mem16,reg16               [evex.w0.0.P66.85 /r]                APX_F
+CTESTNO    mem8,reg8                 [evex.w0.0.PN.84 /r]                APX_F
+CTESTNO    reg64,imm32               [evex.w1.0.PN.F7 /0 id]           APX_F
+CTESTNO    reg32,imm32               [evex.w0.0.PN.F7 /0 id]           APX_F
+CTESTNO    reg16,imm16               [evex.w0.0.P66.F7 /0 iw]           APX_F
+CTESTNO    reg8,imm8                 [evex.w0.0.PN.F6 /0 ib]             APX_F
+CTESTNO    qword mem,imm32      [evex.w1.0.PN.F7 /0 id]           APX_F
+CTESTNO    dword mem,imm32      [evex.w0.0.PN.F7 /0 id]           APX_F
+CTESTNO    word mem,imm16      [evex.w0.0.P66.F7 /0 iw]           APX_F
+CTESTNO    byte mem,imm8             [evex.w0.0.PN.F6 /0 ib]             APX_F
+
+CTESTB     reg64,mem64               [evex.w1.0.PN.85 /r]                APX_F
+CTESTB     reg32,mem32               [evex.w0.0.PN.85 /r]                APX_F
+CTESTB     reg16,mem16               [evex.w0.0.P66.85 /r]                APX_F
+CTESTB     reg8,mem8                 [evex.w0.0.PN.84 /r]                APX_F
+CTESTB     mem64,reg64               [evex.w1.0.PN.85 /r]                APX_F
+CTESTB     mem32,reg32               [evex.w0.0.PN.85 /r]                APX_F
+CTESTB     mem16,reg16               [evex.w0.0.P66.85 /r]                APX_F
+CTESTB     mem8,reg8                 [evex.w0.0.PN.84 /r]                APX_F
+CTESTB     reg64,imm32               [evex.w1.0.PN.F7 /0 id]           APX_F
+CTESTB     reg32,imm32               [evex.w0.0.PN.F7 /0 id]           APX_F
+CTESTB     reg16,imm16               [evex.w0.0.P66.F7 /0 iw]           APX_F
+CTESTB     reg8,imm8                 [evex.w0.0.PN.F6 /0 ib]             APX_F
+CTESTB     qword mem,imm32      [evex.w1.0.PN.F7 /0 id]           APX_F
+CTESTB     dword mem,imm32      [evex.w0.0.PN.F7 /0 id]           APX_F
+CTESTB     word mem,imm16      [evex.w0.0.P66.F7 /0 iw]           APX_F
+CTESTB     byte mem,imm8             [evex.w0.0.PN.F6 /0 ib]             APX_F
+
+CTESTAE    reg64,mem64               [evex.w1.0.PN.85 /r]                APX_F
+CTESTAE    reg32,mem32               [evex.w0.0.PN.85 /r]                APX_F
+CTESTAE    reg16,mem16               [evex.w0.0.P66.85 /r]                APX_F
+CTESTAE    reg8,mem8                 [evex.w0.0.PN.84 /r]                APX_F
+CTESTAE    mem64,reg64               [evex.w1.0.PN.85 /r]                APX_F
+CTESTAE    mem32,reg32               [evex.w0.0.PN.85 /r]                APX_F
+CTESTAE    mem16,reg16               [evex.w0.0.P66.85 /r]                APX_F
+CTESTAE    mem8,reg8                 [evex.w0.0.PN.84 /r]                APX_F
+CTESTAE    reg64,imm32               [evex.w1.0.PN.F7 /0 id]           APX_F
+CTESTAE    reg32,imm32               [evex.w0.0.PN.F7 /0 id]           APX_F
+CTESTAE    reg16,imm16               [evex.w0.0.P66.F7 /0 iw]           APX_F
+CTESTAE    reg8,imm8                 [evex.w0.0.PN.F6 /0 ib]             APX_F
+CTESTAE    qword mem,imm32      [evex.w1.0.PN.F7 /0 id]           APX_F
+CTESTAE    dword mem,imm32      [evex.w0.0.PN.F7 /0 id]           APX_F
+CTESTAE    word mem,imm16      [evex.w0.0.P66.F7 /0 iw]           APX_F
+CTESTAE    byte mem,imm8             [evex.w0.0.PN.F6 /0 ib]             APX_F
+
+CTESTE     reg64,mem64               [evex.w1.0.PN.85 /r]                APX_F
+CTESTE     reg32,mem32               [evex.w0.0.PN.85 /r]                APX_F
+CTESTE     reg16,mem16               [evex.w0.0.P66.85 /r]                APX_F
+CTESTE     reg8,mem8                 [evex.w0.0.PN.84 /r]                APX_F
+CTESTE     mem64,reg64               [evex.w1.0.PN.85 /r]                APX_F
+CTESTE     mem32,reg32               [evex.w0.0.PN.85 /r]                APX_F
+CTESTE     mem16,reg16               [evex.w0.0.P66.85 /r]                APX_F
+CTESTE     mem8,reg8                 [evex.w0.0.PN.84 /r]                APX_F
+CTESTE     reg64,imm32               [evex.w1.0.PN.F7 /0 id]           APX_F
+CTESTE     reg32,imm32               [evex.w0.0.PN.F7 /0 id]           APX_F
+CTESTE     reg16,imm16               [evex.w0.0.P66.F7 /0 iw]           APX_F
+CTESTE     reg8,imm8                 [evex.w0.0.PN.F6 /0 ib]             APX_F
+CTESTE     qword mem,imm32      [evex.w1.0.PN.F7 /0 id]           APX_F
+CTESTE     dword mem,imm32      [evex.w0.0.PN.F7 /0 id]           APX_F
+CTESTE     word mem,imm16      [evex.w0.0.P66.F7 /0 iw]           APX_F
+CTESTE     byte mem,imm8             [evex.w0.0.PN.F6 /0 ib]             APX_F
+
+CTESTNE    reg64,mem64               [evex.w1.0.PN.85 /r]                APX_F
+CTESTNE    reg32,mem32               [evex.w0.0.PN.85 /r]                APX_F
+CTESTNE    reg16,mem16               [evex.w0.0.P66.85 /r]                APX_F
+CTESTNE    reg8,mem8                 [evex.w0.0.PN.84 /r]                APX_F
+CTESTNE    mem64,reg64               [evex.w1.0.PN.85 /r]                APX_F
+CTESTNE    mem32,reg32               [evex.w0.0.PN.85 /r]                APX_F
+CTESTNE    mem16,reg16               [evex.w0.0.P66.85 /r]                APX_F
+CTESTNE    mem8,reg8                 [evex.w0.0.PN.84 /r]                APX_F
+CTESTNE    reg64,imm32               [evex.w1.0.PN.F7 /0 id]           APX_F
+CTESTNE    reg32,imm32               [evex.w0.0.PN.F7 /0 id]           APX_F
+CTESTNE    reg16,imm16               [evex.w0.0.P66.F7 /0 iw]           APX_F
+CTESTNE    reg8,imm8                 [evex.w0.0.PN.F6 /0 ib]             APX_F
+CTESTNE    qword mem,imm32      [evex.w1.0.PN.F7 /0 id]           APX_F
+CTESTNE    dword mem,imm32      [evex.w0.0.PN.F7 /0 id]           APX_F
+CTESTNE    word mem,imm16      [evex.w0.0.P66.F7 /0 iw]           APX_F
+CTESTNE    byte mem,imm8             [evex.w0.0.PN.F6 /0 ib]             APX_F
+
+CTESTBE    reg64,mem64               [evex.w1.0.PN.85 /r]                APX_F
+CTESTBE    reg32,mem32               [evex.w0.0.PN.85 /r]                APX_F
+CTESTBE    reg16,mem16               [evex.w0.0.P66.85 /r]                APX_F
+CTESTBE    reg8,mem8                 [evex.w0.0.PN.84 /r]                APX_F
+CTESTBE    mem64,reg64               [evex.w1.0.PN.85 /r]                APX_F
+CTESTBE    mem32,reg32               [evex.w0.0.PN.85 /r]                APX_F
+CTESTBE    mem16,reg16               [evex.w0.0.P66.85 /r]                APX_F
+CTESTBE    mem8,reg8                 [evex.w0.0.PN.84 /r]                APX_F
+CTESTBE    reg64,imm32               [evex.w1.0.PN.F7 /0 id]           APX_F
+CTESTBE    reg32,imm32               [evex.w0.0.PN.F7 /0 id]           APX_F
+CTESTBE    reg16,imm16               [evex.w0.0.P66.F7 /0 iw]           APX_F
+CTESTBE    reg8,imm8                 [evex.w0.0.PN.F6 /0 ib]             APX_F
+CTESTBE    qword mem,imm32      [evex.w1.0.PN.F7 /0 id]           APX_F
+CTESTBE    dword mem,imm32      [evex.w0.0.PN.F7 /0 id]           APX_F
+CTESTBE    word mem,imm16      [evex.w0.0.P66.F7 /0 iw]           APX_F
+CTESTBE    byte mem,imm8             [evex.w0.0.PN.F6 /0 ib]             APX_F
+
+CTESTA     reg64,mem64               [evex.w1.0.PN.85 /r]                APX_F
+CTESTA     reg32,mem32               [evex.w0.0.PN.85 /r]                APX_F
+CTESTA     reg16,mem16               [evex.w0.0.P66.85 /r]                APX_F
+CTESTA     reg8,mem8                 [evex.w0.0.PN.84 /r]                APX_F
+CTESTA     mem64,reg64               [evex.w1.0.PN.85 /r]                APX_F
+CTESTA     mem32,reg32               [evex.w0.0.PN.85 /r]                APX_F
+CTESTA     mem16,reg16               [evex.w0.0.P66.85 /r]                APX_F
+CTESTA     mem8,reg8                 [evex.w0.0.PN.84 /r]                APX_F
+CTESTA     reg64,imm32               [evex.w1.0.PN.F7 /0 id]           APX_F
+CTESTA     reg32,imm32               [evex.w0.0.PN.F7 /0 id]           APX_F
+CTESTA     reg16,imm16               [evex.w0.0.P66.F7 /0 iw]           APX_F
+CTESTA     reg8,imm8                 [evex.w0.0.PN.F6 /0 ib]             APX_F
+CTESTA     qword mem,imm32      [evex.w1.0.PN.F7 /0 id]           APX_F
+CTESTA     dword mem,imm32      [evex.w0.0.PN.F7 /0 id]           APX_F
+CTESTA     word mem,imm16      [evex.w0.0.P66.F7 /0 iw]           APX_F
+CTESTA     byte mem,imm8             [evex.w0.0.PN.F6 /0 ib]             APX_F
+
+CTESTS     reg64,mem64               [evex.w1.0.PN.85 /r]                APX_F
+CTESTS     reg32,mem32               [evex.w0.0.PN.85 /r]                APX_F
+CTESTS     reg16,mem16               [evex.w0.0.P66.85 /r]                APX_F
+CTESTS     reg8,mem8                 [evex.w0.0.PN.84 /r]                APX_F
+CTESTS     mem64,reg64               [evex.w1.0.PN.85 /r]                APX_F
+CTESTS     mem32,reg32               [evex.w0.0.PN.85 /r]                APX_F
+CTESTS     mem16,reg16               [evex.w0.0.P66.85 /r]                APX_F
+CTESTS     mem8,reg8                 [evex.w0.0.PN.84 /r]                APX_F
+CTESTS     reg64,imm32               [evex.w1.0.PN.F7 /0 id]           APX_F
+CTESTS     reg32,imm32               [evex.w0.0.PN.F7 /0 id]           APX_F
+CTESTS     reg16,imm16               [evex.w0.0.P66.F7 /0 iw]           APX_F
+CTESTS     reg8,imm8                 [evex.w0.0.PN.F6 /0 ib]             APX_F
+CTESTS     qword mem,imm32      [evex.w1.0.PN.F7 /0 id]           APX_F
+CTESTS     dword mem,imm32      [evex.w0.0.PN.F7 /0 id]           APX_F
+CTESTS     word mem,imm16      [evex.w0.0.P66.F7 /0 iw]           APX_F
+CTESTS     byte mem,imm8             [evex.w0.0.PN.F6 /0 ib]             APX_F
+
+CTESTNS    reg64,mem64               [evex.w1.0.PN.85 /r]                APX_F
+CTESTNS    reg32,mem32               [evex.w0.0.PN.85 /r]                APX_F
+CTESTNS    reg16,mem16               [evex.w0.0.P66.85 /r]                APX_F
+CTESTNS    reg8,mem8                 [evex.w0.0.PN.84 /r]                APX_F
+CTESTNS    mem64,reg64               [evex.w1.0.PN.85 /r]                APX_F
+CTESTNS    mem32,reg32               [evex.w0.0.PN.85 /r]                APX_F
+CTESTNS    mem16,reg16               [evex.w0.0.P66.85 /r]                APX_F
+CTESTNS    mem8,reg8                 [evex.w0.0.PN.84 /r]                APX_F
+CTESTNS    reg64,imm32               [evex.w1.0.PN.F7 /0 id]           APX_F
+CTESTNS    reg32,imm32               [evex.w0.0.PN.F7 /0 id]           APX_F
+CTESTNS    reg16,imm16               [evex.w0.0.P66.F7 /0 iw]           APX_F
+CTESTNS    reg8,imm8                 [evex.w0.0.PN.F6 /0 ib]             APX_F
+CTESTNS    qword mem,imm32      [evex.w1.0.PN.F7 /0 id]           APX_F
+CTESTNS    dword mem,imm32      [evex.w0.0.PN.F7 /0 id]           APX_F
+CTESTNS    word mem,imm16      [evex.w0.0.P66.F7 /0 iw]           APX_F
+CTESTNS    byte mem,imm8             [evex.w0.0.PN.F6 /0 ib]             APX_F
+
+CTESTT     reg64,mem64               [evex.w1.0.PN.85 /r]                APX_F
+CTESTT     reg32,mem32               [evex.w0.0.PN.85 /r]                APX_F
+CTESTT     reg16,mem16               [evex.w0.0.P66.85 /r]                APX_F
+CTESTT     reg8,mem8                 [evex.w0.0.PN.84 /r]                APX_F
+CTESTT     mem64,reg64               [evex.w1.0.PN.85 /r]                APX_F
+CTESTT     mem32,reg32               [evex.w0.0.PN.85 /r]                APX_F
+CTESTT     mem16,reg16               [evex.w0.0.P66.85 /r]                APX_F
+CTESTT     mem8,reg8                 [evex.w0.0.PN.84 /r]                APX_F
+CTESTT     reg64,imm32               [evex.w1.0.PN.F7 /0 id]           APX_F
+CTESTT     reg32,imm32               [evex.w0.0.PN.F7 /0 id]           APX_F
+CTESTT     reg16,imm16               [evex.w0.0.P66.F7 /0 iw]           APX_F
+CTESTT     reg8,imm8                 [evex.w0.0.PN.F6 /0 ib]             APX_F
+CTESTT     qword mem,imm32      [evex.w1.0.PN.F7 /0 id]           APX_F
+CTESTT     dword mem,imm32      [evex.w0.0.PN.F7 /0 id]           APX_F
+CTESTT     word mem,imm16      [evex.w0.0.P66.F7 /0 iw]           APX_F
+CTESTT     byte mem,imm8             [evex.w0.0.PN.F6 /0 ib]             APX_F
+
+CTESTF     reg64,mem64               [evex.w1.0.PN.85 /r]                APX_F
+CTESTF     reg32,mem32               [evex.w0.0.PN.85 /r]                APX_F
+CTESTF     reg16,mem16               [evex.w0.0.P66.85 /r]                APX_F
+CTESTF     reg8,mem8                 [evex.w0.0.PN.84 /r]                APX_F
+CTESTF     mem64,reg64               [evex.w1.0.PN.85 /r]                APX_F
+CTESTF     mem32,reg32               [evex.w0.0.PN.85 /r]                APX_F
+CTESTF     mem16,reg16               [evex.w0.0.P66.85 /r]                APX_F
+CTESTF     mem8,reg8                 [evex.w0.0.PN.84 /r]                APX_F
+CTESTF     reg64,imm32               [evex.w1.0.PN.F7 /0 id]           APX_F
+CTESTF     reg32,imm32               [evex.w0.0.PN.F7 /0 id]           APX_F
+CTESTF     reg16,imm16               [evex.w0.0.P66.F7 /0 iw]           APX_F
+CTESTF     reg8,imm8                 [evex.w0.0.PN.F6 /0 ib]             APX_F
+CTESTF     qword mem,imm32      [evex.w1.0.PN.F7 /0 id]           APX_F
+CTESTF     dword mem,imm32      [evex.w0.0.PN.F7 /0 id]           APX_F
+CTESTF     word mem,imm16      [evex.w0.0.P66.F7 /0 iw]           APX_F
+CTESTF     byte mem,imm8             [evex.w0.0.PN.F6 /0 ib]             APX_F
+
+CTESTL     reg64,mem64               [evex.w1.0.PN.85 /r]                APX_F
+CTESTL     reg32,mem32               [evex.w0.0.PN.85 /r]                APX_F
+CTESTL     reg16,mem16               [evex.w0.0.P66.85 /r]                APX_F
+CTESTL     reg8,mem8                 [evex.w0.0.PN.84 /r]                APX_F
+CTESTL     mem64,reg64               [evex.w1.0.PN.85 /r]                APX_F
+CTESTL     mem32,reg32               [evex.w0.0.PN.85 /r]                APX_F
+CTESTL     mem16,reg16               [evex.w0.0.P66.85 /r]                APX_F
+CTESTL     mem8,reg8                 [evex.w0.0.PN.84 /r]                APX_F
+CTESTL     reg64,imm32               [evex.w1.0.PN.F7 /0 id]           APX_F
+CTESTL     reg32,imm32               [evex.w0.0.PN.F7 /0 id]           APX_F
+CTESTL     reg16,imm16               [evex.w0.0.P66.F7 /0 iw]           APX_F
+CTESTL     reg8,imm8                 [evex.w0.0.PN.F6 /0 ib]             APX_F
+CTESTL     qword mem,imm32      [evex.w1.0.PN.F7 /0 id]           APX_F
+CTESTL     dword mem,imm32      [evex.w0.0.PN.F7 /0 id]           APX_F
+CTESTL     word mem,imm16      [evex.w0.0.P66.F7 /0 iw]           APX_F
+CTESTL     byte mem,imm8             [evex.w0.0.PN.F6 /0 ib]             APX_F
+
+CTESTGE    reg64,mem64               [evex.w1.0.PN.85 /r]                APX_F
+CTESTGE    reg32,mem32               [evex.w0.0.PN.85 /r]                APX_F
+CTESTGE    reg16,mem16               [evex.w0.0.P66.85 /r]                APX_F
+CTESTGE    reg8,mem8                 [evex.w0.0.PN.84 /r]                APX_F
+CTESTGE    mem64,reg64               [evex.w1.0.PN.85 /r]                APX_F
+CTESTGE    mem32,reg32               [evex.w0.0.PN.85 /r]                APX_F
+CTESTGE    mem16,reg16               [evex.w0.0.P66.85 /r]                APX_F
+CTESTGE    mem8,reg8                 [evex.w0.0.PN.84 /r]                APX_F
+CTESTGE    reg64,imm32               [evex.w1.0.PN.F7 /0 id]           APX_F
+CTESTGE    reg32,imm32               [evex.w0.0.PN.F7 /0 id]           APX_F
+CTESTGE    reg16,imm16               [evex.w0.0.P66.F7 /0 iw]           APX_F
+CTESTGE    reg8,imm8                 [evex.w0.0.PN.F6 /0 ib]             APX_F
+CTESTGE    qword mem,imm32      [evex.w1.0.PN.F7 /0 id]           APX_F
+CTESTGE    dword mem,imm32      [evex.w0.0.PN.F7 /0 id]           APX_F
+CTESTGE    word mem,imm16      [evex.w0.0.P66.F7 /0 iw]           APX_F
+CTESTGE    byte mem,imm8             [evex.w0.0.PN.F6 /0 ib]             APX_F
+
+CTESTLE    reg64,mem64               [evex.w1.0.PN.85 /r]                APX_F
+CTESTLE    reg32,mem32               [evex.w0.0.PN.85 /r]                APX_F
+CTESTLE    reg16,mem16               [evex.w0.0.P66.85 /r]                APX_F
+CTESTLE    reg8,mem8                 [evex.w0.0.PN.84 /r]                APX_F
+CTESTLE    mem64,reg64               [evex.w1.0.PN.85 /r]                APX_F
+CTESTLE    mem32,reg32               [evex.w0.0.PN.85 /r]                APX_F
+CTESTLE    mem16,reg16               [evex.w0.0.P66.85 /r]                APX_F
+CTESTLE    mem8,reg8                 [evex.w0.0.PN.84 /r]                APX_F
+CTESTLE    reg64,imm32               [evex.w1.0.PN.F7 /0 id]           APX_F
+CTESTLE    reg32,imm32               [evex.w0.0.PN.F7 /0 id]           APX_F
+CTESTLE    reg16,imm16               [evex.w0.0.P66.F7 /0 iw]           APX_F
+CTESTLE    reg8,imm8                 [evex.w0.0.PN.F6 /0 ib]             APX_F
+CTESTLE    qword mem,imm32      [evex.w1.0.PN.F7 /0 id]           APX_F
+CTESTLE    dword mem,imm32      [evex.w0.0.PN.F7 /0 id]           APX_F
+CTESTLE    word mem,imm16      [evex.w0.0.P66.F7 /0 iw]           APX_F
+CTESTLE    byte mem,imm8             [evex.w0.0.PN.F6 /0 ib]             APX_F
+
+CTESTG     reg64,mem64               [evex.w1.0.PN.85 /r]                APX_F
+CTESTG     reg32,mem32               [evex.w0.0.PN.85 /r]                APX_F
+CTESTG     reg16,mem16               [evex.w0.0.P66.85 /r]                APX_F
+CTESTG     reg8,mem8                 [evex.w0.0.PN.84 /r]                APX_F
+CTESTG     mem64,reg64               [evex.w1.0.PN.85 /r]                APX_F
+CTESTG     mem32,reg32               [evex.w0.0.PN.85 /r]                APX_F
+CTESTG     mem16,reg16               [evex.w0.0.P66.85 /r]                APX_F
+CTESTG     mem8,reg8                 [evex.w0.0.PN.84 /r]                APX_F
+CTESTG     reg64,imm32               [evex.w1.0.PN.F7 /0 id]           APX_F
+CTESTG     reg32,imm32               [evex.w0.0.PN.F7 /0 id]           APX_F
+CTESTG     reg16,imm16               [evex.w0.0.P66.F7 /0 iw]           APX_F
+CTESTG     reg8,imm8                 [evex.w0.0.PN.F6 /0 ib]             APX_F
+CTESTG     qword mem,imm32      [evex.w1.0.PN.F7 /0 id]           APX_F
+CTESTG     dword mem,imm32      [evex.w0.0.PN.F7 /0 id]           APX_F
+CTESTG     word mem,imm16      [evex.w0.0.P66.F7 /0 iw]           APX_F
+CTESTG     byte mem,imm8             [evex.w0.0.PN.F6 /0 ib]             APX_F
 
 ; --- APX CFCMOV -------------------------------------------------------------
 ; CFCMOVcc uses EVEX with aaa=100 for reg,reg and aaa=0 for mem,reg
@@ -1298,6 +2165,310 @@ CFCMOVS    reg16,reg16             [evex.w0.0.P66.rex.w /r]               APX_F
 CFCMOVZ    reg64,reg64             [evex.w1.0.PN.44 /r]                APX_F
 CFCMOVZ    reg32,reg32             [evex.w0.0.PN.44 /r]                APX_F
 CFCMOVZ    reg16,reg16             [evex.w0.0.P66.44 /r]               APX_F
+
+; --- CFCMOV APX (NDD, 3-operand) forms ---------------------------------------
+; CFCMOVcc dest,src1,src2
+; CFCMOVcc dest,src1,mem -> opcode unchanged
+; CFCMOVcc dest,mem,src2 -> opcode = paired(negated-condition) opcode (encoder trick)
+CFCMOVA    reg64,reg64,reg64        [evex.w1.0.PN.47 /r]                APX_F
+CFCMOVA    reg32,reg32,reg32        [evex.w0.0.PN.47 /r]                APX_F
+CFCMOVA    reg16,reg16,reg16        [evex.w0.0.P66.47 /r]                APX_F
+CFCMOVA    reg64,reg64,mem64        [evex.w1.0.PN.47 /r]                APX_F
+CFCMOVA    reg32,reg32,mem32        [evex.w0.0.PN.47 /r]                APX_F
+CFCMOVA    reg16,reg16,mem16        [evex.w0.0.P66.47 /r]                APX_F
+CFCMOVA    reg64,mem64,reg64        [evex.w1.0.PN.46 /r]                APX_F
+CFCMOVA    reg32,mem32,reg32        [evex.w0.0.PN.46 /r]                APX_F
+CFCMOVA    reg16,mem16,reg16        [evex.w0.0.P66.46 /r]                APX_F
+
+CFCMOVAE   reg64,reg64,reg64        [evex.w1.0.PN.43 /r]                APX_F
+CFCMOVAE   reg32,reg32,reg32        [evex.w0.0.PN.43 /r]                APX_F
+CFCMOVAE   reg16,reg16,reg16        [evex.w0.0.P66.43 /r]                APX_F
+CFCMOVAE   reg64,reg64,mem64        [evex.w1.0.PN.43 /r]                APX_F
+CFCMOVAE   reg32,reg32,mem32        [evex.w0.0.PN.43 /r]                APX_F
+CFCMOVAE   reg16,reg16,mem16        [evex.w0.0.P66.43 /r]                APX_F
+CFCMOVAE   reg64,mem64,reg64        [evex.w1.0.PN.42 /r]                APX_F
+CFCMOVAE   reg32,mem32,reg32        [evex.w0.0.PN.42 /r]                APX_F
+CFCMOVAE   reg16,mem16,reg16        [evex.w0.0.P66.42 /r]                APX_F
+
+CFCMOVB    reg64,reg64,reg64        [evex.w1.0.PN.42 /r]                APX_F
+CFCMOVB    reg32,reg32,reg32        [evex.w0.0.PN.42 /r]                APX_F
+CFCMOVB    reg16,reg16,reg16        [evex.w0.0.P66.42 /r]                APX_F
+CFCMOVB    reg64,reg64,mem64        [evex.w1.0.PN.42 /r]                APX_F
+CFCMOVB    reg32,reg32,mem32        [evex.w0.0.PN.42 /r]                APX_F
+CFCMOVB    reg16,reg16,mem16        [evex.w0.0.P66.42 /r]                APX_F
+CFCMOVB    reg64,mem64,reg64        [evex.w1.0.PN.43 /r]                APX_F
+CFCMOVB    reg32,mem32,reg32        [evex.w0.0.PN.43 /r]                APX_F
+CFCMOVB    reg16,mem16,reg16        [evex.w0.0.P66.43 /r]                APX_F
+
+CFCMOVBE   reg64,reg64,reg64        [evex.w1.0.PN.46 /r]                APX_F
+CFCMOVBE   reg32,reg32,reg32        [evex.w0.0.PN.46 /r]                APX_F
+CFCMOVBE   reg16,reg16,reg16        [evex.w0.0.P66.46 /r]                APX_F
+CFCMOVBE   reg64,reg64,mem64        [evex.w1.0.PN.46 /r]                APX_F
+CFCMOVBE   reg32,reg32,mem32        [evex.w0.0.PN.46 /r]                APX_F
+CFCMOVBE   reg16,reg16,mem16        [evex.w0.0.P66.46 /r]                APX_F
+CFCMOVBE   reg64,mem64,reg64        [evex.w1.0.PN.47 /r]                APX_F
+CFCMOVBE   reg32,mem32,reg32        [evex.w0.0.PN.47 /r]                APX_F
+CFCMOVBE   reg16,mem16,reg16        [evex.w0.0.P66.47 /r]                APX_F
+
+CFCMOVC    reg64,reg64,reg64        [evex.w1.0.PN.42 /r]                APX_F
+CFCMOVC    reg32,reg32,reg32        [evex.w0.0.PN.42 /r]                APX_F
+CFCMOVC    reg16,reg16,reg16        [evex.w0.0.P66.42 /r]                APX_F
+CFCMOVC    reg64,reg64,mem64        [evex.w1.0.PN.42 /r]                APX_F
+CFCMOVC    reg32,reg32,mem32        [evex.w0.0.PN.42 /r]                APX_F
+CFCMOVC    reg16,reg16,mem16        [evex.w0.0.P66.42 /r]                APX_F
+CFCMOVC    reg64,mem64,reg64        [evex.w1.0.PN.43 /r]                APX_F
+CFCMOVC    reg32,mem32,reg32        [evex.w0.0.PN.43 /r]                APX_F
+CFCMOVC    reg16,mem16,reg16        [evex.w0.0.P66.43 /r]                APX_F
+
+CFCMOVE    reg64,reg64,reg64        [evex.w1.0.PN.44 /r]                APX_F
+CFCMOVE    reg32,reg32,reg32        [evex.w0.0.PN.44 /r]                APX_F
+CFCMOVE    reg16,reg16,reg16        [evex.w0.0.P66.44 /r]                APX_F
+CFCMOVE    reg64,reg64,mem64        [evex.w1.0.PN.44 /r]                APX_F
+CFCMOVE    reg32,reg32,mem32        [evex.w0.0.PN.44 /r]                APX_F
+CFCMOVE    reg16,reg16,mem16        [evex.w0.0.P66.44 /r]                APX_F
+CFCMOVE    reg64,mem64,reg64        [evex.w1.0.PN.45 /r]                APX_F
+CFCMOVE    reg32,mem32,reg32        [evex.w0.0.PN.45 /r]                APX_F
+CFCMOVE    reg16,mem16,reg16        [evex.w0.0.P66.45 /r]                APX_F
+
+CFCMOVG    reg64,reg64,reg64        [evex.w1.0.PN.4F /r]                APX_F
+CFCMOVG    reg32,reg32,reg32        [evex.w0.0.PN.4F /r]                APX_F
+CFCMOVG    reg16,reg16,reg16        [evex.w0.0.P66.4F /r]                APX_F
+CFCMOVG    reg64,reg64,mem64        [evex.w1.0.PN.4F /r]                APX_F
+CFCMOVG    reg32,reg32,mem32        [evex.w0.0.PN.4F /r]                APX_F
+CFCMOVG    reg16,reg16,mem16        [evex.w0.0.P66.4F /r]                APX_F
+CFCMOVG    reg64,mem64,reg64        [evex.w1.0.PN.4E /r]                APX_F
+CFCMOVG    reg32,mem32,reg32        [evex.w0.0.PN.4E /r]                APX_F
+CFCMOVG    reg16,mem16,reg16        [evex.w0.0.P66.4E /r]                APX_F
+
+CFCMOVGE   reg64,reg64,reg64        [evex.w1.0.PN.4D /r]                APX_F
+CFCMOVGE   reg32,reg32,reg32        [evex.w0.0.PN.4D /r]                APX_F
+CFCMOVGE   reg16,reg16,reg16        [evex.w0.0.P66.4D /r]                APX_F
+CFCMOVGE   reg64,reg64,mem64        [evex.w1.0.PN.4D /r]                APX_F
+CFCMOVGE   reg32,reg32,mem32        [evex.w0.0.PN.4D /r]                APX_F
+CFCMOVGE   reg16,reg16,mem16        [evex.w0.0.P66.4D /r]                APX_F
+CFCMOVGE   reg64,mem64,reg64        [evex.w1.0.PN.4C /r]                APX_F
+CFCMOVGE   reg32,mem32,reg32        [evex.w0.0.PN.4C /r]                APX_F
+CFCMOVGE   reg16,mem16,reg16        [evex.w0.0.P66.4C /r]                APX_F
+
+CFCMOVL    reg64,reg64,reg64        [evex.w1.0.PN.4C /r]                APX_F
+CFCMOVL    reg32,reg32,reg32        [evex.w0.0.PN.4C /r]                APX_F
+CFCMOVL    reg16,reg16,reg16        [evex.w0.0.P66.4C /r]                APX_F
+CFCMOVL    reg64,reg64,mem64        [evex.w1.0.PN.4C /r]                APX_F
+CFCMOVL    reg32,reg32,mem32        [evex.w0.0.PN.4C /r]                APX_F
+CFCMOVL    reg16,reg16,mem16        [evex.w0.0.P66.4C /r]                APX_F
+CFCMOVL    reg64,mem64,reg64        [evex.w1.0.PN.4D /r]                APX_F
+CFCMOVL    reg32,mem32,reg32        [evex.w0.0.PN.4D /r]                APX_F
+CFCMOVL    reg16,mem16,reg16        [evex.w0.0.P66.4D /r]                APX_F
+
+CFCMOVLE   reg64,reg64,reg64        [evex.w1.0.PN.4E /r]                APX_F
+CFCMOVLE   reg32,reg32,reg32        [evex.w0.0.PN.4E /r]                APX_F
+CFCMOVLE   reg16,reg16,reg16        [evex.w0.0.P66.4E /r]                APX_F
+CFCMOVLE   reg64,reg64,mem64        [evex.w1.0.PN.4E /r]                APX_F
+CFCMOVLE   reg32,reg32,mem32        [evex.w0.0.PN.4E /r]                APX_F
+CFCMOVLE   reg16,reg16,mem16        [evex.w0.0.P66.4E /r]                APX_F
+CFCMOVLE   reg64,mem64,reg64        [evex.w1.0.PN.4F /r]                APX_F
+CFCMOVLE   reg32,mem32,reg32        [evex.w0.0.PN.4F /r]                APX_F
+CFCMOVLE   reg16,mem16,reg16        [evex.w0.0.P66.4F /r]                APX_F
+
+CFCMOVNA   reg64,reg64,reg64        [evex.w1.0.PN.46 /r]                APX_F
+CFCMOVNA   reg32,reg32,reg32        [evex.w0.0.PN.46 /r]                APX_F
+CFCMOVNA   reg16,reg16,reg16        [evex.w0.0.P66.46 /r]                APX_F
+CFCMOVNA   reg64,reg64,mem64        [evex.w1.0.PN.46 /r]                APX_F
+CFCMOVNA   reg32,reg32,mem32        [evex.w0.0.PN.46 /r]                APX_F
+CFCMOVNA   reg16,reg16,mem16        [evex.w0.0.P66.46 /r]                APX_F
+CFCMOVNA   reg64,mem64,reg64        [evex.w1.0.PN.47 /r]                APX_F
+CFCMOVNA   reg32,mem32,reg32        [evex.w0.0.PN.47 /r]                APX_F
+CFCMOVNA   reg16,mem16,reg16        [evex.w0.0.P66.47 /r]                APX_F
+
+CFCMOVNAE  reg64,reg64,reg64        [evex.w1.0.PN.42 /r]                APX_F
+CFCMOVNAE  reg32,reg32,reg32        [evex.w0.0.PN.42 /r]                APX_F
+CFCMOVNAE  reg16,reg16,reg16        [evex.w0.0.P66.42 /r]                APX_F
+CFCMOVNAE  reg64,reg64,mem64        [evex.w1.0.PN.42 /r]                APX_F
+CFCMOVNAE  reg32,reg32,mem32        [evex.w0.0.PN.42 /r]                APX_F
+CFCMOVNAE  reg16,reg16,mem16        [evex.w0.0.P66.42 /r]                APX_F
+CFCMOVNAE  reg64,mem64,reg64        [evex.w1.0.PN.43 /r]                APX_F
+CFCMOVNAE  reg32,mem32,reg32        [evex.w0.0.PN.43 /r]                APX_F
+CFCMOVNAE  reg16,mem16,reg16        [evex.w0.0.P66.43 /r]                APX_F
+
+CFCMOVNB   reg64,reg64,reg64        [evex.w1.0.PN.43 /r]                APX_F
+CFCMOVNB   reg32,reg32,reg32        [evex.w0.0.PN.43 /r]                APX_F
+CFCMOVNB   reg16,reg16,reg16        [evex.w0.0.P66.43 /r]                APX_F
+CFCMOVNB   reg64,reg64,mem64        [evex.w1.0.PN.43 /r]                APX_F
+CFCMOVNB   reg32,reg32,mem32        [evex.w0.0.PN.43 /r]                APX_F
+CFCMOVNB   reg16,reg16,mem16        [evex.w0.0.P66.43 /r]                APX_F
+CFCMOVNB   reg64,mem64,reg64        [evex.w1.0.PN.42 /r]                APX_F
+CFCMOVNB   reg32,mem32,reg32        [evex.w0.0.PN.42 /r]                APX_F
+CFCMOVNB   reg16,mem16,reg16        [evex.w0.0.P66.42 /r]                APX_F
+
+CFCMOVNBE  reg64,reg64,reg64        [evex.w1.0.PN.47 /r]                APX_F
+CFCMOVNBE  reg32,reg32,reg32        [evex.w0.0.PN.47 /r]                APX_F
+CFCMOVNBE  reg16,reg16,reg16        [evex.w0.0.P66.47 /r]                APX_F
+CFCMOVNBE  reg64,reg64,mem64        [evex.w1.0.PN.47 /r]                APX_F
+CFCMOVNBE  reg32,reg32,mem32        [evex.w0.0.PN.47 /r]                APX_F
+CFCMOVNBE  reg16,reg16,mem16        [evex.w0.0.P66.47 /r]                APX_F
+CFCMOVNBE  reg64,mem64,reg64        [evex.w1.0.PN.46 /r]                APX_F
+CFCMOVNBE  reg32,mem32,reg32        [evex.w0.0.PN.46 /r]                APX_F
+CFCMOVNBE  reg16,mem16,reg16        [evex.w0.0.P66.46 /r]                APX_F
+
+CFCMOVNC   reg64,reg64,reg64        [evex.w1.0.PN.43 /r]                APX_F
+CFCMOVNC   reg32,reg32,reg32        [evex.w0.0.PN.43 /r]                APX_F
+CFCMOVNC   reg16,reg16,reg16        [evex.w0.0.P66.43 /r]                APX_F
+CFCMOVNC   reg64,reg64,mem64        [evex.w1.0.PN.43 /r]                APX_F
+CFCMOVNC   reg32,reg32,mem32        [evex.w0.0.PN.43 /r]                APX_F
+CFCMOVNC   reg16,reg16,mem16        [evex.w0.0.P66.43 /r]                APX_F
+CFCMOVNC   reg64,mem64,reg64        [evex.w1.0.PN.42 /r]                APX_F
+CFCMOVNC   reg32,mem32,reg32        [evex.w0.0.PN.42 /r]                APX_F
+CFCMOVNC   reg16,mem16,reg16        [evex.w0.0.P66.42 /r]                APX_F
+
+CFCMOVNE   reg64,reg64,reg64        [evex.w1.0.PN.45 /r]                APX_F
+CFCMOVNE   reg32,reg32,reg32        [evex.w0.0.PN.45 /r]                APX_F
+CFCMOVNE   reg16,reg16,reg16        [evex.w0.0.P66.45 /r]                APX_F
+CFCMOVNE   reg64,reg64,mem64        [evex.w1.0.PN.45 /r]                APX_F
+CFCMOVNE   reg32,reg32,mem32        [evex.w0.0.PN.45 /r]                APX_F
+CFCMOVNE   reg16,reg16,mem16        [evex.w0.0.P66.45 /r]                APX_F
+CFCMOVNE   reg64,mem64,reg64        [evex.w1.0.PN.44 /r]                APX_F
+CFCMOVNE   reg32,mem32,reg32        [evex.w0.0.PN.44 /r]                APX_F
+CFCMOVNE   reg16,mem16,reg16        [evex.w0.0.P66.44 /r]                APX_F
+
+CFCMOVNG   reg64,reg64,reg64        [evex.w1.0.PN.4E /r]                APX_F
+CFCMOVNG   reg32,reg32,reg32        [evex.w0.0.PN.4E /r]                APX_F
+CFCMOVNG   reg16,reg16,reg16        [evex.w0.0.P66.4E /r]                APX_F
+CFCMOVNG   reg64,reg64,mem64        [evex.w1.0.PN.4E /r]                APX_F
+CFCMOVNG   reg32,reg32,mem32        [evex.w0.0.PN.4E /r]                APX_F
+CFCMOVNG   reg16,reg16,mem16        [evex.w0.0.P66.4E /r]                APX_F
+CFCMOVNG   reg64,mem64,reg64        [evex.w1.0.PN.4F /r]                APX_F
+CFCMOVNG   reg32,mem32,reg32        [evex.w0.0.PN.4F /r]                APX_F
+CFCMOVNG   reg16,mem16,reg16        [evex.w0.0.P66.4F /r]                APX_F
+
+CFCMOVNGE  reg64,reg64,reg64        [evex.w1.0.PN.4C /r]                APX_F
+CFCMOVNGE  reg32,reg32,reg32        [evex.w0.0.PN.4C /r]                APX_F
+CFCMOVNGE  reg16,reg16,reg16        [evex.w0.0.P66.4C /r]                APX_F
+CFCMOVNGE  reg64,reg64,mem64        [evex.w1.0.PN.4C /r]                APX_F
+CFCMOVNGE  reg32,reg32,mem32        [evex.w0.0.PN.4C /r]                APX_F
+CFCMOVNGE  reg16,reg16,mem16        [evex.w0.0.P66.4C /r]                APX_F
+CFCMOVNGE  reg64,mem64,reg64        [evex.w1.0.PN.4D /r]                APX_F
+CFCMOVNGE  reg32,mem32,reg32        [evex.w0.0.PN.4D /r]                APX_F
+CFCMOVNGE  reg16,mem16,reg16        [evex.w0.0.P66.4D /r]                APX_F
+
+CFCMOVNL   reg64,reg64,reg64        [evex.w1.0.PN.4D /r]                APX_F
+CFCMOVNL   reg32,reg32,reg32        [evex.w0.0.PN.4D /r]                APX_F
+CFCMOVNL   reg16,reg16,reg16        [evex.w0.0.P66.4D /r]                APX_F
+CFCMOVNL   reg64,reg64,mem64        [evex.w1.0.PN.4D /r]                APX_F
+CFCMOVNL   reg32,reg32,mem32        [evex.w0.0.PN.4D /r]                APX_F
+CFCMOVNL   reg16,reg16,mem16        [evex.w0.0.P66.4D /r]                APX_F
+CFCMOVNL   reg64,mem64,reg64        [evex.w1.0.PN.4C /r]                APX_F
+CFCMOVNL   reg32,mem32,reg32        [evex.w0.0.PN.4C /r]                APX_F
+CFCMOVNL   reg16,mem16,reg16        [evex.w0.0.P66.4C /r]                APX_F
+
+CFCMOVNLE  reg64,reg64,reg64        [evex.w1.0.PN.4F /r]                APX_F
+CFCMOVNLE  reg32,reg32,reg32        [evex.w0.0.PN.4F /r]                APX_F
+CFCMOVNLE  reg16,reg16,reg16        [evex.w0.0.P66.4F /r]                APX_F
+CFCMOVNLE  reg64,reg64,mem64        [evex.w1.0.PN.4F /r]                APX_F
+CFCMOVNLE  reg32,reg32,mem32        [evex.w0.0.PN.4F /r]                APX_F
+CFCMOVNLE  reg16,reg16,mem16        [evex.w0.0.P66.4F /r]                APX_F
+CFCMOVNLE  reg64,mem64,reg64        [evex.w1.0.PN.4E /r]                APX_F
+CFCMOVNLE  reg32,mem32,reg32        [evex.w0.0.PN.4E /r]                APX_F
+CFCMOVNLE  reg16,mem16,reg16        [evex.w0.0.P66.4E /r]                APX_F
+
+CFCMOVNO   reg64,reg64,reg64        [evex.w1.0.PN.41 /r]                APX_F
+CFCMOVNO   reg32,reg32,reg32        [evex.w0.0.PN.41 /r]                APX_F
+CFCMOVNO   reg16,reg16,reg16        [evex.w0.0.P66.41 /r]                APX_F
+CFCMOVNO   reg64,reg64,mem64        [evex.w1.0.PN.41 /r]                APX_F
+CFCMOVNO   reg32,reg32,mem32        [evex.w0.0.PN.41 /r]                APX_F
+CFCMOVNO   reg16,reg16,mem16        [evex.w0.0.P66.41 /r]                APX_F
+CFCMOVNO   reg64,mem64,reg64        [evex.w1.0.PN.40 /r]                APX_F
+CFCMOVNO   reg32,mem32,reg32        [evex.w0.0.PN.40 /r]                APX_F
+CFCMOVNO   reg16,mem16,reg16        [evex.w0.0.P66.40 /r]                APX_F
+
+CFCMOVNP   reg64,reg64,reg64        [evex.w1.0.PN.4B /r]                APX_F
+CFCMOVNP   reg32,reg32,reg32        [evex.w0.0.PN.4B /r]                APX_F
+CFCMOVNP   reg16,reg16,reg16        [evex.w0.0.P66.4B /r]                APX_F
+CFCMOVNP   reg64,reg64,mem64        [evex.w1.0.PN.4B /r]                APX_F
+CFCMOVNP   reg32,reg32,mem32        [evex.w0.0.PN.4B /r]                APX_F
+CFCMOVNP   reg16,reg16,mem16        [evex.w0.0.P66.4B /r]                APX_F
+CFCMOVNP   reg64,mem64,reg64        [evex.w1.0.PN.4A /r]                APX_F
+CFCMOVNP   reg32,mem32,reg32        [evex.w0.0.PN.4A /r]                APX_F
+CFCMOVNP   reg16,mem16,reg16        [evex.w0.0.P66.4A /r]                APX_F
+
+CFCMOVNS   reg64,reg64,reg64        [evex.w1.0.PN.49 /r]                APX_F
+CFCMOVNS   reg32,reg32,reg32        [evex.w0.0.PN.49 /r]                APX_F
+CFCMOVNS   reg16,reg16,reg16        [evex.w0.0.P66.49 /r]                APX_F
+CFCMOVNS   reg64,reg64,mem64        [evex.w1.0.PN.49 /r]                APX_F
+CFCMOVNS   reg32,reg32,mem32        [evex.w0.0.PN.49 /r]                APX_F
+CFCMOVNS   reg16,reg16,mem16        [evex.w0.0.P66.49 /r]                APX_F
+CFCMOVNS   reg64,mem64,reg64        [evex.w1.0.PN.48 /r]                APX_F
+CFCMOVNS   reg32,mem32,reg32        [evex.w0.0.PN.48 /r]                APX_F
+CFCMOVNS   reg16,mem16,reg16        [evex.w0.0.P66.48 /r]                APX_F
+
+CFCMOVNZ   reg64,reg64,reg64        [evex.w1.0.PN.45 /r]                APX_F
+CFCMOVNZ   reg32,reg32,reg32        [evex.w0.0.PN.45 /r]                APX_F
+CFCMOVNZ   reg16,reg16,reg16        [evex.w0.0.P66.45 /r]                APX_F
+CFCMOVNZ   reg64,reg64,mem64        [evex.w1.0.PN.45 /r]                APX_F
+CFCMOVNZ   reg32,reg32,mem32        [evex.w0.0.PN.45 /r]                APX_F
+CFCMOVNZ   reg16,reg16,mem16        [evex.w0.0.P66.45 /r]                APX_F
+CFCMOVNZ   reg64,mem64,reg64        [evex.w1.0.PN.44 /r]                APX_F
+CFCMOVNZ   reg32,mem32,reg32        [evex.w0.0.PN.44 /r]                APX_F
+CFCMOVNZ   reg16,mem16,reg16        [evex.w0.0.P66.44 /r]                APX_F
+
+CFCMOVO    reg64,reg64,reg64        [evex.w1.0.PN.40 /r]                APX_F
+CFCMOVO    reg32,reg32,reg32        [evex.w0.0.PN.40 /r]                APX_F
+CFCMOVO    reg16,reg16,reg16        [evex.w0.0.P66.40 /r]                APX_F
+CFCMOVO    reg64,reg64,mem64        [evex.w1.0.PN.40 /r]                APX_F
+CFCMOVO    reg32,reg32,mem32        [evex.w0.0.PN.40 /r]                APX_F
+CFCMOVO    reg16,reg16,mem16        [evex.w0.0.P66.40 /r]                APX_F
+CFCMOVO    reg64,mem64,reg64        [evex.w1.0.PN.41 /r]                APX_F
+CFCMOVO    reg32,mem32,reg32        [evex.w0.0.PN.41 /r]                APX_F
+CFCMOVO    reg16,mem16,reg16        [evex.w0.0.P66.41 /r]                APX_F
+
+CFCMOVP    reg64,reg64,reg64        [evex.w1.0.PN.4A /r]                APX_F
+CFCMOVP    reg32,reg32,reg32        [evex.w0.0.PN.4A /r]                APX_F
+CFCMOVP    reg16,reg16,reg16        [evex.w0.0.P66.4A /r]                APX_F
+CFCMOVP    reg64,reg64,mem64        [evex.w1.0.PN.4A /r]                APX_F
+CFCMOVP    reg32,reg32,mem32        [evex.w0.0.PN.4A /r]                APX_F
+CFCMOVP    reg16,reg16,mem16        [evex.w0.0.P66.4A /r]                APX_F
+CFCMOVP    reg64,mem64,reg64        [evex.w1.0.PN.4B /r]                APX_F
+CFCMOVP    reg32,mem32,reg32        [evex.w0.0.PN.4B /r]                APX_F
+CFCMOVP    reg16,mem16,reg16        [evex.w0.0.P66.4B /r]                APX_F
+
+CFCMOVPE   reg64,reg64,reg64        [evex.w1.0.PN.4A /r]                APX_F
+CFCMOVPE   reg32,reg32,reg32        [evex.w0.0.PN.4A /r]                APX_F
+CFCMOVPE   reg16,reg16,reg16        [evex.w0.0.P66.4A /r]                APX_F
+CFCMOVPE   reg64,reg64,mem64        [evex.w1.0.PN.4A /r]                APX_F
+CFCMOVPE   reg32,reg32,mem32        [evex.w0.0.PN.4A /r]                APX_F
+CFCMOVPE   reg16,reg16,mem16        [evex.w0.0.P66.4A /r]                APX_F
+CFCMOVPE   reg64,mem64,reg64        [evex.w1.0.PN.4B /r]                APX_F
+CFCMOVPE   reg32,mem32,reg32        [evex.w0.0.PN.4B /r]                APX_F
+CFCMOVPE   reg16,mem16,reg16        [evex.w0.0.P66.4B /r]                APX_F
+
+CFCMOVPO   reg64,reg64,reg64        [evex.w1.0.PN.4B /r]                APX_F
+CFCMOVPO   reg32,reg32,reg32        [evex.w0.0.PN.4B /r]                APX_F
+CFCMOVPO   reg16,reg16,reg16        [evex.w0.0.P66.4B /r]                APX_F
+CFCMOVPO   reg64,reg64,mem64        [evex.w1.0.PN.4B /r]                APX_F
+CFCMOVPO   reg32,reg32,mem32        [evex.w0.0.PN.4B /r]                APX_F
+CFCMOVPO   reg16,reg16,mem16        [evex.w0.0.P66.4B /r]                APX_F
+CFCMOVPO   reg64,mem64,reg64        [evex.w1.0.PN.4A /r]                APX_F
+CFCMOVPO   reg32,mem32,reg32        [evex.w0.0.PN.4A /r]                APX_F
+CFCMOVPO   reg16,mem16,reg16        [evex.w0.0.P66.4A /r]                APX_F
+
+CFCMOVS    reg64,reg64,reg64        [evex.w1.0.PN.48 /r]                APX_F
+CFCMOVS    reg32,reg32,reg32        [evex.w0.0.PN.48 /r]                APX_F
+CFCMOVS    reg16,reg16,reg16        [evex.w0.0.P66.48 /r]                APX_F
+CFCMOVS    reg64,reg64,mem64        [evex.w1.0.PN.48 /r]                APX_F
+CFCMOVS    reg32,reg32,mem32        [evex.w0.0.PN.48 /r]                APX_F
+CFCMOVS    reg16,reg16,mem16        [evex.w0.0.P66.48 /r]                APX_F
+CFCMOVS    reg64,mem64,reg64        [evex.w1.0.PN.49 /r]                APX_F
+CFCMOVS    reg32,mem32,reg32        [evex.w0.0.PN.49 /r]                APX_F
+CFCMOVS    reg16,mem16,reg16        [evex.w0.0.P66.49 /r]                APX_F
+
+CFCMOVZ    reg64,reg64,reg64        [evex.w1.0.PN.44 /r]                APX_F
+CFCMOVZ    reg32,reg32,reg32        [evex.w0.0.PN.44 /r]                APX_F
+CFCMOVZ    reg16,reg16,reg16        [evex.w0.0.P66.44 /r]                APX_F
+CFCMOVZ    reg64,reg64,mem64        [evex.w1.0.PN.44 /r]                APX_F
+CFCMOVZ    reg32,reg32,mem32        [evex.w0.0.PN.44 /r]                APX_F
+CFCMOVZ    reg16,reg16,mem16        [evex.w0.0.P66.44 /r]                APX_F
+CFCMOVZ    reg64,mem64,reg64        [evex.w1.0.PN.45 /r]                APX_F
+CFCMOVZ    reg32,mem32,reg32        [evex.w0.0.PN.45 /r]                APX_F
+CFCMOVZ    reg16,mem16,reg16        [evex.w0.0.P66.45 /r]                APX_F
 
 ; ============================================================================
 ; SECTION 3: SSE / SSE2 INSTRUCTIONS
@@ -2316,6 +3487,18 @@ VPUNPCKLDQ zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f 62 /r]         AVX512
 VPUNPCKLDQ xmmreg{k1}{z},xmmreg,mem128 [evex.nds.128.66.0f 62 /r]         AVX512F,AVX512VL
 VPUNPCKLDQ ymmreg{k1}{z},ymmreg,mem256 [evex.nds.256.66.0f 62 /r]         AVX512F,AVX512VL
 VPUNPCKLDQ zmmreg{k1}{z},zmmreg,mem512 [evex.nds.512.66.0f 62 /r]         AVX512F
+
+; --- VPUNPCKLQDQ --------------------------------------------------------------
+VPUNPCKLQDQ xmmreg,xmmreg,xmmreg       [vex.nds.128.66.0f 6c /r]          AVX
+VPUNPCKLQDQ ymmreg,ymmreg,ymmreg       [vex.nds.256.66.0f 6c /r]          AVX,AVX2
+VPUNPCKLQDQ xmmreg,xmmreg,mem128       [vex.nds.128.66.0f 6c /r]          AVX
+VPUNPCKLQDQ ymmreg,ymmreg,mem256       [vex.nds.256.66.0f 6c /r]          AVX,AVX2
+VPUNPCKLQDQ xmmreg{k1}{z},xmmreg,xmmreg [evex.nds.128.66.0f 6c /r]        AVX512F,AVX512VL
+VPUNPCKLQDQ ymmreg{k1}{z},ymmreg,ymmreg [evex.nds.256.66.0f 6c /r]        AVX512F,AVX512VL
+VPUNPCKLQDQ zmmreg{k1}{z},zmmreg,zmmreg [evex.nds.512.66.0f 6c /r]        AVX512F
+VPUNPCKLQDQ xmmreg{k1}{z},xmmreg,mem128 [evex.nds.128.66.0f 6c /r]        AVX512F,AVX512VL
+VPUNPCKLQDQ ymmreg{k1}{z},ymmreg,mem256 [evex.nds.256.66.0f 6c /r]        AVX512F,AVX512VL
+VPUNPCKLQDQ zmmreg{k1}{z},zmmreg,mem512 [evex.nds.512.66.0f 6c /r]        AVX512F
 
 ; --- VPUNPCKLWD -------------------------------------------------------------
 VPUNPCKLWD xmmreg,xmmreg,xmmreg        [vex.nds.128.66.0f 61 /r]          AVX
