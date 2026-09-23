@@ -145,12 +145,12 @@ int LEXER(FILE* fl) {
                 continue; 
             }
 
-            else if (isin(LETEXT, *buff)) { 
+            else if (isletext(*buff)) { 
                 char buf[1024] = {0} ;
                 int i = 0;
                 char buf2[1024] = {0} ;
                 
-                while (isin(LETEXT, *buff) && i <= 1024) buf[i++] = *buff++; buf[i] = 0;
+                while (isletext(*buff) && i <= 1024) buf[i++] = *buff++; buf[i] = 0;
 
                 strncpy(buf2, buf, i);
                 str_tolower(buf);
@@ -186,7 +186,7 @@ int LEXER(FILE* fl) {
                     while (*buff == ' ' || *buff == '\t') buff++;
                     char secname[64] = {0};
                     i = 0;
-                    while ((isin(LETEXT, *buff) || *buff == '.')) {
+                    while ((isletext(*buff) || *buff == '.')) {
                         if(i >= 64){fprintf(stderr, "AmmAsm:%d: Section name is too long\n", line); exit(1);}
                         secname[i++] = *buff++;
                     }
@@ -239,7 +239,7 @@ int LEXER(FILE* fl) {
                 char buf[256] = {0};
                 buf[0] = '.'; buff++;
                 int i = 1;
-                while (isin(LETEXT, *buff) ) {
+                while (isletext(*buff) ) {
                     buf[i++] = *buff++;
                 }
                 char full[64] = {0};

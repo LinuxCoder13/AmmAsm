@@ -18,7 +18,7 @@
  *   0  NULL
  *   1  .data
  *   2  .text
- *   3  .data
+ *   3  .bss
  *   4  .shstrtab
  *   5  .symtab
  *   6  .strtab
@@ -67,11 +67,13 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
     if (!fl) return -1;
     /*  1. Scan AST: collect .data bytes and .text machine code */
  
-    uint8_t  data_buf[1024 * 1024];
-    uint32_t data_size = 0;
+    uint32_t data_size = 0; // len
+    uint32_t data_cap = 256 * 1024;
+    uint8_t  *data_buf = malloc(data_cap);
  
-    uint8_t  text_buf[1024 * 1024];
-    uint32_t text_size = 0;
+    uint32_t text_size = 0; // len
+    uint32_t text_cap = 256 * 1024;
+    uint8_t  *text_buf = malloc(text_cap);
 
     uint64_t bss_size = 0;
  
@@ -104,9 +106,7 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
             if (ast[i].machine_code_len > 0 &&
                 ((ast[i].type == AST_U8  || ast[i].type == AST_U16 ||
                  ast[i].type == AST_U32 || ast[i].type == AST_U64) || ast[i].type == AST_ALIGN)) {
-                if (data_size + ast[i].machine_code_len > (1024 * 1024)) break;
-                memcpy(data_buf + data_size, ast[i].machine_code, ast[i].machine_code_len);
-                data_size += ast[i].machine_code_len;
+                data_buf =  appendARR(&data_size, &data_cap, data_buf, ast[i].machine_code, ast[i].machine_code_len);
             }
         }
     }
@@ -118,10 +118,7 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
         for (int i = text_start_idx + 1; i < ast_len; i++) {
             if (ast[i].type == AST_SECTION) break;
             if ((ast[i].machine_code_len > 0 && ast[i].type == AST_INS) || ast[i].type == AST_U8 || ast[i].type == AST_U16 || ast[i].type == AST_U32 || ast[i].type == AST_U64 || ast[i].type == AST_ALIGN) {
-                if (text_size + ast[i].machine_code_len > (1024 * 1024)) break;
-                
-                memcpy(text_buf + text_size, ast[i].machine_code, ast[i].machine_code_len);
-                text_size += ast[i].machine_code_len;
+                text_buf =  appendARR(&text_size, &text_cap, text_buf, ast[i].machine_code, ast[i].machine_code_len);
             }
         }
     }
@@ -216,12 +213,12 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
      * ex -> \0input.asm\0msg\0_start\0printf\0
      */
  
-#define MAX_SYMS 256
+#define MAX_SYMS 2048
     Elf64_Sym syms[MAX_SYMS];
     int       sym_count = 0;
  
     /* .strtab: byte string table for symbol names */
-    uint8_t  strtab_buf[0x1000];
+    uint8_t  strtab_buf[1024 * 10];
     uint32_t strtab_size = 0;
     strtab_buf[strtab_size++] = 0; /* index 0 = empty string */
  
@@ -358,7 +355,13 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
         }
 
     }
- 
+  
+    // currently hard-coded 
+    if(strtab_size >= 1024 * 5 || sym_count >= MAX_SYMS){
+        fprintf(stderr, "AmmAsm: too many symbols, exiting to avoid damaged binary\n");
+        exit(1);
+    }
+
     /* first_global_sym: index of first STB_GLOBAL symbol (for sh_info of .symtab) */
     int first_global_sym = sym_count; /* default: all local */
     for (int i = 0; i < sym_count; i++) {
@@ -379,7 +382,8 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
      * r_addend = disp - 4  (standard PC32 addend)
      */
 
-    Elf64_Rela relas[256];
+#define MAX_RELAS 2048
+    Elf64_Rela relas[MAX_RELAS];
     int        rela_count = 0;
  
     if (text_start_idx >= 0) {
@@ -388,7 +392,7 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
             if (ast[i].type != AST_INS)     continue;
 
             
-            for (int op = 0; op < ast[i].ins.oper_count && rela_count < 256; op++) {
+            for (int op = 0; op < ast[i].ins.oper_count && rela_count < MAX_RELAS; op++) {
                 Operand *oper = &ast[i].ins.operands[op];
                 
                 // resolving R_X86_64_PC32
@@ -453,7 +457,7 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
                                     imm_sz2 == 2 ? "word" : "qword",
                                     lab2);
                             } 
-                            else if (rela_count < 256) {
+                            else if (rela_count < MAX_RELAS) {
                                 int sym_idx2 = data_section_sym_idx;
                                 for (int s2 = 0; s2 < sym_count; s2++) {
                                     if (syms[s2].st_name == 0) continue;
@@ -544,7 +548,7 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
                     } 
                     
                     
-                    if (lab2 && *lab2 && rela_count < 256) {
+                    if (lab2 && *lab2 && rela_count < MAX_RELAS) {
                         int sym_idx2 = data_section_sym_idx;
                         for (int s2 = 0; s2 < sym_count; s2++) {
                             if (syms[s2].st_name == 0) continue;
@@ -610,6 +614,10 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
             }
         }
         // We will add more types of realocations in new versions
+    }
+    if(rela_count >= MAX_SYMS){
+        fprintf(stderr, "AmmAsm: too many relocations, exiting to avoid damaged binary\n");
+        exit(1);
     }
     free_ast(ast, ast_len);
 
@@ -695,6 +703,7 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
         while (cur < (long)off_data) { fputc(0, fl); cur++; }
     }
     fwrite(data_buf, 1, data_size, fl);
+    free(data_buf);
  
     /* Pad to off_text */
     {
@@ -702,6 +711,7 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
         while (cur < (long)off_text) { fputc(0, fl); cur++; }
     }
     fwrite(text_buf, 1, text_size, fl);
+    free(text_buf);
 
     // fucking bss bytes are not in file (ph_memsz - ph_filesz)
  

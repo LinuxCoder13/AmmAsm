@@ -515,19 +515,32 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         uint8_t reg;
 
         // [mem]/reg, cl
-        if ((b->type == O_REG8 && !strcmp(b->reg, "cl") && c->type == O_NONE) ||
-            (c->type == O_REG8 && !strcmp(c->reg, "cl")) /* APX */ ) {
-            if (a->type == O_MEM && c->type == O_NONE) {
+        if (((a->type == O_REG8 || a->type == O_REG16 || a->type == O_REG32 || a->type == O_REG64) && !strcmp(b->reg, "cl") && c->type == O_NONE) ||
+             (a->type == O_MEM && !strcmp(b->reg, "cl") && c->type == O_NONE)) {
+            
+            // mem, cl
+            // {nf} mem, cl
+            if (a->type == O_MEM && !strcmp(b->reg, "cl") && c->type == O_NONE) {
                 sz = node->ins.operands[1].imm_sz;
 
                 node->ins.pc = *pc;
-                *s = encode_inst_rm_rm(machine_code, insn->group, &a->addr, sz * 8, (sz * 8) == 8 ? 0xD2 : 0xD3, 111, 0);
+                if(!a->nf)*s = encode_inst_rm_rm(machine_code, insn->group, &a->addr, sz * 8, (sz * 8) == 8 ? 0xD2 : 0xD3, 111, 0);
+                else{
+                    if(a->nf && (insn->group == 2 || insn->group == 3)) goto error; // rcl/rcr
+                    *s = encode_NDD_APX_reg_reg_rm(machine_code, (sz * 8) == 8 ? 0xD2 : 0xD3, 
+                        insn->group,
+                        0,
+                        &a->addr,
+                        EVEX_MAP_APX,
+                        0,
+                        sz == 2 ? EVEX_PP_66 : EVEX_PP_NONE , sz*8 == 8 /* bytes */, a->nf , EVEX_Z0, 0);
+                }
                 *pc += *s;
             }
 
             // reg, cl
             // {nf} reg, cl
-            else if ((a->type == O_REG8 || a->type == O_REG16 || a->type == O_REG32 || a->type == O_REG64) &&  !strcmp(c->reg, "cl")) {
+            else if ((a->type == O_REG8 || a->type == O_REG16 || a->type == O_REG32 || a->type == O_REG64) &&  !strcmp(b->reg, "cl") && c->type == O_NONE) {
 
                 sz = operand_bits(a);
                 reg = reg_index(a);
@@ -678,6 +691,30 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
 
             *pc += *s;   
         }
+
+        // (APX) reg, mem, cl
+        else if((a->type == O_REG8 || a->type == O_REG16 || a->type == O_REG32 || a->type == O_REG64) && b->type == O_MEM && !strcmp(c->reg, "cl")){
+            if(a->nf && (insn->group == 2 || insn->group == 3)) goto error; // rcl/rcr
+            uint8_t imm = b->type == O_IMM ? c->imm : c->c;
+            sz = operand_bits(a);
+            reg = reg_index(a);
+            uint8_t opcode = sz == 8 ? 0xD2 : 0xD3;
+
+            AddrExpr *mem = &b->addr;
+
+            node->ins.pc = *pc;
+
+            *s = encode_NDD_APX_reg_reg_rm(machine_code, opcode, 
+                insn->group,
+                reg,
+                mem,
+                EVEX_MAP_APX,
+                0,
+                sz == 16 ? EVEX_PP_66 : EVEX_PP_NONE , sz == 64 /* bytes */, a->nf , EVEX_Z0, 1);
+
+            *pc += *s;   
+        }
+
     }
 
     // Group 3 instructions: not, neg, mul, imul, div, idiv, test

@@ -18,5 +18,5 @@
 #include <sys/stat.h>
 #include "pe.h"
 
-extern void compiler(uint8_t *text, int *textsize, uint64_t *e_entry);
+extern void compiler(uint8_t *text, int *textsize, int *textcap, uint64_t *e_entry);
 extern void handl_pipeline(int argc, char **argv);

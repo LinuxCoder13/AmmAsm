@@ -36,7 +36,7 @@ static char* ParseArgs(char *buffer, macro* macros, int *line){
         skips;skipnl(*line);skips;
         while(*buf != ')' && *buf != '{'){
             for(i = 0; *buf && *buf != ')' && *buf != ',' && *buf != ' ' && *buf != '\n' && *buf != '{'; i++){
-                if(!isin(LETEXT, *buf)){ fprintf(stderr, "AmmAsm:%d: Macro args can include only alpha letters\n", *line); exit(1);}
+                if(!isletext(*buf)){ fprintf(stderr, "AmmAsm:%d: Macro args can include only alpha letters\n", *line); exit(1);}
                 arg_name[i] = *buf++;
             }
 
@@ -281,9 +281,9 @@ static char* SubstituteArgs(macro *m, macro *call, const char *line, char *out, 
         if (*buf == '"' && !in_char) in_string = !in_string;
         else if (*buf == '\'' && !in_string) in_char = !in_char;
 
-        if (!in_string && !in_char && isin(LETEXT, *buf)) {
+        if (!in_string && !in_char && isletext(*buf)) {
             const char *name = buf;
-            while (*buf && isin(LETEXT, *buf)) buf++;
+            while (*buf && isletext(*buf)) buf++;
             int len = buf - name;
 
             int match = -1;
@@ -416,7 +416,7 @@ static void FindCallOfMacro(char *buff, macro *macros, int macros_len, int *line
         }
 
         // copy of unknow fucking char
-        if (!isin(LETEXT, *buf)) {
+        if (!isletext(*buf)) {
             if (*buf == '\n'){ (*line)++;} // skip fucking \n
             fputc(*buf, out);
             buf++;
@@ -425,7 +425,7 @@ static void FindCallOfMacro(char *buff, macro *macros, int macros_len, int *line
 
         char *name = buf;
 
-        while (isin(LETEXT, *buf))
+        while (isletext(*buf))
             buf++;
 
         int len = buf - name;

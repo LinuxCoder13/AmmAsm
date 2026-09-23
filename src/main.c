@@ -6,9 +6,8 @@
 #include "main.h"
 #define VERSION "3.0.0"
 
-void compiler(uint8_t *text, int *textsize, uint64_t *e_entry) {
+void compiler(uint8_t *text, int *textsize, int *textcap, uint64_t *e_entry) {
     if (!text) return;
-    int pos = 0;
  
     // of text
     uint64_t pc = pie_mode ? 0x1000 : 0x401000;
@@ -34,29 +33,20 @@ void compiler(uint8_t *text, int *textsize, uint64_t *e_entry) {
             case AST_U64:
             case AST_BSS_RES:
             case AST_ALIGN:
-                if (pos >= (1024 * 1024)){
-                    fprintf(stderr, "AmmAsm: data size is too big. Max 1MB\n");
-                    exit(1);
-                }
                 if (ast[i].type == AST_BSS_RES) {
                     if (!obj_file) {
-                        if(ast[i].machine_code_len > (1024 * 1024)){
-                            fprintf(stderr, "AmmAsm: data size is too big. Max 1MB\n");
-                            exit(1);
-                        }
-                        memset(text + pos, 0, ast[i].machine_code_len);
-                        pos += ast[i].machine_code_len;
+                        char * zeros = calloc(ast[i].machine_code_len, 1);
+                        text = appendARR(textsize, textcap, text, zeros, ast[i].machine_code_len);
+                        free(zeros);
                     }
                     break;
                 }
-
-                memcpy(text + pos, ast[i].machine_code, ast[i].machine_code_len);
-                pos += ast[i].machine_code_len;
+                
+                text = appendARR(textsize, textcap, text, ast[i].machine_code, ast[i].machine_code_len);
                 break;
         }
     }
- 
-    *textsize = pos;
+
 }
  
 void handl_pipeline(int argc, char **argv){ 
@@ -69,8 +59,10 @@ void handl_pipeline(int argc, char **argv){
         exit(0);
     }
 
-    uint8_t text[1024 * 1024];
-    int textsize = 0;
+    uint8_t *text = malloc(256 * 1024);
+    int textsize = 0; // len
+    int textcap  = 256 * 1024; // cap
+
     int flsz = 0;
  
 
@@ -88,12 +80,13 @@ void handl_pipeline(int argc, char **argv){
     
     FILE *output = fopen(argv[1], "wb");
  
-    compiler(text, &textsize, &entry_point);
+    compiler(text, &textsize, &textcap, &entry_point);
     DEBUG_PRINT_AST();
     // mini driver
     flsz += pe32plus ?  PEgenfile(output, entry_point, text, textsize, pie_mode)  : 
             obj_file ?  GenObjElfFile(output, argv[0]) : 
                         ELFgenfile(output, entry_point, text, textsize, pie_mode);
+    free(text);
     
     chmod(argv[1], 0775); // +x
     fclose(output);

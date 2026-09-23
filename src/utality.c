@@ -8,10 +8,12 @@ void str_tolower(char *s) {
         s++;
     }
 }
-int isin(const char *str, char c){ 
-    for(int i = 0; str[i] != '\0'; i++)
-        if(str[i] == c) return 1;
-    return 0;
+
+inline int isletext(const char c){ 
+    return (c >= 'A' && c <= 'Z') ||
+           (c >= 'a' && c <= 'z') ||
+           (c >= '0' && c <= '9') ||
+           c == '_';
 }
 
 int is2arrin(const char *str[], int n, char *str2){ 
@@ -599,6 +601,19 @@ void *append(int *len, int *cap, void *arr, const void *value, size_t elem_size)
 
     memcpy((char *)arr + *len * elem_size, value, elem_size);
     (*len)++;
+
+    return arr;
+}
+
+void *appendARR(int *len, int *cap, void *arr, const char *array, int array_sz){
+
+    if(*len + array_sz > *cap){
+        while(*len + array_sz > *cap) *cap *= 2;
+        arr = realloc(arr, *cap);
+    }
+
+    memcpy((char *)arr + *len, array, array_sz);
+    (*len) += array_sz;
 
     return arr;
 }
