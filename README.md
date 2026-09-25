@@ -5,7 +5,7 @@
 AmmAsm - Assembler that sucks less.
 
 ![GitHub last commit](https://img.shields.io/github/last-commit/LinuxCoder13/AmmAsm)
-![Version](https://img.shields.io/badge/version-v3.0.0-blue)
+![Version](https://img.shields.io/badge/version-v3.0.1-blue)
 ![Platform](https://img.shields.io/badge/platform-Linux_x86--64-success)
 
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -30,6 +30,8 @@ AmmAsm is a handwritten x86-64 assembler designed for simplicity and clarity, ed
 4) Added PE32+ output (experimental)
 
 5) Added Benchmakrs - AmmAsm vs Nasm
+
+6) Added Segment registers for `[mem]`
 
 ---
 
@@ -280,16 +282,18 @@ Unlike NASM, AmmAsm uses an explicit key-value format inside [...]:
 | i=REG | Index register | i=rcx |
 | s=N | Scale (1/2/4/8) | s=4 |
 | d=N | Displacement | d=0x10 |
+| seg=REG | Segment register | seg=fs |
 
 ```asm
-mov rax, [b=rbx]                       ; [rbx]
-mov rax, [b=rbx, d=16]                 ; [rbx + 16]
-mov rax, [b=rbx, i=rcx, s=8]           ; [rbx + rcx*8]
-mov rax, [b=rbx, i=rcx, s=8, d=0x10]   ; [rbx + rcx*8 + 16]
-mov [b=rsp, d=8], rax                  ; store to [rsp+8]
+mov rax, [b=rbx]                             ; [rbx]
+mov rax, [b=rbx, d=16]                       ; [rbx + 16]
+mov rax, [b=rbx, i=rcx, s=8]                 ; [rbx + rcx*8]
+mov rax, [b=rbx, i=rcx, s=8, d=0x10]         ; [rbx + rcx*8 + 16]
+mov [b=rsp, d=8], rax                        ; store to [rsp+8]
 
-mov rax, [b=msg]                       ; load from msg
-mov rax, [b=msg, d=4]                  ; msg + 4
+mov rax, [b=msg]                             ; load from msg
+mov rax, [b=msg, d=4]                        ; msg + 4
+vaddps zmm1, zmm2, [seg=fs, b=_start, d=12]  ; fs: _start + 12
 ```
 
 

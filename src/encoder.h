@@ -159,12 +159,14 @@ enum {
 #define EVEX_EV(EV) (((EV) & 1) << 3)
 #define EVEX_A(AAA) (((AAA) & 0b111) << 0) // K0 - K7
 
+#define UNKNOWN_SEG_REG 1
 
 #define emit_modrm(mod, reg, rm) (((mod & 7) << 6) | ((reg & 7) << 3) | (rm & 7))
 #define emit_sib(scale, idx, base) (((scale & 3) << 6) | ((idx & 7) << 3) | (base & 7))
 
 /* == address-expression parser == */
 AddrExpr parse_addr_expr(const uint8_t *expr, int line);
+uint8_t define_segmet_reg(const char* reg);
  
 /* == instruction encoders == */ 
 extern uint8_t encode_mov_reg_imm(uint8_t *mash_code, uint8_t reg_idx, uint64_t imm, uint8_t sz);

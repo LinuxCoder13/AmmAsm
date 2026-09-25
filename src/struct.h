@@ -12,11 +12,14 @@ typedef struct {
     uint8_t have_base;
     uint8_t have_index;
     uint8_t have_disp;
+    uint8_t have_seg;
 
     uint8_t is_rip_rel;
     uint8_t label[64];
     uint8_t disp_offset; // from start of machine_code
 
+    /* NOTE: any segmet reg in 64 bit mode, except FS/GS, will be ignored */
+    uint8_t seg_reg;
 } AddrExpr;
 
 typedef struct {
@@ -107,9 +110,10 @@ typedef struct {
 } Lexer;
 
 typedef struct Modrm_SIB{
-    uint8_t modrm, sib;
+    uint8_t modrm, sib, seg;
     uint8_t have_sib;
     uint8_t disp_sz;
+    uint8_t has_seg;
 }Modrm_SIB;
 
 typedef struct VEX{

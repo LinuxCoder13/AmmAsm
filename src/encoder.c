@@ -12,14 +12,27 @@ Address format: b=reg, i=reg, s=num, d=num
    rsp can't be index
 */
 
+uint8_t define_segmet_reg(const char* reg){
+    switch(*reg){
+        case 'c': case 'C': return 0x2E;
+        case 's': case 'S': return 0x36;
+        case 'd': case 'D': return 0x3E; 
+        case 'e': case 'E': return 0x2E;
+        case 'f': case 'F': return 0x64;
+        case 'g': case 'G': return 0x65;
+        default: return UNKNOWN_SEG_REG;
+    }
+}
+
 AddrExpr parse_addr_expr(const uint8_t* expr, int line) {
     AddrExpr new = { 0 };
     const uint8_t *p = expr;
-    uint8_t find_b = 0, find_i = 0, find_s = 0, find_d = 0; 
+    uint8_t find_b = 0, find_i = 0, find_s = 0, find_d = 0, find_seg = 0; 
     uint8_t base[64]  = {0};
     uint8_t index[16] = {0};
     uint8_t scale[8]  = {0};
     uint8_t disp[32]  = {0};
+    uint8_t seg_reg[16] = {0};
 
     scale[0] = '1';
     scale[1] = '\0';
@@ -28,7 +41,19 @@ AddrExpr parse_addr_expr(const uint8_t* expr, int line) {
     disp[1] = '\0';
 
     while (*p) {
-        if(*p == 'b'){
+        if(!strncmp(p, "seg", 3)){
+            find_seg = 1; p+=3;
+            if(!*p || *p != '='){ fprintf(stderr, "AmmAsm:%d: SIB syntax error\n", line); exit(1);}
+            p++;
+            int i = 0;
+            while (*p && *p != ',' && i < sizeof(seg_reg)-1) {
+                seg_reg[i++] = *p++;
+            }        
+            seg_reg[i] = '\0';
+            if (*p == ',') p++;
+        }
+
+        else if(*p == 'b'){
             find_b = 1; p++;
             if(!*p || *p != '='){ fprintf(stderr, "AmmAsm:%d: SIB syntax error\n", line); exit(1);}
             p++;
@@ -80,6 +105,7 @@ AddrExpr parse_addr_expr(const uint8_t* expr, int line) {
     new.have_base  = find_b;
     new.have_index = find_i;
     new.have_disp  = find_d;
+    new.have_seg   = find_seg;
 
     new.scale = (uint8_t)eval_expr(scale);
     new.disp = (int32_t)eval_expr(disp);
@@ -129,13 +155,15 @@ AddrExpr parse_addr_expr(const uint8_t* expr, int line) {
     }
 
     else if (!new.have_base && new.have_index && !new.have_disp) {
-        fprintf(stderr, "AmmAsm: Line %d: index-only addressing is not supported (require base or disp32)\n", line);
+        fprintf(stderr, "AmmAsm:%d: index-only addressing is not supported (require base or disp32)\n", line);
         exit(1);
 
     }
 
     new.base  = (new.have_base)  ? find_reg64_index(base)  : 0;
     new.index = (new.have_index) ? find_reg64_index(index) : 0b100;
+    new.seg_reg = (new.have_seg) ? define_segmet_reg(seg_reg) : 0;
+    if(new.seg_reg == UNKNOWN_SEG_REG){fprintf(stderr, "AmmAsm:%d: Unknown segment register\n", line); exit(1);}
 
     return new;
 }
@@ -307,6 +335,8 @@ Modrm_SIB gen_modrm_sib_ex(AddrExpr *expr, uint8_t reg, uint8_t is_evex){
     uint8_t base  = expr->base;
     uint8_t index = expr->index; // if index == 0b100 then no index
     uint8_t scale = 0b00; // base value
+    
+    uint8_t seg_reg = expr->seg_reg;
 
     switch(expr->scale){
         case 1: scale = 0b00; break;
@@ -406,7 +436,7 @@ Modrm_SIB gen_modrm_sib_ex(AddrExpr *expr, uint8_t reg, uint8_t is_evex){
         exit(1);
     }
 
-    return (Modrm_SIB){.modrm = modrm, .sib = sib, .have_sib = need_sib, .disp_sz = disp_sz};
+    return (Modrm_SIB){.modrm = modrm, .sib = sib, .seg = seg_reg, .have_sib = need_sib, .disp_sz = disp_sz, .has_seg = expr->have_seg};
 }
 
 Modrm_SIB gen_modrm_sib(AddrExpr *expr, uint8_t reg){
@@ -461,7 +491,7 @@ uint8_t encode_inst_rm_rm(uint8_t *mash_code, uint8_t reg, AddrExpr *expr, uint8
 
     Modrm_SIB out = gen_modrm_sib(expr, reg);
     
-
+    if(out.has_seg) mash_code[pos++] = out.seg;
     if(is_apx){
         mash_code[pos++] = rex2;
         mash_code[pos++] = rex;
@@ -523,7 +553,7 @@ uint8_t encode_inst_reg_rm2( uint8_t *machine_code, uint8_t opcode2, uint8_t reg
     }
 
     Modrm_SIB out = gen_modrm_sib(expr, reg);
-
+    if(out.has_seg) machine_code[pos++] = out.seg;
     if(is_apx){
         if(prefix == 0x66 || prefix == 0xF3) machine_code[pos++] = prefix;
         machine_code[pos++] = rex2;
@@ -1465,6 +1495,7 @@ uint8_t encode_avx_reg_reg_mem(uint8_t* mash_code, uint8_t opcode, uint8_t dest,
     Modrm_SIB out = gen_modrm_sib(expr, dest);
     emit_vex(&vex);
 
+    if(out.has_seg) mash_code[pos++] = out.seg;
     mash_code[pos++] = 0xC5 - is_2byte;
     mash_code[pos++] = vex.vex1;
     if(vex.vex2) mash_code[pos++] = vex.vex2;
@@ -1658,6 +1689,7 @@ uint8_t encode_avx512_reg_reg_rm(uint8_t* mash_code, uint8_t opcode,
     P2 |= EVEX_EV(!(src1 >= 16)); 
     P2 |= EVEX_A(aaa);
 
+    if(out.has_seg) mash_code[pos++] = out.seg;
     mash_code[pos++] = prefix;
     mash_code[pos++] = P0;
     mash_code[pos++] = P1;
@@ -1753,7 +1785,7 @@ uint8_t encode_NDD_APX_reg_reg_rm(uint8_t* mash_code, uint8_t opcode, uint8_t de
 
     Modrm_SIB out = gen_modrm_sib(mem, dest);
 
-
+    if(out.has_seg) mash_code[pos++] = out.seg;
     mash_code[pos++] = prefix;
     mash_code[pos++] = P0;
     mash_code[pos++] = P1;
@@ -1903,7 +1935,7 @@ uint8_t encode_CCMPcc_reg_rm(uint8_t* mash_code, uint8_t opcode, uint8_t dest, u
 
     Modrm_SIB out = gen_modrm_sib(mem, dest);
 
-
+    if(out.has_seg) mash_code[pos++] = out.seg;
     mash_code[pos++] = prefix;
     mash_code[pos++] = P0;
     mash_code[pos++] = P1;
@@ -1967,7 +1999,7 @@ uint8_t encode_CCMPcc_mem_imm(uint8_t* mash_code, uint8_t group, uint8_t dfv, Ad
 
     Modrm_SIB out = gen_modrm_sib(mem, group);
 
-
+    if(out.has_seg) mash_code[pos++] = out.seg;
     mash_code[pos++] = prefix;
     mash_code[pos++] = P0;
     mash_code[pos++] = P1;
@@ -2035,7 +2067,7 @@ uint8_t encode_CTESTcc_mem_imm(uint8_t* mash_code, uint8_t group, uint8_t dfv, A
 
     Modrm_SIB out = gen_modrm_sib(mem, group);
 
-
+    if(out.has_seg) mash_code[pos++] = out.seg;
     mash_code[pos++] = prefix;
     mash_code[pos++] = P0;
     mash_code[pos++] = P1;
