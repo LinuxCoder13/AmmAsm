@@ -10,6 +10,7 @@ AmmAsm - Assembler that sucks less.
 
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Status](https://img.shields.io/badge/status-maintenance--only-yellow)
+![Commits](https://img.shields.io/github/commit-activity/m/LinuxCoder13/AmmAsm)
 <br clear="left"/>
 
 **Maintainer:** Ammar Najafli
@@ -318,3 +319,12 @@ ld prog.o -o output && chmod +x output && ./output
 - Limited instruction set - Only a subset of the x86-64 instruction set is currently implemented (look at `./insn.dat`)
 - x87 FPU not implemented
 - No `ah, bh, ch, dh` registers (sorry)
+
+
+## Found a Bug or Incorrect Opcode?
+We strive for bit-perfect accuracy against Intel SDM. If you find:
+* Incorrect instruction encoding (EVEX prefixes, map selection)
+* Missing syntax symmetry or compilation crashes
+* Performance anomalies
+
+Please open an Issue! Provide the assembly source string and the expected output.

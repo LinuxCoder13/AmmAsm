@@ -514,77 +514,73 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
         int sz;
         uint8_t reg;
 
-        // [mem]/reg, cl
-        if (((a->type == O_REG8 || a->type == O_REG16 || a->type == O_REG32 || a->type == O_REG64) && !strcmp(b->reg, "cl") && c->type == O_NONE) ||
-             (a->type == O_MEM && !strcmp(b->reg, "cl") && c->type == O_NONE)) {
-            
             // mem, cl
             // {nf} mem, cl
-            if (a->type == O_MEM && !strcmp(b->reg, "cl") && c->type == O_NONE) {
-                sz = node->ins.operands[1].imm_sz;
+        if (a->type == O_MEM && !strcmp(b->reg, "cl") && c->type == O_NONE) {
+            sz = node->ins.operands[1].imm_sz;
 
-                node->ins.pc = *pc;
-                if(!a->nf)*s = encode_inst_rm_rm(machine_code, insn->group, &a->addr, sz * 8, (sz * 8) == 8 ? 0xD2 : 0xD3, 111, 0);
-                else{
-                    if(a->nf && (insn->group == 2 || insn->group == 3)) goto error; // rcl/rcr
-                    *s = encode_NDD_APX_reg_reg_rm(machine_code, (sz * 8) == 8 ? 0xD2 : 0xD3, 
-                        insn->group,
-                        0,
-                        &a->addr,
-                        EVEX_MAP_APX,
-                        0,
-                        sz == 2 ? EVEX_PP_66 : EVEX_PP_NONE , sz*8 == 8 /* bytes */, a->nf , EVEX_Z0, 0);
-                }
-                *pc += *s;
+            node->ins.pc = *pc;
+            if(!a->nf)*s = encode_inst_rm_rm(machine_code, insn->group, &a->addr, sz * 8, (sz * 8) == 8 ? 0xD2 : 0xD3, 111, 0);
+            else{
+                if(a->nf && (insn->group == 2 || insn->group == 3)) goto error; // rcl/rcr
+                *s = encode_NDD_APX_reg_reg_rm(machine_code, (sz * 8) == 8 ? 0xD2 : 0xD3, 
+                    insn->group,
+                    0,
+                    &a->addr,
+                    EVEX_MAP_APX,
+                    0,
+                    sz == 2 ? EVEX_PP_66 : EVEX_PP_NONE , sz*8 == 8 /* bytes */, a->nf , EVEX_Z0, 0);
             }
+            *pc += *s;
+        }
 
             // reg, cl
             // {nf} reg, cl
-            else if ((a->type == O_REG8 || a->type == O_REG16 || a->type == O_REG32 || a->type == O_REG64) &&  !strcmp(b->reg, "cl") && c->type == O_NONE) {
+        else if ((a->type == O_REG8 || a->type == O_REG16 || a->type == O_REG32 || a->type == O_REG64) &&  !strcmp(b->reg, "cl") && c->type == O_NONE) {
 
-                sz = operand_bits(a);
-                reg = reg_index(a);
+            sz = operand_bits(a);
+            reg = reg_index(a);
 
-                node->ins.pc = *pc;
-                if(!a->nf)*s = encode_group2_reg_cl(machine_code, reg, sz == 8 ? 0xD2 : 0xD3, insn->group, sz);
-                else{
-                    *s = encode_NDD_APX_reg_reg_reg(machine_code, sz == 8 ? 0xD2 : 0xD3, 
-                        insn->group,
-                        0,
-                        reg,
-                        EVEX_MAP_APX,
-                        0,
-                        sz == 16 ? EVEX_PP_66 : EVEX_PP_NONE , sz == 64, a->nf , EVEX_Z0, 0);
-                }
-                *pc += *s;
-            }
-
-
-
-            // APX
-            // reg, reg, cl
-            else if(((a->type == O_REG8  && b->type == O_REG8 )|| 
-                     (a->type == O_REG16 && b->type == O_REG16)||
-                     (a->type == O_REG32 && b->type == O_REG32)||
-                     (a->type == O_REG64 && b->type == O_REG64)) && 
-                   !strcmp(c->reg, "cl") ){
-                if(a->nf && (insn->group == 2 || insn->group == 3)) goto error; // rcl/rcr
-                int dest = reg_index(a);
-                int src1 = reg_index(b);
-
-                int sz = operand_bits(a);
-
-                node->ins.pc = *pc;
+            node->ins.pc = *pc;
+            if(!a->nf)*s = encode_group2_reg_cl(machine_code, reg, sz == 8 ? 0xD2 : 0xD3, insn->group, sz);
+            else{
                 *s = encode_NDD_APX_reg_reg_reg(machine_code, sz == 8 ? 0xD2 : 0xD3, 
-                insn->group,
-                dest,
-                src1,
-                EVEX_MAP_APX,
-                0,
-                sz == 16 ? EVEX_PP_66 : EVEX_PP_NONE , sz == 64, a->nf , EVEX_Z0, 1);
-                *pc += *s;
+                    insn->group,
+                    0,
+                    reg,
+                    EVEX_MAP_APX,
+                    0,
+                    sz == 16 ? EVEX_PP_66 : EVEX_PP_NONE , sz == 64, a->nf , EVEX_Z0, 0);
             }
-        }   
+            *pc += *s;
+        }
+
+
+
+        // APX
+        // reg, reg, cl
+        else if(((a->type == O_REG8  && b->type == O_REG8 )|| 
+                    (a->type == O_REG16 && b->type == O_REG16)||
+                    (a->type == O_REG32 && b->type == O_REG32)||
+                    (a->type == O_REG64 && b->type == O_REG64)) && 
+                !strcmp(c->reg, "cl") ){
+            if(a->nf && (insn->group == 2 || insn->group == 3)) goto error; // rcl/rcr
+            int dest = reg_index(a);
+            int src1 = reg_index(b);
+
+            int sz = operand_bits(a);
+
+            node->ins.pc = *pc;
+            *s = encode_NDD_APX_reg_reg_reg(machine_code, sz == 8 ? 0xD2 : 0xD3, 
+            insn->group,
+            dest,
+            src1,
+            EVEX_MAP_APX,
+            0,
+            sz == 16 ? EVEX_PP_66 : EVEX_PP_NONE , sz == 64, a->nf , EVEX_Z0, 1);
+            *pc += *s;
+        }
+          
         // reg, imm8/char
         // {nf} reg, imm8/char
         else if ((b->type == O_IMM || b->type == O_CHAR) && (a->type == O_REG8 || a->type == O_REG16 || a->type == O_REG32 || a->type == O_REG64) && c->type == O_NONE) {
@@ -1753,8 +1749,8 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
             AddrExpr *mem = b->type == O_MEM ? &b->addr : &a->addr;
              
             int sz = b->type == O_MEM ? operand_bits(a) : operand_bits(b);
-            if(sz == 8){reg_mem--; mem_reg--;}
-            uint8_t opcode = b->type == O_MEM ? reg_mem :mem_reg ;
+            if(sz == 8){reg_mem--; mem_reg--; reg_reg--;}
+            uint8_t opcode = b->type == O_MEM ? reg_mem : mem_reg ;
             /* for ctest -> opcode for `mem, reg' and `reg, mem' are same.*/
             if(is_ctest) opcode = reg_reg; // nasm can't encode `ctest {dfv=} reg, mem' form, but aasm can!
             node->ins.pc = *pc;
