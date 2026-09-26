@@ -1,0 +1,19 @@
+name: AmmAsm CI
+
+on:
+  push:
+
+jobs:
+  # PR are not accepted.
+  tests:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build
+        run: ./build.sh
+
+      - name: Tests
+        run: ./tests/run.sh
