@@ -11,7 +11,7 @@ AmmAsm - Assembler that sucks less.
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Status](https://img.shields.io/badge/status-maintenance--only-yellow)
 ![Commits](https://img.shields.io/github/commit-activity/m/LinuxCoder13/AmmAsm)
-[![Tests](https://github.com/LinuxCoder13/AmmAsm/actions/workflows/tests.yml/badge.svg)](https://github.com/LinuxCoder13/AmmAsm/actions/workflows/tests.yml)
+[![tests](https://github.com/LinuxCoder13/AmmAsm/actions/workflows/tests.yaml/badge.svg)](https://github.com/LinuxCoder13/AmmAsm/actions/workflows/tests.yaml)
 <br clear="left"/>
 
 **Maintainer:** Ammar Najafli
