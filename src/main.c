@@ -4,7 +4,7 @@
 */
 
 #include "main.h"
-#define VERSION "3.0.1"
+#define VERSION "3.0.2"
 
 void compiler(uint8_t *text, int *textsize, int *textcap, uint64_t *e_entry) {
     if (!text) return;

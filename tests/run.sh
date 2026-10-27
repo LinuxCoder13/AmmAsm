@@ -181,3 +181,25 @@ else
 fi
 
 rm -f star
+
+# mandelbrot
+
+printf "%-45s" 'Building | Running "mandelbroat"...'
+
+if "$AASM" mandelbrot/mandelbrot.asm -c a.o >/dev/null 2>&1 &&
+   ld a.o -o mandelbroat >/dev/null 2>&1; then
+    echo -n "[OK] "
+else
+    echo -n "[FAIL]"
+    exit 1
+fi
+
+if ./mandelbroat >/dev/null 2>&1; then
+    echo "[OK]"
+else
+    echo "[FAIL]"
+    exit 1
+fi
+
+
+rm -f mandelbroat

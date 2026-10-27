@@ -444,41 +444,25 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
                         Expr *imm_expr = &ast[i].ins.operands[1].expr;
                         const uint8_t *lab2 = get_label_from_expr(*imm_expr);
 
-                        if (lab2 && *lab2) {
-                            uint8_t imm_sz2 = ast[i].ins.operands[1].imm_sz;
+                        if (lab2 && *lab2 && rela_count < MAX_RELAS) {
     
-                            if (imm_sz2 != 4) {
-                                fprintf(stderr,
-                                    "AmmAsm:%d: warning: inst [mem], %s label: "
-                                    "only \'dword\' (4-byte) supported for R_X86_64_32; "
-                                    "skipping relocation for \'%s\'\n",
-                                    ast[i].line,
-                                    imm_sz2 == 1 ? "byte" :
-                                    imm_sz2 == 2 ? "word" : "qword",
-                                    lab2);
-                            } 
-                            else if (rela_count < MAX_RELAS) {
-                                int sym_idx2 = data_section_sym_idx;
-                                for (int s2 = 0; s2 < sym_count; s2++) {
-                                    if (syms[s2].st_name == 0) continue;
-                                    const uint8_t *sname = strtab_buf + syms[s2].st_name;
-                                    if (!strcmp(sname, lab2)) { sym_idx2 = s2; break; }
-                                }
-    
-                                uint64_t imm_reloc_off =
-                                    (ast[i].ins.pc - text_start_pc) +
-                                    (ast[i].machine_code_len - 4);
-                                uint32_t vaddr = find_lab_addr(lab2);
-                                uint32_t imm32 = *(uint32_t*)(ast[i].machine_code + ast[i].machine_code_len - 4);
-    
-                                relas[rela_count].r_offset = imm_reloc_off;
-                                relas[rela_count].r_info   = ((uint64_t)sym_idx2 << 32) | R_X86_64_32;
-                                relas[rela_count].r_addend = imm32 - vaddr;
-                                rela_count++;
-    
-                               
-                                memset(text_buf + imm_reloc_off, 0, 4);
+                            int sym_idx2 = data_section_sym_idx;
+                            for (int s2 = 0; s2 < sym_count; s2++) {
+                                if (syms[s2].st_name == 0) continue;
+                                const uint8_t *sname = strtab_buf + syms[s2].st_name;
+                                if (!strcmp(sname, lab2)) { sym_idx2 = s2; break; }
                             }
+    
+                            uint64_t imm_reloc_off =
+                                (ast[i].ins.pc - text_start_pc) +
+                                (ast[i].machine_code_len - 4);
+                            uint32_t vaddr = find_lab_addr(lab2);
+                            uint32_t imm32 = *(uint32_t*)(ast[i].machine_code + ast[i].machine_code_len - 4);
+    
+                            relas[rela_count].r_offset = imm_reloc_off;
+                            relas[rela_count].r_info   = ((uint64_t)sym_idx2 << 32) | R_X86_64_32;
+                            relas[rela_count].r_addend = imm32 - vaddr;
+                            rela_count++;
                         }
                     }
                     break;
@@ -535,14 +519,14 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
                         
                     const uint8_t *lab2 = get_label_from_expr(expr);
                     
-                    if (imm_sz2 != 4 && imm_sz2) {
+                    if ((imm_sz2 != 4 && imm_sz2 != 8) && imm_sz2) {
                         fprintf(stderr,
                             "AmmAsm:%d: warning: inst [mem], %s label: "
-                            "only \'dword\' (4-byte) supported for R_X86_64_32; "
+                            "only \'dword\' and \'qword\' (4/8-byte) supported for R_X86_64_32; "
                             "skipping relocation for \'%s\'\n",
                             ast[i].line,
                             imm_sz2 == 1 ? "byte" :
-                            imm_sz2 == 2 ? "word" : "qword",
+                            imm_sz2 == 2 ? "word" : "???",
                             lab2);
                         break;;
                     } 

@@ -15,6 +15,9 @@
 #define IS_EXPR_OR_IMM_OR_PC(operand) \
     ((operand).type == O_PC || (operand).type == O_EXPR || (operand).type == O_IMM)
 
+#define IS_EXPR_OR_IMM_OR_PC_OR_CHAR(operand) \
+    ((operand).type == O_PC || (operand).type == O_EXPR || (operand).type == O_IMM || (operand).type == O_CHAR)    
+
 // collect labels with sections and find e_entry 
 extern uint64_t collect_labels_sections();
 

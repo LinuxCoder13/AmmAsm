@@ -5,7 +5,7 @@
 AmmAsm - Assembler that sucks less.
 
 ![GitHub last commit](https://img.shields.io/github/last-commit/LinuxCoder13/AmmAsm)
-![Version](https://img.shields.io/badge/version-v3.0.1-blue)
+![Version](https://img.shields.io/badge/version-v3.0.2-blue)
 ![Platform](https://img.shields.io/badge/platform-Linux_x86--64-success)
 
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -22,7 +22,7 @@ AmmAsm is a handwritten x86-64 assembler designed for simplicity and clarity, ed
 
 ## What's New in v3.0.x
 
-1) Added new instructions: `push2`, `pop2`, `push2p`, `pop2p`, `jmpabs`, `endbr64`, `CCMPcc`(set), `CTESTcc`(set), `CFCMOVcc`(set), `vpunpcklqdq`
+1) Added new instructions: `push2`, `pop2`, `push2p`, `pop2p`, `jmpabs`, `endbr64`, `CCMPcc`(set), `CTESTcc`(set), `CFCMOVcc`(set), `vpunpcklqdq`, `addsd`, `movsd`, `ucomisd`, `vmovdqu32`, `vmovdqu64`
 
 2) Added Advanced APX support
 
@@ -33,6 +33,8 @@ AmmAsm is a handwritten x86-64 assembler designed for simplicity and clarity, ed
 5) Added Benchmakrs - AmmAsm vs Nasm
 
 6) Added Segment registers for `[mem]`
+
+7) Added Mandelbrot to CI, to test AVX/SSE2 encoder
 
 ---
 
@@ -67,8 +69,7 @@ Starting from v2.4, AmmAsm includes a fully handwritten, high-performance **EVEX
 * **Zeroing Masking:** Optional conditional zeroing via the `{z}` modifier.
 * **Embedded Broadcast:** Built-in `{b}` flag support for memory operands (e.g., `DWORD BCST`).
 * **Compressed Displacement:** Automatic scale matching (disp8 times N) based on data type, broadcast state, and vector size.
-* **SAE Decorator:** Support for reg-to-reg operations, mainly for `ZMM` but also supports for `XMM` if instruction is scalar
-
+* **SAE/ER Decorator:** Support for reg-to-reg operations, for `ZMM` vector-registers
 ### Syntax Example
 
 Unlike standard assemblers, AmmAsm uses an explicit, clean, and bulletproof Key-Value syntax for memory operands to make handwritten assembly robust and easy to parse:
@@ -290,7 +291,8 @@ mov rax, [b=rbx]                             ; [rbx]
 mov rax, [b=rbx, d=16]                       ; [rbx + 16]
 mov rax, [b=rbx, i=rcx, s=8]                 ; [rbx + rcx*8]
 mov rax, [b=rbx, i=rcx, s=8, d=0x10]         ; [rbx + rcx*8 + 16]
-mov [b=rsp, d=8], rax                        ; store to [rsp+8]
+mov [b=rsp, d=8], rax                        ; [rsp + 8]
+mov [i=rcx, s=2], rax                        ; [rcx * 2]
 
 mov rax, [b=msg]                             ; load from msg
 mov rax, [b=msg, d=4]                        ; msg + 4

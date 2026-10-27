@@ -136,12 +136,6 @@ AddrExpr parse_addr_expr(const uint8_t* expr, int line) {
         exit(1);
     }
 
-    if (!new.have_base && new.have_index){
-        fprintf(stderr, "AmmAsm:%d: Index-based addressing is not supported\n", line);
-        exit(1);
-    }
-
-
     if (new.have_index && !(is2arrin(regs64, 8, index) || is2arrin(regs64GP, 8, index) || is2arrin(regs64APX, 16, index))) {
         fprintf(stderr, "AmmAsm:%d: invalid index register name '%s'\n", line, index);
         exit(1);
@@ -152,12 +146,6 @@ AddrExpr parse_addr_expr(const uint8_t* expr, int line) {
         new.label[sizeof(new.label) - 1] = '\0';
         new.is_rip_rel = 1;
         new.have_base = 0;
-    }
-
-    else if (!new.have_base && new.have_index && !new.have_disp) {
-        fprintf(stderr, "AmmAsm:%d: index-only addressing is not supported (require base or disp32)\n", line);
-        exit(1);
-
     }
 
     new.base  = (new.have_base)  ? find_reg64_index(base)  : 0;
@@ -282,7 +270,9 @@ uint8_t encode_two_byte_opcode_reg(uint8_t *mash_code, uint8_t opcode, uint8_t d
     uint8_t rm = src;
     uint8_t reg = dest;
       
-    
+    if((reg >> 4) & 1 && destsz == 128) return 0;
+    if((rm  >> 4) & 1 && destsz == 128) return 0;    
+
     if (src >= 4 && src <= 7) rex |= REX_BASE;
     if((reg >> 3) & 1) rex |= REX_BASE | REX_R;
     if((rm  >> 3) & 1) rex |= REX_BASE | REX_B;
@@ -345,6 +335,7 @@ Modrm_SIB gen_modrm_sib_ex(AddrExpr *expr, uint8_t reg, uint8_t is_evex){
         case 8: scale = 0b11; break;
     }
 
+
     if ((expr->have_base || expr->have_index) && expr->have_disp && expr->disp == 0) expr->have_disp = 0;
     if (!expr->have_disp) {  mod = 0b00; expr->have_disp = 0;}
     else {
@@ -376,9 +367,26 @@ Modrm_SIB gen_modrm_sib_ex(AddrExpr *expr, uint8_t reg, uint8_t is_evex){
         expr->have_disp = 1;
     }
 
+        /*  
+        Addresing | mod | r/m| SIB?| disp? |
+        |---------|-----|----|-----|-------|     
+    1. |[reg]    | 00  | reg| n/a | n/a   | v
+    2. |[reg+d8] | 01  | reg| n/a | disp8 | v
+    3. |[reg+d32]| 10  | reg| n/a | disp32| v
+    4. |[rsp]    | 00  | 100| yes | n/a   | v
+    5. |[rsp+d8] | 01  | 100| yes | disp8 | v
+    6. |[rsp+d32]| 10  | 100| yes | disp32| v
+    7. |[rbp]    | 01  | 101| n/a | disp=0| v
+    8. |[b+i*s]  | 00  | 100| yes | n/a   | v
+    9. |[b+i+d*s]|01/10| 100| yes | d8/d32| v
+    10.|[i*s+d32]| 00  | 100|b=101| disp32| v
+    11.|[rip+d32]| 00  | 101| n/a | disp32| v
+                [DONE] :-)
+        */
+
     // 8, 9
-    if (expr->have_index && !expr->is_rip_rel) {
-        if ((base & 7) == 0b101 && !expr->have_disp) {
+    if (expr->have_base && expr->have_index && !expr->is_rip_rel) {
+        if ((base & 0b111) == 0b101 && !expr->have_disp) {
             mod = 0b01;
             expr->disp = 0;
             expr->have_disp = 1;
@@ -390,14 +398,14 @@ Modrm_SIB gen_modrm_sib_ex(AddrExpr *expr, uint8_t reg, uint8_t is_evex){
     }
 
     // 4, 5, 6
-    else if ((base & 7) == 0b100) {
+    else if ((base & 0b111) == 0b100) {
         modrm = emit_modrm(mod, reg, 0b100);
         sib   = emit_sib(0b00, 0b100, base);
         need_sib = 1;
     }
 
     // 7
-    else if ((base & 7) == 0b101) {
+    else if ((base & 0b111) == 0b101) {
 
         if (!expr->have_disp) {
             mod = 0b01;
@@ -416,7 +424,7 @@ Modrm_SIB gen_modrm_sib_ex(AddrExpr *expr, uint8_t reg, uint8_t is_evex){
     }
         
     // 10.
-    else if(!expr->is_rip_rel && !expr->have_base && expr->have_disp){
+    else if(!expr->have_base && expr->have_index){
         modrm = emit_modrm(0b00, reg, 0b100);
         sib   = emit_sib(scale, index, 0b101);
         need_sib = 1;
@@ -431,10 +439,10 @@ Modrm_SIB gen_modrm_sib_ex(AddrExpr *expr, uint8_t reg, uint8_t is_evex){
     }
 
 
-    if(expr->is_rip_rel && !expr->have_base && expr->have_index){
-        fprintf(stderr, "AmmAsm: RIP-relative addressing cannot use index register\n");
-        exit(1);
-    }
+    // if(expr->is_rip_rel && !expr->have_base && expr->have_index){
+    //     fprintf(stderr, "AmmAsm: RIP-relative addressing cannot use index register\n");
+    //     exit(1);
+    // }
 
     return (Modrm_SIB){.modrm = modrm, .sib = sib, .seg = seg_reg, .have_sib = need_sib, .disp_sz = disp_sz, .has_seg = expr->have_seg};
 }
@@ -471,23 +479,7 @@ uint8_t encode_inst_rm_rm(uint8_t *mash_code, uint8_t reg, AddrExpr *expr, uint8
         if ((expr->index >> 4) & 1) rex |= REX2_X4;
     }
 
-    
-    /*  
-    Addresing | mod | r/m| SIB?| disp? |
-    |---------|-----|----|-----|-------|     
- 1. |[reg]    | 00  | reg| n/a | n/a   | v
- 2. |[reg+d8] | 01  | reg| n/a | disp8 | v
- 3. |[reg+d32]| 10  | reg| n/a | disp32| v
- 4. |[rsp]    | 00  | 100| yes | n/a   | v
- 5. |[rsp+d8] | 01  | 100| yes | disp8 | v
- 6. |[rsp+d32]| 10  | 100| yes | disp32| v
- 7. |[rbp]    | 01  | 101| n/a | disp=0| v
- 8. |[b+i*s]  | 00  | 100| yes | n/a   | v
- 9. |[b+i+d*s]|01/10| 100| yes | d8/d32| v
- 10.|[i*s+d32]| 00  | 100|b=101| disp32| v
- 11.|[rip+d32]| 00  | 101| n/a | disp32| v
-            [DONE] :-)
-    */
+
 
     Modrm_SIB out = gen_modrm_sib(expr, reg);
     
@@ -531,6 +523,8 @@ uint8_t encode_inst_reg_rm2( uint8_t *machine_code, uint8_t opcode2, uint8_t reg
     int pos = 0;
     uint8_t is_apx = 0;
 
+    if((reg >> 4) & 1 && dst_sz == 128) return 0;
+
     switch (dst_sz) {
         case 64: rex |= REX_BASE | REX_W; break;
         case 32: break;
@@ -538,9 +532,9 @@ uint8_t encode_inst_reg_rm2( uint8_t *machine_code, uint8_t opcode2, uint8_t reg
         case 8:  break;
     }
 
-    if((reg >> 3) & 1)         rex |= REX_R;
-    if((expr->base >> 3) & 1)  rex |= REX_B;
-    if((expr->index >> 3) & 1) rex |= REX_X;
+    if((reg >> 3) & 1)         rex |= REX_BASE | REX_R;
+    if((expr->base >> 3) & 1)  rex |= REX_BASE | REX_B;
+    if((expr->index >> 3) & 1) rex |= REX_BASE | REX_X;
 
     if ((reg >> 4) & 1 || (expr->base  >> 4) & 1 || (expr->index >> 4) & 1) {
         if (CHECK_REX_BASE(rex))rex = CLEAR_REX_BASE(rex);
@@ -1456,7 +1450,7 @@ void emit_vex(VEX *vex){
 }
 
 uint8_t encode_avx_reg_reg_reg(uint8_t* mash_code, uint8_t opcode, uint8_t dest, uint8_t src1, uint8_t src2, uint8_t L, uint8_t pp, uint8_t mmmmm){
-    uint8_t is_2byte = !(mmmmm == VEX_MAP_0F && dest < 8 && src2 < 8);
+    uint8_t is_2byte = !(mmmmm == VEX_MAP_0F && src2 < 8);
     uint8_t vex1 = 0; 
     uint8_t vex2 = 0;
     uint8_t modrm = 0;

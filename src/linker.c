@@ -130,15 +130,15 @@ uint64_t collect_labels_sections() {
                  (ast[i].type == AST_U16 && ast[i].machine_code_len > 0) ||
                  (ast[i].type == AST_U32 && ast[i].machine_code_len > 0) ||
                  (ast[i].type == AST_U64 && ast[i].machine_code_len > 0) ||
-                 (ast[i].type == AST_BSS_RES && ast[i].machine_code_len > 0 ||
-                  ast[i].type == AST_ALIGN && ast[i].machine_code_len > 0)){
+                 (ast[i].type == AST_BSS_RES && ast[i].machine_code_len > 0) ||
+                 (ast[i].type == AST_ALIGN && ast[i].machine_code_len > 0)){
 
             if(ast[i].type == AST_BSS_RES && obj_file) goto skip;
             current_pc += ast[i].machine_code_len; 
             skip:
         }
     }
-    
+
     if(!e_entry_defined && !obj_file){
         printf("AmmAsm: Linker: Entry point '_start' not found. Using %s%s as default\n", (pie_mode) ? "0x1000" : "0x401000", (pie_mode) ? "(PIE)" : "");
         e_entry = pie_mode ? 0x1000 : 0x401000;
