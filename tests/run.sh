@@ -202,4 +202,27 @@ else
 fi
 
 
-rm -f mandelbroat
+rm -f mandelbroat a.o 
+
+# AmmAsm 1.0
+
+printf "%-45s" 'Building | Running "AmmAsm1.0"...'
+
+if "$AASM" AmmAsm1.0/Aasm.asm -c a.o >/dev/null 2>&1 &&
+   gcc -no-pie -nostartfiles a.o -lc -o aasm_asm ; then
+    echo -n "[OK] "
+else
+    echo -n "[FAIL]"
+    exit 1
+fi
+
+printf '%s\n' 'mov [b=rbp, i=rcx, s=8, d=10], rsp' > test.asm
+
+if ./aasm_asm test.asm >/dev/null 2>&1; then
+    echo "[OK]"
+else
+    echo "[FAIL]"
+    exit 1
+fi
+
+rm -rf test.asm aasm_asm a.o a.bin

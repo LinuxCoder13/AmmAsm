@@ -36,6 +36,8 @@ AmmAsm is a handwritten x86-64 assembler designed for simplicity and clarity, ed
 
 7) Added Mandelbrot to CI, to test AVX/SSE2 encoder
 
+8) Added rewritten AmmAsm 1.0 to assembly test, see `./tests/AmmAsm1.0/README.md` 
+
 ---
 
 ## Advanced APX (Advance Performance Extension) Support

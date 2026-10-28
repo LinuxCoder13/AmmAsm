@@ -1,0 +1,105 @@
+a.bin:     file format binary
+
+
+Disassembly of section .data:
+
+0000000000000000 <.data>:
+   0:	88 d8                	mov    al,bl
+   2:	88 d1                	mov    cl,dl
+   4:	88 c3                	mov    bl,al
+   6:	88 ca                	mov    dl,cl
+   8:	66 89 d8             	mov    ax,bx
+   b:	66 89 d1             	mov    cx,dx
+   e:	66 89 c3             	mov    bx,ax
+  11:	66 89 ca             	mov    dx,cx
+  14:	66 89 fe             	mov    si,di
+  17:	66 89 f7             	mov    di,si
+  1a:	66 89 e5             	mov    bp,sp
+  1d:	66 89 ec             	mov    sp,bp
+  20:	89 d8                	mov    eax,ebx
+  22:	89 d1                	mov    ecx,edx
+  24:	89 c3                	mov    ebx,eax
+  26:	89 ca                	mov    edx,ecx
+  28:	89 fe                	mov    esi,edi
+  2a:	89 f7                	mov    edi,esi
+  2c:	89 e5                	mov    ebp,esp
+  2e:	89 ec                	mov    esp,ebp
+  30:	48 89 d8             	mov    rax,rbx
+  33:	48 89 d1             	mov    rcx,rdx
+  36:	48 89 c3             	mov    rbx,rax
+  39:	48 89 ca             	mov    rdx,rcx
+  3c:	48 89 fe             	mov    rsi,rdi
+  3f:	48 89 f7             	mov    rdi,rsi
+  42:	48 89 e5             	mov    rbp,rsp
+  45:	48 89 ec             	mov    rsp,rbp
+  48:	b0 00                	mov    al,0x0
+  4a:	b3 01                	mov    bl,0x1
+  4c:	b1 7f                	mov    cl,0x7f
+  4e:	b2 ff                	mov    dl,0xff
+  50:	66 b8 00 00          	mov    ax,0x0
+  54:	66 bb 01 00          	mov    bx,0x1
+  58:	66 b9 34 12          	mov    cx,0x1234
+  5c:	66 ba ff ff          	mov    dx,0xffff
+  60:	b8 00 00 00 00       	mov    eax,0x0
+  65:	bb 01 00 00 00       	mov    ebx,0x1
+  6a:	b9 78 56 34 12       	mov    ecx,0x12345678
+  6f:	ba ff ff ff ff       	mov    edx,0xffffffff
+  74:	48 b8 00 00 00 00 00 	movabs rax,0x0
+  7b:	00 00 00 
+  7e:	48 bb 01 00 00 00 00 	movabs rbx,0x1
+  85:	00 00 00 
+  88:	48 b9 78 56 34 12 00 	movabs rcx,0x12345678
+  8f:	00 00 00 
+  92:	48 ba f0 de bc 9a 78 	movabs rdx,0x123456789abcdef0
+  99:	56 34 12 
+  9c:	48 be ff ff ff ff ff 	movabs rsi,0x7fffffffffffffff
+  a3:	ff ff 7f 
+  a6:	48 bf ff ff ff ff ff 	movabs rdi,0xffffffffffffffff
+  ad:	ff ff ff 
+  b0:	8a 03                	mov    al,BYTE PTR [rbx]
+  b2:	66 8b 03             	mov    ax,WORD PTR [rbx]
+  b5:	8b 03                	mov    eax,DWORD PTR [rbx]
+  b7:	48 8b 03             	mov    rax,QWORD PTR [rbx]
+  ba:	88 03                	mov    BYTE PTR [rbx],al
+  bc:	66 89 03             	mov    WORD PTR [rbx],ax
+  bf:	89 03                	mov    DWORD PTR [rbx],eax
+  c1:	48 89 03             	mov    QWORD PTR [rbx],rax
+  c4:	48 8b 43 01          	mov    rax,QWORD PTR [rbx+0x1]
+  c8:	48 8b 43 7f          	mov    rax,QWORD PTR [rbx+0x7f]
+  cc:	48 8b 83 80 00 00 00 	mov    rax,QWORD PTR [rbx+0x80]
+  d3:	48 8b 83 ff 00 00 00 	mov    rax,QWORD PTR [rbx+0xff]
+  da:	48 8b 83 00 04 00 00 	mov    rax,QWORD PTR [rbx+0x400]
+  e1:	48 89 43 01          	mov    QWORD PTR [rbx+0x1],rax
+  e5:	48 89 43 7f          	mov    QWORD PTR [rbx+0x7f],rax
+  e9:	48 89 83 80 00 00 00 	mov    QWORD PTR [rbx+0x80],rax
+  f0:	48 89 83 ff 00 00 00 	mov    QWORD PTR [rbx+0xff],rax
+  f7:	48 89 83 00 04 00 00 	mov    QWORD PTR [rbx+0x400],rax
+  fe:	48 8b 04 0b          	mov    rax,QWORD PTR [rbx+rcx*1]
+ 102:	48 8b 04 4b          	mov    rax,QWORD PTR [rbx+rcx*2]
+ 106:	48 8b 04 8b          	mov    rax,QWORD PTR [rbx+rcx*4]
+ 10a:	48 8b 04 cb          	mov    rax,QWORD PTR [rbx+rcx*8]
+ 10e:	48 8b 44 4b 08       	mov    rax,QWORD PTR [rbx+rcx*2+0x8]
+ 113:	48 8b 44 8b 10       	mov    rax,QWORD PTR [rbx+rcx*4+0x10]
+ 118:	48 8b 44 cb 20       	mov    rax,QWORD PTR [rbx+rcx*8+0x20]
+ 11d:	48 8b 04 0d 10 00 00 	mov    rax,QWORD PTR [rcx*1+0x10]
+ 124:	00 
+ 125:	48 8b 04 4d 20 00 00 	mov    rax,QWORD PTR [rcx*2+0x20]
+ 12c:	00 
+ 12d:	48 8b 04 8d 40 00 00 	mov    rax,QWORD PTR [rcx*4+0x40]
+ 134:	00 
+ 135:	48 8b 04 cd 80 00 00 	mov    rax,QWORD PTR [rcx*8+0x80]
+ 13c:	00 
+ 13d:	c7 03 12 00 00 00    	mov    DWORD PTR [rbx],0x12
+ 143:	c7 03 34 12 00 00    	mov    DWORD PTR [rbx],0x1234
+ 149:	c7 03 78 56 34 12    	mov    DWORD PTR [rbx],0x12345678
+ 14f:	c7 03 78 56 34 12    	mov    DWORD PTR [rbx],0x12345678
+ 155:	48 b8 ff ff ff 7f 00 	movabs rax,0x7fffffff
+ 15c:	00 00 00 
+ 15f:	48 b8 ff ff ff ff 00 	movabs rax,0xffffffff
+ 166:	00 00 00 
+ 169:	48 b8 00 00 00 80 00 	movabs rax,0x80000000
+ 170:	00 00 00 
+ 173:	48 b8 00 00 00 00 00 	movabs rax,0x8000000000000000
+ 17a:	00 00 80 
+ 17d:	48 b8 ff ff ff ff ff 	movabs rax,0xffffffffffffffff
+ 184:	ff ff ff 

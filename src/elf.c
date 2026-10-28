@@ -422,12 +422,14 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
                         reloc_off = (ast[i].ins.pc - text_start_pc) + (ast[i].machine_code_len - 4);
                     } 
                     else {
-                        reloc_off = (ast[i].ins.pc - text_start_pc) +(ast[i].machine_code_len - real_imm_sz - 4);
+                        if(ast[i].ins.oper_count > 1)reloc_off = (ast[i].ins.pc - text_start_pc) +(ast[i].machine_code_len - real_imm_sz - 4);
+                        else reloc_off = (ast[i].ins.pc - text_start_pc) +(ast[i].machine_code_len - 4);
                     }
 
                     relas[rela_count].r_offset = reloc_off;
                     relas[rela_count].r_info   = ((uint64_t)sym_idx << 32) | R_X86_64_PC32;
-                    relas[rela_count].r_addend = (int64_t)oper->addr.disp - 4 - real_imm_sz; // linker writes: S + A - P
+                    relas[rela_count].r_addend = (int64_t)oper->addr.disp - 4; // linker writes: S + A - P
+                    if(ast[i].ins.oper_count > 1) relas[rela_count].r_addend -= real_imm_sz;
                     rela_count++;
 
                   //  memset(text_buf + reloc_off, 0, 4);
