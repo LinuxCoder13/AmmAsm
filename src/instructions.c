@@ -390,7 +390,7 @@ const int Sign_extensions_COUNT = sizeof(Sign_extensions) / sizeof(Sign_extensio
 
 // sign-extended immediate instructions
 const char *short_imm_instructions[] = {
-    "adc", "add", "and", "cmp", 
+    "adc", "add", "and", 
     "ccmpa", 
     "ccmpae",
     "ccmpb", 
@@ -407,6 +407,7 @@ const char *short_imm_instructions[] = {
     "ccmpo", 
     "ccmps", 
     "ccmpt", 
+    "cmp",
     "ctesta", 
     "ctestae",
     "ctestb", 

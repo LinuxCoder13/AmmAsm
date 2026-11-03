@@ -213,12 +213,12 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
      * ex -> \0input.asm\0msg\0_start\0printf\0
      */
  
-#define MAX_SYMS 2048
+#define MAX_SYMS 1024 * 10
     Elf64_Sym syms[MAX_SYMS];
     int       sym_count = 0;
  
     /* .strtab: byte string table for symbol names */
-    uint8_t  strtab_buf[1024 * 10];
+    uint8_t  strtab_buf[1024 * 15];
     uint32_t strtab_size = 0;
     strtab_buf[strtab_size++] = 0; /* index 0 = empty string */
  
@@ -357,7 +357,7 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
     }
   
     // currently hard-coded 
-    if(strtab_size >= 1024 * 5 || sym_count >= MAX_SYMS){
+    if(strtab_size >= 1024 * 15 || sym_count >= MAX_SYMS){
         fprintf(stderr, "AmmAsm: too many symbols, exiting to avoid damaged binary\n");
         exit(1);
     }
@@ -382,7 +382,7 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
      * r_addend = disp - 4  (standard PC32 addend)
      */
 
-#define MAX_RELAS 2048
+#define MAX_RELAS 10 * 1024
     Elf64_Rela relas[MAX_RELAS];
     int        rela_count = 0;
  
@@ -392,9 +392,14 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
             if (ast[i].type != AST_INS)     continue;
 
             
-            for (int op = 0; op < ast[i].ins.oper_count && rela_count < MAX_RELAS; op++) {
+            for (int op = 0; op < ast[i].ins.oper_count; op++) {
                 Operand *oper = &ast[i].ins.operands[op];
                 
+                    if(rela_count >= MAX_RELAS){
+                        fprintf(stderr, "AmmAsm: too many relocations, exiting to avoid damaged binary\n");
+                        exit(1);
+                    }
+
                 // resolving R_X86_64_PC32
 
                 // mov/lea/... rax, [rel label] | mov/lea/... [rel label], <size> imm
@@ -601,10 +606,7 @@ int GenObjElfFile(FILE *fl, const char *src_filename) {
         }
         // We will add more types of realocations in new versions
     }
-    if(rela_count >= MAX_SYMS){
-        fprintf(stderr, "AmmAsm: too many relocations, exiting to avoid damaged binary\n");
-        exit(1);
-    }
+
     free_ast(ast, ast_len);
 
 
