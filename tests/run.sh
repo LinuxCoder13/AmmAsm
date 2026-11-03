@@ -226,3 +226,29 @@ else
 fi
 
 rm -rf test.asm aasm_asm a.o a.bin
+
+# APX_AmmAsm 1.0
+
+printf "%-45s" 'Building | Running "APX_AmmAsm1.0"...'
+
+if "$AASM" APX_AmmAsm1.0/Aasm.asm -c a.o >/dev/null 2>&1 &&
+   gcc -no-pie -nostartfiles a.o -lc -o aasm_asm ; then
+    echo -n "[OK] "
+else
+    echo -n "[FAIL]"
+    exit 1
+fi
+
+printf '%s\n' 'mov [b=rbp, i=rcx, s=8, d=10], rsp' > test.asm
+
+if [ ! -x "$HOME/intel/sde/sde64" ]; then
+    echo "[SKIP] SDE64 not found"
+elif "$HOME/intel/sde/sde64" -future -- ./aasm_asm test.asm >/dev/null 2>&1; then
+    echo "[OK]"
+else
+    status=$?
+    echo "[FAIL]"
+    exit "$status"
+fi
+
+rm -rf test.asm aasm_asm a.o a.bin
