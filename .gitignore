@@ -17,6 +17,7 @@
 *.gcov
 
 aasm
+aasm_rust
 
 coverage/
 *.profraw
