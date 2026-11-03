@@ -1001,8 +1001,8 @@ uint8_t parseInst(AST* node, uint64_t *pc) {
             }
 
             // imul reg, imm
-            else if (c->type == O_NONE && (b->type == O_REG64 || b->type == O_REG32 ||
-                    b->type == O_REG16)) {
+            else if (c->type == O_NONE && (a->type == O_REG64 || a->type == O_REG32 ||
+                    a->type == O_REG16)) {
                 node->ins.pc = *pc;
                 if(!a->nf && !a->zu)*s = encode_imul_reg_reg_imm(machine_code, dest, dest, b->imm, sz, b->type == O_EXPR);
                 else{
