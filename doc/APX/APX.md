@@ -99,9 +99,12 @@ Pseudo code:
         if(*(char*)(rax + rcx) == (uint8_t)10){
             ZF = 1;
         }
-        else{
-            OF = 1; ZF = 0; SF = 0; CF = 0;
+        else {
+            ZF = 0;
         }
+    }
+    else{
+        OF = 1; ZF = 0; SF = 0; CF = 0;
     }
 ```
 
@@ -119,8 +122,11 @@ Pseudo code:
             ZF = 1;
         }
         else{
-            OF = 0; ZF = 0; SF = 0; CF = 0;
+            ZF = 0;
         }
+    }
+    else{
+        OF = 0; ZF = 0; SF = 0; CF = 0;
     }
 ```
 
